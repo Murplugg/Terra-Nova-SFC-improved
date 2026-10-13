@@ -1,0 +1,37 @@
+{
+  "world": {
+    "address": 1757413888,
+    "sha256": "87cff8f491d828c33c0fedcbcde8f52f5bad7ad65b40938b4f56d5bfa2377534",
+    "size": 678
+  },
+  "map_entry": {
+    "address": 1757415936,
+    "sha256": "ae111d98b340fa8ead7859578ab09325105e5a03866a867f94ca286b9ab8687f",
+    "size": 751
+  },
+  "map_background": {
+    "address": 1757416704,
+    "sha256": "a5d8f64a1ca1007bb89c65a295460610635b339b4035b34df3ea7a04e522d4c9",
+    "size": 70
+  },
+  "camera_merge": {
+    "address": 1757417472,
+    "sha256": "2ad571a8879a2dca43a30387f14bb3e61c25d14e8d836299e129e13171f4da31",
+    "size": 198
+  },
+  "map_merge": {
+    "address": 1757417728,
+    "sha256": "faea72ae9d69fdaab4efce2ae18a20389863435b86668324f74e4ec61773f69a",
+    "size": 253
+  },
+  "cursor": {
+    "address": 1757418496,
+    "sha256": "aad8922cb6ac583b98b0b4ee42989f6814547d8f262672b0cc3734097f20601c",
+    "size": 613
+  },
+  "mode": {
+    "address": 33128448,
+    "sha256": "8633a44f103711a1cfe31c7a387a37c6f6bda07a4d3e39a7f9518d6fbf16d01c",
+    "size": 70
+  }
+}

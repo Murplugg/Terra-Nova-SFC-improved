@@ -1,0 +1,832 @@
+[
+  {
+    "index": 0,
+    "retail_indices": [
+      83
+    ]
+  },
+  {
+    "index": 1,
+    "retail_indices": [
+      85,
+      84
+    ]
+  },
+  {
+    "index": 2,
+    "retail_indices": [
+      85,
+      84
+    ]
+  },
+  {
+    "index": 3,
+    "retail_indices": [
+      0
+    ]
+  },
+  {
+    "index": 4,
+    "retail_indices": [
+      86,
+      100,
+      95
+    ]
+  },
+  {
+    "index": 5,
+    "retail_indices": [
+      2
+    ]
+  },
+  {
+    "index": 6,
+    "retail_indices": [
+      3
+    ]
+  },
+  {
+    "index": 7,
+    "retail_indices": [
+      4
+    ]
+  },
+  {
+    "index": 8,
+    "retail_indices": [
+      5
+    ]
+  },
+  {
+    "index": 9,
+    "retail_indices": [
+      6
+    ]
+  },
+  {
+    "index": 10,
+    "retail_indices": [
+      7
+    ]
+  },
+  {
+    "index": 11,
+    "retail_indices": [
+      8
+    ]
+  },
+  {
+    "index": 12,
+    "retail_indices": [
+      87
+    ]
+  },
+  {
+    "index": 13,
+    "retail_indices": [
+      88
+    ]
+  },
+  {
+    "index": 14,
+    "retail_indices": [
+      41
+    ]
+  },
+  {
+    "index": 15,
+    "retail_indices": [
+      89
+    ]
+  },
+  {
+    "index": 16,
+    "retail_indices": [
+      90
+    ]
+  },
+  {
+    "index": 17,
+    "retail_indices": [
+      21
+    ]
+  },
+  {
+    "index": 18,
+    "retail_indices": [
+      22
+    ]
+  },
+  {
+    "index": 19,
+    "retail_indices": [
+      91
+    ]
+  },
+  {
+    "index": 20,
+    "retail_indices": [
+      92
+    ]
+  },
+  {
+    "index": 21,
+    "retail_indices": [
+      93
+    ]
+  },
+  {
+    "index": 22,
+    "retail_indices": [
+      94
+    ]
+  },
+  {
+    "index": 23,
+    "retail_indices": [
+      141
+    ]
+  },
+  {
+    "index": 24,
+    "retail_indices": [
+      107
+    ]
+  },
+  {
+    "index": 25,
+    "retail_indices": [
+      108
+    ]
+  },
+  {
+    "index": 26,
+    "retail_indices": [
+      109
+    ]
+  },
+  {
+    "index": 27,
+    "retail_indices": [
+      82
+    ]
+  },
+  {
+    "index": 28,
+    "retail_indices": [
+      1
+    ]
+  },
+  {
+    "index": 29,
+    "retail_indices": [
+      9
+    ]
+  },
+  {
+    "index": 30,
+    "retail_indices": [
+      10
+    ]
+  },
+  {
+    "index": 31,
+    "retail_indices": [
+      11
+    ]
+  },
+  {
+    "index": 32,
+    "retail_indices": [
+      12
+    ]
+  },
+  {
+    "index": 33,
+    "retail_indices": [
+      13
+    ]
+  },
+  {
+    "index": 34,
+    "retail_indices": [
+      14
+    ]
+  },
+  {
+    "index": 35,
+    "retail_indices": [
+      15
+    ]
+  },
+  {
+    "index": 36,
+    "retail_indices": [
+      16
+    ]
+  },
+  {
+    "index": 37,
+    "retail_indices": [
+      17
+    ]
+  },
+  {
+    "index": 38,
+    "retail_indices": [
+      18
+    ]
+  },
+  {
+    "index": 39,
+    "retail_indices": [
+      19
+    ]
+  },
+  {
+    "index": 40,
+    "retail_indices": [
+      42,
+      20
+    ]
+  },
+  {
+    "index": 41,
+    "retail_indices": [
+      23
+    ]
+  },
+  {
+    "index": 42,
+    "retail_indices": [
+      24
+    ]
+  },
+  {
+    "index": 43,
+    "retail_indices": [
+      25
+    ]
+  },
+  {
+    "index": 44,
+    "retail_indices": [
+      26
+    ]
+  },
+  {
+    "index": 45,
+    "retail_indices": [
+      27
+    ]
+  },
+  {
+    "index": 46,
+    "retail_indices": [
+      28
+    ]
+  },
+  {
+    "index": 47,
+    "retail_indices": [
+      29
+    ]
+  },
+  {
+    "index": 48,
+    "retail_indices": [
+      30
+    ]
+  },
+  {
+    "index": 49,
+    "retail_indices": [
+      31
+    ]
+  },
+  {
+    "index": 50,
+    "retail_indices": [
+      32
+    ]
+  },
+  {
+    "index": 51,
+    "retail_indices": [
+      33
+    ]
+  },
+  {
+    "index": 52,
+    "retail_indices": [
+      34
+    ]
+  },
+  {
+    "index": 53,
+    "retail_indices": [
+      35
+    ]
+  },
+  {
+    "index": 54,
+    "retail_indices": [
+      36
+    ]
+  },
+  {
+    "index": 55,
+    "retail_indices": [
+      37
+    ]
+  },
+  {
+    "index": 56,
+    "retail_indices": [
+      38
+    ]
+  },
+  {
+    "index": 57,
+    "retail_indices": [
+      39
+    ]
+  },
+  {
+    "index": 58,
+    "retail_indices": [
+      40
+    ]
+  },
+  {
+    "index": 59,
+    "retail_indices": [
+      42,
+      20
+    ]
+  },
+  {
+    "index": 60,
+    "retail_indices": [
+      43
+    ]
+  },
+  {
+    "index": 61,
+    "retail_indices": [
+      44
+    ]
+  },
+  {
+    "index": 62,
+    "retail_indices": []
+  },
+  {
+    "index": 63,
+    "retail_indices": [
+      46
+    ]
+  },
+  {
+    "index": 64,
+    "retail_indices": [
+      47
+    ]
+  },
+  {
+    "index": 65,
+    "retail_indices": [
+      48
+    ]
+  },
+  {
+    "index": 66,
+    "retail_indices": [
+      49
+    ]
+  },
+  {
+    "index": 67,
+    "retail_indices": [
+      50
+    ]
+  },
+  {
+    "index": 68,
+    "retail_indices": [
+      51
+    ]
+  },
+  {
+    "index": 69,
+    "retail_indices": [
+      52
+    ]
+  },
+  {
+    "index": 70,
+    "retail_indices": [
+      53
+    ]
+  },
+  {
+    "index": 71,
+    "retail_indices": [
+      54
+    ]
+  },
+  {
+    "index": 72,
+    "retail_indices": [
+      79
+    ]
+  },
+  {
+    "index": 73,
+    "retail_indices": []
+  },
+  {
+    "index": 74,
+    "retail_indices": []
+  },
+  {
+    "index": 75,
+    "retail_indices": [
+      56
+    ]
+  },
+  {
+    "index": 76,
+    "retail_indices": [
+      57
+    ]
+  },
+  {
+    "index": 77,
+    "retail_indices": [
+      58
+    ]
+  },
+  {
+    "index": 78,
+    "retail_indices": [
+      59
+    ]
+  },
+  {
+    "index": 79,
+    "retail_indices": [
+      60
+    ]
+  },
+  {
+    "index": 80,
+    "retail_indices": [
+      61
+    ]
+  },
+  {
+    "index": 81,
+    "retail_indices": [
+      62
+    ]
+  },
+  {
+    "index": 82,
+    "retail_indices": [
+      63
+    ]
+  },
+  {
+    "index": 83,
+    "retail_indices": [
+      64
+    ]
+  },
+  {
+    "index": 84,
+    "retail_indices": [
+      65
+    ]
+  },
+  {
+    "index": 85,
+    "retail_indices": [
+      66
+    ]
+  },
+  {
+    "index": 86,
+    "retail_indices": [
+      67
+    ]
+  },
+  {
+    "index": 87,
+    "retail_indices": [
+      68
+    ]
+  },
+  {
+    "index": 88,
+    "retail_indices": [
+      69
+    ]
+  },
+  {
+    "index": 89,
+    "retail_indices": [
+      70
+    ]
+  },
+  {
+    "index": 90,
+    "retail_indices": [
+      71
+    ]
+  },
+  {
+    "index": 91,
+    "retail_indices": [
+      72
+    ]
+  },
+  {
+    "index": 92,
+    "retail_indices": [
+      73
+    ]
+  },
+  {
+    "index": 93,
+    "retail_indices": [
+      74
+    ]
+  },
+  {
+    "index": 94,
+    "retail_indices": [
+      75
+    ]
+  },
+  {
+    "index": 95,
+    "retail_indices": [
+      76
+    ]
+  },
+  {
+    "index": 96,
+    "retail_indices": [
+      77
+    ]
+  },
+  {
+    "index": 97,
+    "retail_indices": [
+      78
+    ]
+  },
+  {
+    "index": 98,
+    "retail_indices": [
+      86,
+      100,
+      95
+    ]
+  },
+  {
+    "index": 99,
+    "retail_indices": [
+      80
+    ]
+  },
+  {
+    "index": 100,
+    "retail_indices": [
+      81
+    ]
+  },
+  {
+    "index": 101,
+    "retail_indices": [
+      101
+    ]
+  },
+  {
+    "index": 102,
+    "retail_indices": [
+      102
+    ]
+  },
+  {
+    "index": 103,
+    "retail_indices": [
+      103
+    ]
+  },
+  {
+    "index": 104,
+    "retail_indices": [
+      104
+    ]
+  },
+  {
+    "index": 105,
+    "retail_indices": [
+      105
+    ]
+  },
+  {
+    "index": 106,
+    "retail_indices": [
+      106
+    ]
+  },
+  {
+    "index": 107,
+    "retail_indices": [
+      110
+    ]
+  },
+  {
+    "index": 108,
+    "retail_indices": [
+      111
+    ]
+  },
+  {
+    "index": 109,
+    "retail_indices": [
+      112
+    ]
+  },
+  {
+    "index": 110,
+    "retail_indices": [
+      113
+    ]
+  },
+  {
+    "index": 111,
+    "retail_indices": [
+      114
+    ]
+  },
+  {
+    "index": 112,
+    "retail_indices": [
+      115
+    ]
+  },
+  {
+    "index": 113,
+    "retail_indices": [
+      116
+    ]
+  },
+  {
+    "index": 114,
+    "retail_indices": [
+      117
+    ]
+  },
+  {
+    "index": 115,
+    "retail_indices": [
+      118
+    ]
+  },
+  {
+    "index": 116,
+    "retail_indices": [
+      119
+    ]
+  },
+  {
+    "index": 117,
+    "retail_indices": [
+      120
+    ]
+  },
+  {
+    "index": 118,
+    "retail_indices": [
+      121
+    ]
+  },
+  {
+    "index": 119,
+    "retail_indices": [
+      122
+    ]
+  },
+  {
+    "index": 120,
+    "retail_indices": [
+      123
+    ]
+  },
+  {
+    "index": 121,
+    "retail_indices": [
+      124
+    ]
+  },
+  {
+    "index": 122,
+    "retail_indices": [
+      125
+    ]
+  },
+  {
+    "index": 123,
+    "retail_indices": [
+      126
+    ]
+  },
+  {
+    "index": 124,
+    "retail_indices": [
+      127
+    ]
+  },
+  {
+    "index": 125,
+    "retail_indices": [
+      128
+    ]
+  },
+  {
+    "index": 126,
+    "retail_indices": [
+      129
+    ]
+  },
+  {
+    "index": 127,
+    "retail_indices": [
+      130
+    ]
+  },
+  {
+    "index": 128,
+    "retail_indices": [
+      131
+    ]
+  },
+  {
+    "index": 129,
+    "retail_indices": [
+      132
+    ]
+  },
+  {
+    "index": 130,
+    "retail_indices": [
+      133
+    ]
+  },
+  {
+    "index": 131,
+    "retail_indices": [
+      134
+    ]
+  },
+  {
+    "index": 132,
+    "retail_indices": [
+      135
+    ]
+  },
+  {
+    "index": 133,
+    "retail_indices": [
+      136
+    ]
+  },
+  {
+    "index": 134,
+    "retail_indices": [
+      138
+    ]
+  },
+  {
+    "index": 135,
+    "retail_indices": [
+      162
+    ]
+  },
+  {
+    "index": 136,
+    "retail_indices": [
+      146
+    ]
+  },
+  {
+    "index": 137,
+    "retail_indices": [
+      163
+    ]
+  }
+]

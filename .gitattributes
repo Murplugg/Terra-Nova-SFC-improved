@@ -1,0 +1,2 @@
+# The source inventory checks exact bytes, including historical newlines.
+* -text

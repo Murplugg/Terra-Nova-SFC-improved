@@ -1,0 +1,849 @@
+[
+  {
+    "recipe": "cursor-text",
+    "address": 10138856,
+    "source": "foundation_recipes",
+    "size": 62,
+    "sha256": "56aa5f52417d71c0545acb06d846f5326df60a20c480bbaf13707d8a858bac9b"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 10139368,
+    "source": "foundation_recipes",
+    "size": 56,
+    "sha256": "af0e9dadb68a8eeec43dbf0687e4177d41af550a96ba5d918455d2d1309de767"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 10139880,
+    "source": "foundation_recipes",
+    "size": 262,
+    "sha256": "d47aa998e6cc7bf5805cd826e699e569ff7a718406f3eb8b8df68a17365ac534"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 10141416,
+    "source": "foundation_recipes",
+    "size": 70,
+    "sha256": "13c54700eebc9bc37f0563c172410e537cd16509d8627a87c5047060294dccda"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 10141928,
+    "source": "foundation_recipes",
+    "size": 37,
+    "sha256": "6e9ffd9828792afdd1277da78be78527a07e0acfaa504cc1f875cad8f414beec"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 2498508,
+    "source": "foundation_recipes",
+    "size": 5,
+    "sha256": "9e35d4eb609556dcc18545f34b350eb749376866fc160a3cb15dcc901610ca9e"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 3032016,
+    "source": "foundation_recipes",
+    "size": 5,
+    "sha256": "a84c4cb8e538abc9c659e2eb0838041350c87cfd64760e9f5e9407a60a3dab15"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 10142952,
+    "source": "foundation_recipes",
+    "size": 390,
+    "sha256": "0bac857d4be73a86cecebf12c7658a5e150aedd5c374c12475ca789e74c1134a"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 10145000,
+    "source": "foundation_recipes",
+    "size": 56,
+    "sha256": "459dfc499f4facc3909190eba7a708d10eb851b1b541e16824a46fe60b6e4c67"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 10145512,
+    "source": "foundation_recipes",
+    "size": 72,
+    "sha256": "113d51d7b8a4bfe1ba92a3a60ce4ef456db661134bc31ca5f607d7c12d76d544"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 9057512,
+    "source": "foundation_recipes",
+    "size": 256,
+    "sha256": "2c41a1dd584e3773b95674841b685f36c76b48ec4db75863372c2fd6e19a61ce"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 9537768,
+    "source": "foundation_recipes",
+    "size": 256,
+    "sha256": "2c41a1dd584e3773b95674841b685f36c76b48ec4db75863372c2fd6e19a61ce"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 10147048,
+    "source": "foundation_recipes",
+    "size": 435,
+    "sha256": "d005f4be57ac8d9f01efaa9c01031938d60c9d94cbdc1f5a6ff65d1bbb1f17a4"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 10149096,
+    "source": "foundation_recipes",
+    "size": 56,
+    "sha256": "b7f6b1feaac1bc4e619aa6feca5af59274067c17578e76d9f74e380a1ccbb31a"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 10149608,
+    "source": "foundation_recipes",
+    "size": 72,
+    "sha256": "8eda53bc9d2a750015836795d517f42b9b7b949956127bc2291c32472d9ec95b"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 8781568,
+    "source": "foundation_recipes",
+    "size": 256,
+    "sha256": "2c41a1dd584e3773b95674841b685f36c76b48ec4db75863372c2fd6e19a61ce"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 8845824,
+    "source": "foundation_recipes",
+    "size": 256,
+    "sha256": "2c41a1dd584e3773b95674841b685f36c76b48ec4db75863372c2fd6e19a61ce"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 10151144,
+    "source": "foundation_recipes",
+    "size": 46,
+    "sha256": "5abad330537157cbe6e44b592144ebf311522dac439a8ea10a6deec72d7f65ae"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 10151656,
+    "source": "foundation_recipes",
+    "size": 42,
+    "sha256": "f6634419fa7006280f714fc9502c52d93f8a841e87ddbcc5cd56c208cb375dcb"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 10152168,
+    "source": "foundation_recipes",
+    "size": 572,
+    "sha256": "3d0e67c70c7111997443c62810cf520bd94d17c87300c2e281bf9c97eb372667"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 10154216,
+    "source": "foundation_recipes",
+    "size": 73,
+    "sha256": "df0bda8ab90dfdcc479878237ab76fc6493accdd5b2c8a437855c23e4eb348c7"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 10154728,
+    "source": "foundation_recipes",
+    "size": 57,
+    "sha256": "e8160b2846188643ea1af029c0596d494901edba148fd5456604c674fdf10f2a"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 3036384,
+    "source": "foundation_recipes",
+    "size": 5,
+    "sha256": "198fdb8e46fe37f88dc3ce07ea0370f109565a0dc7df990e6ef485dd1c2124fe"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 3089838,
+    "source": "foundation_recipes",
+    "size": 7,
+    "sha256": "63edbd984a0d6c7eac2628d82519d2264b341d97209a1a26557ae564d33457f3"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 10158312,
+    "source": "foundation_recipes",
+    "size": 41,
+    "sha256": "a9dc19edbc85eeb047d7abe038d4ff35cc44e60b202d0eed320a8f311dbbaee0"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 10158824,
+    "source": "foundation_recipes",
+    "size": 207,
+    "sha256": "1e55b91891daf36a9f5b10925bf023ceba9648659b8294d718e97c49392854fa"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 10159848,
+    "source": "foundation_recipes",
+    "size": 11,
+    "sha256": "b03f1c7a6235179185d7b6366db754562dc06013fb13cc9428e467f279f31a43"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 10160360,
+    "source": "foundation_recipes",
+    "size": 446,
+    "sha256": "750869294435bd54a2486567a764fb22a07cb13b9e93bf3d6d0fe6707516e10f"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 2523288,
+    "source": "foundation_recipes",
+    "size": 6,
+    "sha256": "4280d92b88a5555159395a38f6b4ea3e93016c881348b74aa796cb48738851c1"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 8847104,
+    "source": "foundation_recipes",
+    "size": 256,
+    "sha256": "2c41a1dd584e3773b95674841b685f36c76b48ec4db75863372c2fd6e19a61ce"
+  },
+  {
+    "recipe": "cursor-text",
+    "address": 8911360,
+    "source": "foundation_recipes",
+    "size": 256,
+    "sha256": "2c41a1dd584e3773b95674841b685f36c76b48ec4db75863372c2fd6e19a61ce"
+  },
+  {
+    "recipe": "world-hud",
+    "address": 10182888,
+    "source": "foundation_recipes",
+    "size": 685,
+    "sha256": "3500302d04d2d027552deb8afcca60d07e5a8f2dbe257cd8d09b6ebb30615706"
+  },
+  {
+    "recipe": "world-hud",
+    "address": 10186984,
+    "source": "foundation_recipes",
+    "size": 281,
+    "sha256": "b4540084c37a208a159ae0e75b0e97e1efa313e930c5a6b1b10c00366ca0e370"
+  },
+  {
+    "recipe": "world-hud",
+    "address": 10189032,
+    "source": "foundation_recipes",
+    "size": 430,
+    "sha256": "a2c46990c5f4fa742f37de6615758feeec70455c59a3615aba78b84dae319d22"
+  },
+  {
+    "recipe": "world-hud",
+    "address": 10192104,
+    "source": "foundation_recipes",
+    "size": 198,
+    "sha256": "e88e83616949a0dae1c551d78ae67b9f2b0052a396b68516908f2afeb56c1678"
+  },
+  {
+    "recipe": "world-hud",
+    "address": 10130664,
+    "source": "foundation_recipes",
+    "size": 5,
+    "sha256": "909bf41cb290009817e983358ee6bcbe5aa1008606a738b6bb61016a22284057"
+  },
+  {
+    "recipe": "world-hud",
+    "address": 2734652,
+    "source": "foundation_recipes",
+    "size": 5,
+    "sha256": "103ea64a7c745a7f6ce0eb26e28c671d60e60073d7194e8b7f1defae133f29a7"
+  },
+  {
+    "recipe": "world-hud",
+    "address": 2745327,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "81b88c8b7c5f1605918e8f4b24381285fbf48105ba2c40aee89951eefb1e1d49"
+  },
+  {
+    "recipe": "world-hud",
+    "address": 2744848,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "b6374cfbde7b0cbf299b8538921d53e21f6658b3acf3988ae61bfd712d9b5b32"
+  },
+  {
+    "recipe": "world-hud",
+    "address": 2744908,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "b6374cfbde7b0cbf299b8538921d53e21f6658b3acf3988ae61bfd712d9b5b32"
+  },
+  {
+    "recipe": "world-hud",
+    "address": 2745204,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "b6374cfbde7b0cbf299b8538921d53e21f6658b3acf3988ae61bfd712d9b5b32"
+  },
+  {
+    "recipe": "world-hud",
+    "address": 2786478,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "a4c8daf8f4990600fe62d238cee276b229a3bc73165f3e5ffdd193bb52d95a34"
+  },
+  {
+    "recipe": "world-hud",
+    "address": 2786989,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "a4c8daf8f4990600fe62d238cee276b229a3bc73165f3e5ffdd193bb52d95a34"
+  },
+  {
+    "recipe": "world-hud",
+    "address": 2786483,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "fab9231240d3cc7173b5e34243e587a86dbeadc9039e5d4f71d6060cd001168c"
+  },
+  {
+    "recipe": "world-hud",
+    "address": 2787255,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "44102d19eb299f17989d9f5129c682bcef9b8da03e6b7fe484b3f35f850882f1"
+  },
+  {
+    "recipe": "world-hud",
+    "address": 2826998,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "44102d19eb299f17989d9f5129c682bcef9b8da03e6b7fe484b3f35f850882f1"
+  },
+  {
+    "recipe": "world-hud",
+    "address": 2495790,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "c9c7e8c63836a93f6d8c04598b6503d2863a2df7b86366157178234175704dcc"
+  },
+  {
+    "recipe": "world-hud",
+    "address": 2495860,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "c9c7e8c63836a93f6d8c04598b6503d2863a2df7b86366157178234175704dcc"
+  },
+  {
+    "recipe": "world-hud",
+    "address": 2502505,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "c9c7e8c63836a93f6d8c04598b6503d2863a2df7b86366157178234175704dcc"
+  },
+  {
+    "recipe": "world-hud",
+    "address": 2502719,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "c9c7e8c63836a93f6d8c04598b6503d2863a2df7b86366157178234175704dcc"
+  },
+  {
+    "recipe": "secondary-cameras",
+    "address": 10313728,
+    "source": "foundation_recipes",
+    "size": 958,
+    "sha256": "6584183a7700b5dc8c795fb4769a2d99038f1d4ac6b8b673b6977054d099212e"
+  },
+  {
+    "recipe": "secondary-cameras",
+    "address": 10326016,
+    "source": "foundation_recipes",
+    "size": 76,
+    "sha256": "ceaf227207732fe10676249a7030fce9630edd2902bc0ff8c50ddb6ee2ede182"
+  },
+  {
+    "recipe": "secondary-cameras",
+    "address": 10321920,
+    "source": "foundation_recipes",
+    "size": 620,
+    "sha256": "22af91fcb46ef60b3b5fb940030ca4202ca1d2d9246ddccb13e79c5b770f2866"
+  },
+  {
+    "recipe": "secondary-cameras",
+    "address": 10327040,
+    "source": "foundation_recipes",
+    "size": 32,
+    "sha256": "6bcb9cb413da827ada4da4b502ef14921e1a0020b9fcfa625f77616d6c362f6f"
+  },
+  {
+    "recipe": "secondary-cameras",
+    "address": 2575780,
+    "source": "foundation_recipes",
+    "size": 5,
+    "sha256": "54d9c13ad2dbd9b72b4cb67a9acf97382a90419cbe87cc3958e3a5c663676c2d"
+  },
+  {
+    "recipe": "secondary-cameras",
+    "address": 10199272,
+    "source": "foundation_recipes",
+    "size": 560,
+    "sha256": "8d0fcad995461d1f17d9051fff8ec0b0564cb188ef9bf79bbd479943dac60f70"
+  },
+  {
+    "recipe": "secondary-cameras",
+    "address": 2747828,
+    "source": "foundation_recipes",
+    "size": 5,
+    "sha256": "847b3f1f07f49862966a18dfac2ca5372dca112520acc41b929e2235aec803b2"
+  },
+  {
+    "recipe": "navigation",
+    "address": 10166504,
+    "source": "foundation_recipes",
+    "size": 15,
+    "sha256": "c9eea578912ca187fac68946328b85173adf42173299a53ab12dda212c9795a4"
+  },
+  {
+    "recipe": "navigation",
+    "address": 10167016,
+    "source": "foundation_recipes",
+    "size": 99,
+    "sha256": "f57fab8bb1c896133b0f1c5fb37f603e844b861927c6c4a1850c9afd56966b89"
+  },
+  {
+    "recipe": "navigation",
+    "address": 10168040,
+    "source": "foundation_recipes",
+    "size": 67,
+    "sha256": "76bdbf51d6a09a81bd02c97a5dab1998927401ca671b8019f699fd285b8729d3"
+  },
+  {
+    "recipe": "navigation",
+    "address": 2497628,
+    "source": "foundation_recipes",
+    "size": 5,
+    "sha256": "c2431ca08235efdf2349948e1fc8ad14009c70c558083e23d0d0676ba63b6e55"
+  },
+  {
+    "recipe": "navigation",
+    "address": 10178792,
+    "source": "foundation_recipes",
+    "size": 314,
+    "sha256": "10e685ebd2a169ba85d664da941236b501363914e3821089a64be5a830af128d"
+  },
+  {
+    "recipe": "navigation",
+    "address": 10179816,
+    "source": "foundation_recipes",
+    "size": 10,
+    "sha256": "e151a080e9b5661ef19f55d522a097afdace546c82c92229d678f5471fb8d3e9"
+  },
+  {
+    "recipe": "target-projection",
+    "address": 10170600,
+    "source": "foundation_recipes",
+    "size": 206,
+    "sha256": "4d4aa1b316ecf91ca9eb8c954a8f25f07f05614ce35e84fd60347cb59e67b85f"
+  },
+  {
+    "recipe": "target-projection",
+    "address": 10171112,
+    "source": "foundation_recipes",
+    "size": 77,
+    "sha256": "b7da8a15f5b6a663dcdb91ca5a338538e14470206f27c7e4080d0f464e533489"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 10203368,
+    "source": "foundation_recipes",
+    "size": 168,
+    "sha256": "a96512a2c7a83ff7df680ccffec3123ff6d5287e54c210b630f163301647a41e"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 10204392,
+    "source": "foundation_recipes",
+    "size": 116,
+    "sha256": "9b7987280e734130e3fb338e2c4c0ecbfc6cf547b0aabc691b9f22b62f6dbd8f"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 10205416,
+    "source": "foundation_recipes",
+    "size": 56,
+    "sha256": "33d325a3efb89dcfaaf6ac24674d9954be506fd55e7e0f5701cf56d3bec1b468"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 10205672,
+    "source": "foundation_recipes",
+    "size": 56,
+    "sha256": "0efe13fb2d93083a221e34a8b42864b6c112be3357524240451422717c722150"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 2816839,
+    "source": "foundation_recipes",
+    "size": 5,
+    "sha256": "9767eef0dbbd526ae27315d4ecafbcad3405a9f1e40850c20821c46dff140ea1"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 2816874,
+    "source": "foundation_recipes",
+    "size": 5,
+    "sha256": "65b91968a667390195c89a2ed7a627d78baecaad88ffdb948aca765b29bdf08b"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 2816898,
+    "source": "foundation_recipes",
+    "size": 5,
+    "sha256": "28a39d8f778c74c11210ddbfb7dfe6bd184c935fc5beff1807fea84c85730879"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 2816941,
+    "source": "foundation_recipes",
+    "size": 6,
+    "sha256": "867bf00cc676ad0d66df01adad443ba4f01c05cd835919cd2899cfe8a8124715"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 2786758,
+    "source": "foundation_recipes",
+    "size": 6,
+    "sha256": "de44b0a96c14c4f5a60cfcb92e17c29bce11942b9fc02c1b0ccbac74d72fff39"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 2786826,
+    "source": "foundation_recipes",
+    "size": 6,
+    "sha256": "7a23d5bf4ca39abd5c5b10a6b913c381571521059afdd478984b453674110744"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 2786856,
+    "source": "foundation_recipes",
+    "size": 6,
+    "sha256": "1e864e0d280862ad95c718be3aa85d53440ac19c02264b2f24cb89f294cbc583"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 2783737,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "5f0053ca80cb7778b259e49d47d172c3526b0a2507250588f672282596d1c061"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 2783820,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "5f0053ca80cb7778b259e49d47d172c3526b0a2507250588f672282596d1c061"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 2782756,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "a27e99bb626273733afa1a65764ed331a12c1df0500dffd0438a267d0c2273ae"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 2782931,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "a27e99bb626273733afa1a65764ed331a12c1df0500dffd0438a267d0c2273ae"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 2783074,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "a27e99bb626273733afa1a65764ed331a12c1df0500dffd0438a267d0c2273ae"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 2782127,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "6e8260ad3239207850dedbc2d53c0341c0860c91c1eb9c503a1ed276958f3c92"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 2782591,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "6e8260ad3239207850dedbc2d53c0341c0860c91c1eb9c503a1ed276958f3c92"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 2782744,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "6e8260ad3239207850dedbc2d53c0341c0860c91c1eb9c503a1ed276958f3c92"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 2782901,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "6e8260ad3239207850dedbc2d53c0341c0860c91c1eb9c503a1ed276958f3c92"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 2782663,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "ec72caa7f9adc7b7bd9d5c07cd6169b22527f2b74bd7d4318fe21d22c5cc771c"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 2782914,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "ec72caa7f9adc7b7bd9d5c07cd6169b22527f2b74bd7d4318fe21d22c5cc771c"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 2782655,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "8ee0549858d261726f7c1a03ed3a2eafc3b60c27088ecbef3f8b3fc696300a40"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 2782882,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "8ee0549858d261726f7c1a03ed3a2eafc3b60c27088ecbef3f8b3fc696300a40"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 2782133,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "db53c2801be9bf80e07042d2db53a0ca0042db1aa1b351b3999f99dedb40524b"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 2782514,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "db53c2801be9bf80e07042d2db53a0ca0042db1aa1b351b3999f99dedb40524b"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 2782750,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "db53c2801be9bf80e07042d2db53a0ca0042db1aa1b351b3999f99dedb40524b"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 2782892,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "db53c2801be9bf80e07042d2db53a0ca0042db1aa1b351b3999f99dedb40524b"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 2783774,
+    "source": "foundation_recipes",
+    "size": 4,
+    "sha256": "b741b015fbc8894041825d2b830ab35f030ac1af2d0c3294aadabff0107ab0b1"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 10555392,
+    "source": "foundation_recipes",
+    "size": 29,
+    "sha256": "25d18bf93b3ab693f673771c845ccee935b0fa287279ae584ec5606ad145a067"
+  },
+  {
+    "recipe": "weather-terrain",
+    "address": 2815330,
+    "source": "foundation_recipes",
+    "size": 10,
+    "sha256": "5d7912e99156886ace290a6acd9122dc7de65a59978982d9104a7460281461bb"
+  },
+  {
+    "recipe": "sky-spans",
+    "address": 3492864,
+    "source": "foundation_recipes",
+    "size": 24,
+    "sha256": "d8a4d130b78c1c20c66038ccd7aa90256c1712ef7d24b5adc1c0579760c72127"
+  },
+  {
+    "recipe": "sky-spans",
+    "address": 3492992,
+    "source": "foundation_recipes",
+    "size": 14,
+    "sha256": "ecc7b5126c115b72a80e28ee80ae4276bb8dedebce4c1a68a554c0732857ab36"
+  },
+  {
+    "recipe": "sky-spans",
+    "address": 2828096,
+    "source": "foundation_recipes",
+    "size": 6,
+    "sha256": "3230857f59b920212902fa76abaec03015e7ea44fa8fed3f8a3b6325118df2c5"
+  },
+  {
+    "recipe": "sky-spans",
+    "address": 2828159,
+    "source": "foundation_recipes",
+    "size": 5,
+    "sha256": "ded519956e58963b2a565cea5258b13c3025d5680e4ca25edb4a22463fa84ce3"
+  },
+  {
+    "recipe": "display-state",
+    "address": 10174696,
+    "source": "foundation_recipes",
+    "size": 23,
+    "sha256": "c0cf53535f0249f1bce01771f864a560e6e56cef91cc51709b27e185975b284b"
+  },
+  {
+    "recipe": "display-state",
+    "address": 2495864,
+    "source": "foundation_recipes",
+    "size": 6,
+    "sha256": "d26c623b3c3825bd30c9371d3cd1bfa08fbce5368301f030f3c3c8b9b004c5c1"
+  },
+  {
+    "recipe": "display-state",
+    "address": 2502509,
+    "source": "foundation_recipes",
+    "size": 6,
+    "sha256": "e42af023650d77a029c9800b23eb1a9f71328cafc3dcec5988796b34143befd8"
+  },
+  {
+    "recipe": "display-state",
+    "address": 2502723,
+    "source": "foundation_recipes",
+    "size": 6,
+    "sha256": "a90a09322ce1050f633d99df28f352cd61d8c7ada08f07c067a1a91f1c7b01d0"
+  },
+  {
+    "recipe": "display-state",
+    "address": 2503664,
+    "source": "foundation_recipes",
+    "size": 2,
+    "sha256": "06c8c2f66b59d22018450ce88a0d5e955fcc74c7e8b2a13467889a08937f39c6"
+  },
+  {
+    "recipe": "display-state",
+    "address": 10197224,
+    "source": "foundation_recipes",
+    "size": 42,
+    "sha256": "e6971c1042aff2735f5128d6c5076cd92dd9c6c2b7454d17e4d89989db5585c2"
+  },
+  {
+    "recipe": "dialog-coverage",
+    "address": 10555904,
+    "source": "foundation_recipes",
+    "size": 324,
+    "sha256": "a684d8b1b0cdc3647ff2e09a3133c94480b84b926c3673cf420b615244265e37"
+  },
+  {
+    "recipe": "dialog-coverage",
+    "address": 10557952,
+    "source": "foundation_recipes",
+    "size": 11,
+    "sha256": "2380b213464f7d517c5db72b708b35aa2613e1063257f15552de21e166ecad30"
+  },
+  {
+    "recipe": "dialog-coverage",
+    "address": 2380988,
+    "source": "foundation_recipes",
+    "size": 6,
+    "sha256": "1ba0ae6e380cda143950e80acfb4196b33c82762a0c5b8b34f528deaecba06e1"
+  },
+  {
+    "recipe": "dialog-coverage",
+    "address": 10556928,
+    "source": "foundation_recipes",
+    "size": 324,
+    "sha256": "ac36baf24169db6c773d4ad6e0f4513789fa31991bdb5883ca4e769131707e55"
+  },
+  {
+    "recipe": "dialog-coverage",
+    "address": 10557984,
+    "source": "foundation_recipes",
+    "size": 11,
+    "sha256": "475b3df14fd94bdbbceeba4667e5127e39431b04bb127ff27a769a818a1f48c1"
+  },
+  {
+    "recipe": "dialog-coverage",
+    "address": 2381312,
+    "source": "foundation_recipes",
+    "size": 6,
+    "sha256": "402e4a8506ae03f41dfe401b83135cb5941a860adf1247467913989a207d55a4"
+  },
+  {
+    "recipe": "damage-canvas",
+    "address": 10558720,
+    "source": "foundation_recipes",
+    "size": 163,
+    "sha256": "9e52d151cee73e3a1183ac9b3bd47617decf23a25c78eef54bc280d664344f13"
+  },
+  {
+    "recipe": "damage-canvas",
+    "address": 2527758,
+    "source": "foundation_recipes",
+    "size": 5,
+    "sha256": "a091ff8442205d101f66188f15e97eaf77b3525e283ddec269581288b444d7ac"
+  },
+  {
+    "recipe": "movie-io",
+    "address": 10627840,
+    "source": "foundation_recipes",
+    "size": 116,
+    "sha256": "3c8b1719def4eeb88daceb3e7a73abaf094c5283c3a6250664eb8ab13a514535"
+  },
+  {
+    "recipe": "movie-io",
+    "address": 10628352,
+    "source": "foundation_recipes",
+    "size": 65,
+    "sha256": "5c2e593d02a4b3a03711753c59efbc5a73216b9b20b46d24c75128f42f181517"
+  },
+  {
+    "recipe": "movie-io",
+    "address": 10628608,
+    "source": "foundation_recipes",
+    "size": 77,
+    "sha256": "f1bd90c848f74e113eea5c94324be81d7a30c29da537f74e29d31533f6880ab7"
+  },
+  {
+    "recipe": "movie-io",
+    "address": 2999033,
+    "source": "foundation_recipes",
+    "size": 5,
+    "sha256": "ccbeb6e97966d0fa37625ede9bffcad0b7ddec075adb09b4526318fd70ade513"
+  },
+  {
+    "recipe": "movie-io",
+    "address": 2999060,
+    "source": "foundation_recipes",
+    "size": 5,
+    "sha256": "3065ea9d0aaf875521e05c0b33665d4d0ca82d24e20d7ddc478657c7d2f1801a"
+  },
+  {
+    "recipe": "movie-io",
+    "address": 3152640,
+    "source": "foundation_recipes",
+    "size": 6,
+    "sha256": "0aedb67a8faa47205359680e1182b03b0b114f453dd02a6c7aef149ec3d5a9e8"
+  },
+  {
+    "recipe": "movie-io",
+    "address": 3033704,
+    "source": "foundation_recipes",
+    "size": 6,
+    "sha256": "8defb3bfd094b3f30f6dfbcd78270b2f0b13316698a90d7169fd3e24b418c461"
+  }
+]

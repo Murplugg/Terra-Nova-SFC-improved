@@ -1,0 +1,131 @@
+{
+  "compiler": {
+    "version": "0.15.2",
+    "sha256": "d408dd38eed3e5204af841bcebf70502a4dbbb8399a3a3262be55059370bc018"
+  },
+  "sources": {
+    "cannon_ray.c": "a98cf918488ac744abfd5bb0ad2202adbe9760e6663423563a5cc4e7b69bbf36",
+    "vehicle_ray.c": "09ceb3e7a569000f8b48afbaa0d002d93a97d44bc9fa6fc3d001b22c62de443a",
+    "pba_ray.c": "af169d77227adebe1defae643446e3626bd2a527d95881bf6ba819b212a572cc",
+    "mobile_ray.c": "e7f884241eafda682e6d462608cea6dac6e630ad782e22171e2cc77ad1281f69",
+    "mesh-recipes.json": "d7d3ffe2ac96a7d079ce926c45fc8dd84e7e359117d969edbb79392d19734702"
+  },
+  "helpers": [
+    {
+      "module": "collision_cannon",
+      "source": "cannon_ray.c",
+      "low": 33312768,
+      "high": 33353728,
+      "symbols": {
+        "ENTRY": "cannon_ray"
+      },
+      "addresses": {
+        "ENTRY": 33313840
+      },
+      "regions": [
+        {
+          "address": 33312768,
+          "size": 2287,
+          "sha256": "ac76ee3f3bf6f34771e566d834050b5beda369ef91d14b565b90fb8d98f335f8"
+        },
+        {
+          "address": 33315056,
+          "size": 2828,
+          "sha256": "dffe16b8b6fb69d2616580332a488886d078ad890732b71d616cc6508befc35a"
+        }
+      ],
+      "historical_module_sha256": "8f628ed2f0bba158b119ced05c5b39bd7be05ef448c8b24ba5aad8a5c0d1a1ae"
+    },
+    {
+      "module": "collision_vehicle",
+      "source": "vehicle_ray.c",
+      "low": 32456704,
+      "high": 32505856,
+      "symbols": {
+        "ENTRY": "vehicle_ray",
+        "TEST": "vehicle_mesh_test"
+      },
+      "addresses": {
+        "ENTRY": 32458832,
+        "TEST": 32458096
+      },
+      "regions": [
+        {
+          "address": 32456704,
+          "size": 3680,
+          "sha256": "ce920364ad569fa089c93f6be102eca9ab6ec7c69e23efeb6a2233fdfd82525b"
+        },
+        {
+          "address": 32460384,
+          "size": 4944,
+          "sha256": "1ac20bc3dfa1e9e482d8b61f69f7a102c88dbac1a8f8d43231421b6af4be7d33"
+        }
+      ],
+      "historical_module_sha256": "66420cd347d831a15d0979feaf758a726341ddd076c910f3431f9aa017a6e3e8"
+    },
+    {
+      "module": "collision_pba",
+      "source": "pba_ray.c",
+      "low": 32473088,
+      "high": 32501760,
+      "symbols": {
+        "ENTRY": "pba_ray",
+        "TEST": "pba_capsule_test",
+        "JOINTS": "pba_joints_test"
+      },
+      "defines": {
+        "VEHICLE_ENTRY": "collision_vehicle"
+      },
+      "addresses": {
+        "ENTRY": 32477456,
+        "TEST": 32476848,
+        "JOINTS": 32477216
+      },
+      "regions": [
+        {
+          "address": 32473088,
+          "size": 8508,
+          "sha256": "6b4b16137f2a0802d50f86cae9330196a926b72fe8a7dbe5906b492e28c13178"
+        },
+        {
+          "address": 32481600,
+          "size": 160,
+          "sha256": "c84be7c17136541dbcb307f8bb0b8548b4b4a013a36603f5ba72a6b086faf85b"
+        }
+      ],
+      "historical_module_sha256": "eed391b0bad8a756eaf28c2d85dd681e7e67b5cc3f7ababfa39e1ce04192dfaf"
+    },
+    {
+      "module": "collision_mobile",
+      "source": "mobile_ray.c",
+      "low": 32481792,
+      "high": 32501760,
+      "ignore_headers": true,
+      "symbols": {
+        "ENTRY": "mobile_ray",
+        "TEST": "mobile_mesh_test"
+      },
+      "defines": {
+        "PBA_ENTRY": "collision_pba"
+      },
+      "addresses": {
+        "ENTRY": 32484448,
+        "TEST": 32484160
+      },
+      "regions": [
+        {
+          "address": 32481792,
+          "size": 4241,
+          "sha256": "f9ef891cf9b0edf28037ca72f9cad21f084237935158453be5bf81bf59ad54f5"
+        },
+        {
+          "address": 32486048,
+          "size": 10228,
+          "sha256": "700cae2b6f6ec970d50dcb0d9c7327a8ce75eabf4f02b3b6e808849f1d054f61"
+        }
+      ],
+      "historical_module_sha256": "59820e55da12660ce28c50931e74dbc982063683693efe0150dc7f4b11e61e4f"
+    }
+  ],
+  "note": "Mesh headers remain original-derived checked data. No original game source is implied."
+}

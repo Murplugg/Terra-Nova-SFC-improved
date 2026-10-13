@@ -1,0 +1,9 @@
+# Isolated Windows x64 build environment; none of these need installing by players.
+pyinstaller==6.16.0
+pyinstaller-hooks-contrib==2025.8
+altgraph==0.17.4
+packaging==25.0
+pefile==2023.2.7
+pywin32-ctypes==0.2.3
+setuptools==80.9.0
+keystone-engine==0.9.2

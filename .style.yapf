@@ -1,0 +1,9 @@
+[style]
+based_on_style = pep8
+column_limit = 100
+indent_width = 4
+join_multiple_lines = false
+dedent_closing_brackets = true
+split_before_expression_after_opening_paren = true
+split_before_named_assigns = true
+

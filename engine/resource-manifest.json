@@ -1,0 +1,73 @@
+{
+  "inputs": {
+    "TNOVA/DATA/RESBABL2.RES": {
+      "size": 122910,
+      "sha256": "95e0386d01004ad4ebbf89bd0c2aa4c344777d70249bece3f0928d9c2a8a56e3"
+    },
+    "TNOVA/DATA/RESBASE.RES": {
+      "size": 3573838,
+      "sha256": "2149bf5e781519aea95b8850f62ca2fac4369da737d2d9daf67f9dc3266cf49a"
+    },
+    "TNOVA/DATA/RESGAME.RES": {
+      "size": 1072390,
+      "sha256": "ae02cdc65547b8478266d3ba697256d87f2fb3477eda5833674f7dad26fca5fa"
+    },
+    "TNDEMO2/DATA/DEMOBAB2.RES": {
+      "size": 13098,
+      "sha256": "09626e689de37454a932eda2e6e627d2d08db19e1432c2c2d80f20762d6d4fba"
+    },
+    "TNDEMO2/DATA/DEMOGAM2.RES": {
+      "size": 1206164,
+      "sha256": "405117438104a539ba294843318e3b9076bbec457febe41d5c152af4b836a9ea"
+    },
+    "TNDEMO2/DATA/DEMOMIS2.RES": {
+      "size": 8312,
+      "sha256": "8c69c553ecb0220831523f36066bc551e395329a5841b78c486b7b52c4ffdd44"
+    },
+    "TNDEMO2/DATA/DEMOPTRM.RES": {
+      "size": 183712,
+      "sha256": "cb0813f1771271e4f487456b9a7af5153236977af17bf7bb36016ca42efde884"
+    }
+  },
+  "outputs": {
+    "menu-demo-art.res": {
+      "size": 1613012,
+      "sha256": "81f5bc24bf5ae4d896f7baf3e36efd12286bda2ed51d33350d0e12d48b3fea19"
+    },
+    "menu-demo.res": {
+      "size": 13226,
+      "sha256": "0713d76cc3a08027e937451a720e37e91a2c0d242d620fb702e4d2af3f3898d5"
+    },
+    "menu-retail-art.res": {
+      "size": 3577330,
+      "sha256": "57302260853db645d36978c43464bde1ece33e8d35de2c6043a71adab7783869"
+    },
+    "menu-retail.res": {
+      "size": 123066,
+      "sha256": "2c5e20c6d65e46e6d9eda31ad2b06de575a1055265e6c70574081ea171ff6ea8"
+    },
+    "prequel/DATA/RESBABL2.RES": {
+      "size": 13210,
+      "sha256": "ba63014a725fe155746673c8a3fe4b73c60ead9eb9176863bf467eecca55db96"
+    },
+    "prequel/DATA/RESGAME.RES": {
+      "size": 1612376,
+      "sha256": "502ede9e0c74bae687b9421db8a5dff9820cf9858746a1ed5477c2c3d358e012"
+    },
+    "prequel/DATA/RESMISS.RES": {
+      "size": 8312,
+      "sha256": "b0a8b063e327df49c1bb34d1cebf3f18aeeb54fd50b865229fbef73102c0c097"
+    }
+  },
+  "source_provenance": {
+    "checkpoint_reports98.py": "8ad7cebe573edc6d6f14191e1c79a1104259a903c305d93f2a006a580b4a34db",
+    "weapon_catalog.py": "ddbbeb1384bbaea8992c82c2dcdc8ee9f1e570f903c5fb50b6c77a41456d75c4",
+    "demo102_resources.py": "4c522db6d3f980349cb17d9f8c3a7e20c33bf8ea6435bb96807d88bc08833bc1",
+    "rsd119.py": "cb9f858b5a2733f9350a83c85d12a89b7dbafa585e228adcb49b59374ee293e0",
+    "menu_art119.py": "665b4e1a7fd3815bd4ce184f27f9517542ede43e83714200f94b9852734b3f8b",
+    "campaign_menu116.py": "0043f46d19ebc37fe89dd4e94483671cfabebb4205c47ee854275bffb573dee4",
+    "campaign_menu119.py": "b06241ccfdadafabd2ee5a4328939d763ab95d3a8284efcea65aa5917b996c9c",
+    "build_demo_prequel104.py": "0bd8728846efb7ad9a2b6061716cc3e30ea7a4a9dcc6a85e28413d45e133df5a"
+  },
+  "scope": "Seven accepted v120 resource outputs; no target-installation reads at build time"
+}

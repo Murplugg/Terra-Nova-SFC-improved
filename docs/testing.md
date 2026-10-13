@@ -79,6 +79,14 @@ support equivalent drawing; scene timing measures world rendering only and does
 not predict complete gameplay frame rate on every machine.
 
 All names below are under `tests/` and have the `test_` prefix and `.py` suffix.
+The sky cases in `test_terrain_install.py` came from a cloud-layer jump during
+small changes in walking tilt. Synthetic camera matrices check the direct
+fixed-point ray equation at several viewport heights and verify preserved caller
+state. An optional check admits the verified original instruction span. Private
+scene comparisons isolate tilt from position and cloud scrolling; visual walking
+checks remain necessary because matching a formula alone cannot establish the
+appearance of the whole scene.
+
 Read the test method names for the individual cases and their fixture helpers for
 the modeled calls.
 

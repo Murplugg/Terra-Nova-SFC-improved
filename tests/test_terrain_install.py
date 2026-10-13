@@ -115,5 +115,78 @@ class TerrainInstallTests(unittest.TestCase):
         self.assertEqual(dict(pieces)[d.MESH_ENTRY], dict(d.mesh_bodies())[d.MESH_ENTRY])
 
 
+class SkyRowTests(unittest.TestCase):
+    """A playtest exposed a cloud-layer jump around a nearly level camera.
+
+    Synthetic matrices check the direct ray equation independently of game
+    assets. The optional original-input case verifies installer admission;
+    it does not stand in for visual checks while walking through the scene.
+    """
+
+    def test_rows_match_direct_fixed_point_equation_and_preserve_callers(self):
+        from features import terrain_raster as f
+        from tests.test_render_views import Fixture, put, STACK
+        from unicorn.x86_const import (
+            UC_X86_REG_EAX, UC_X86_REG_EBX, UC_X86_REG_ESI, UC_X86_REG_EDX, UC_X86_REG_EDI,
+            UC_X86_REG_EBP, UC_X86_REG_ESP, UC_X86_REG_EIP
+        )
+        u = Fixture().u
+        u.mem_write(f.SKY_ROW_SITE, f.sky_row_body())
+        matrices = ((-58569, -4106, -1), (65536, -65536, 0), (1, -1, 1), (-32000, 12000, -45000))
+        base = (33, -27, 64428)
+        for a, value in zip((0x41eb9e, 0x41eba6, 0x41eba2), base):
+            put(u, a, value & 0xffffffff)
+        for coefficients in matrices:
+            for a, value in zip((0x41ebaa, 0x41ebb2, 0x41ebae), coefficients):
+                put(u, a, value & 0xffffffff)
+            for height in (200, 400, 936, 960, 1200):
+                for row in (
+                    0, 1, height // 4, height // 2 - 1, height // 2, height - 2, height - 1
+                ):
+                    y = (row * 65536 // (height // 2)) - 65536
+                    for reg, value in (
+                        (UC_X86_REG_EAX, y & 0xffffffff), (UC_X86_REG_EDI, 0x123456),
+                        (UC_X86_REG_EBP, 0x654321), (UC_X86_REG_ESP, STACK)
+                    ):
+                        u.reg_write(reg, value)
+                    u.emu_start(f.SKY_ROW_SITE, f.SKY_ROW_END, count=100)
+                    expected = (
+                        (coefficients[0] * y >> 16) - base[0],
+                        (coefficients[1] * y >> 16) - base[1],
+                        base[2] - (coefficients[2] * y >> 16)
+                    )
+                    for reg, value in zip(
+                        (UC_X86_REG_EBX, UC_X86_REG_ESI, UC_X86_REG_EDX), expected
+                    ):
+                        self.assertEqual(u.reg_read(reg), value & 0xffffffff)
+                    for reg, value in (
+                        (UC_X86_REG_EDI, 0x123456), (UC_X86_REG_EBP, 0x654321),
+                        (UC_X86_REG_ESP, STACK), (UC_X86_REG_EIP, f.SKY_ROW_END)
+                    ):
+                        self.assertEqual(u.reg_read(reg), value)
+
+    def test_sky_installer_rejects_unknown_or_partial_code_without_writes(self):
+        from features import terrain_raster as f
+        body = f.sky_row_body()
+        for before in (bytes(len(body)), body[:-1], bytes([body[0] ^ 1]) + body[1:]):
+            writes = []
+            with self.assertRaises(ValueError):
+                f.sky_install(lambda a, b: writes.append((a, b)), lambda a, n: before)
+            self.assertFalse(writes)
+        self.assertTrue(f.sky_verify(lambda a, n: body))
+        self.assertTrue(f.sky_install(self.fail, lambda a, n: body)['already_installed'])
+
+    def test_verified_original_sky_span_accepts_one_in_place_replacement(self):
+        from features import terrain_raster as f
+        from original_inputs import original_ram
+        before = bytes(original_ram[f.SKY_ROW_SITE:f.SKY_ROW_END])
+        if not any(before):
+            self.skipTest('Requires the original retail executable')
+        writes = []
+        result = f.sky_install(lambda a, b: writes.append((a, b)), lambda a, n: before)
+        self.assertEqual(writes, [(f.SKY_ROW_SITE, f.sky_row_body())])
+        self.assertEqual(result['ranges'], [(f.SKY_ROW_SITE, f.SKY_ROW_END)])
+
+
 if __name__ == '__main__':
     unittest.main()

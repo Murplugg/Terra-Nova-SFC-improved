@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "game_revision": 153,
+  "game_revision": 154,
   "iso": {
     "path": "_ISO/TNF108.ISO",
     "size": 626792448,
@@ -1785,32 +1785,32 @@
     }
   },
   "compiler_sha256": "d408dd38eed3e5204af841bcebf70502a4dbbb8399a3a3262be55059370bc018",
-  "executable_sha256": "46f8651230b6bb9c301a61ebf6132c2a94700942a1c6a531d548419845595c29",
-  "template_sha256": "9bf61ab9898cea125dde571de1ea48e5aa3c646332ac1184e62d1276a465247c",
+  "executable_sha256": "4b943f4b4b1083aaf21bd334d4d50394fe63befe2933420871dec2c4536fc4a7",
+  "template_sha256": "4c8b073fb69abb3132b489a1d52c911eceef07bacfdb594548ed3b05eb5adb12",
   "relocations": [
     {
       "offset": 30360064,
       "capacity": 130,
       "value": "{ROOT}\\services.bin",
-      "before_sha256": "2d198ebce98029080e52ab9164e767bbc679401a1ae17d969a8e5d919ccdac3a"
+      "before_sha256": "e93a47b5ca45a959e366dc79e32beebc8e54fa345a2c5d012e92b438593512fa"
     },
     {
       "offset": 30361088,
       "capacity": 136,
       "value": "{ROOT}\\stopped-memory.bin",
-      "before_sha256": "1e37983c854d4956d6ad0aaa946e3cf324fac7fec90d5576c855ae1b2128d1cd"
+      "before_sha256": "fba4abcf541781af766edfdfe59b91c78d833f28c6f7f2c0454cec7cb8bc07b1"
     },
     {
       "offset": 30361344,
       "capacity": 133,
       "value": "{ROOT}\\framebuffer.bin",
-      "before_sha256": "16eab3e6a89e013e96fdd878055aaa8faf5ffbecee9980e5cb0d0b62b7c0f06d"
+      "before_sha256": "844e6fa35f909f55241c1e4e9421866671ad654ef9a5b79620509ac53cfc49f6"
     },
     {
       "offset": 30361600,
       "capacity": 128,
       "value": "{ROOT}\\stdout.txt",
-      "before_sha256": "f3934231aff91caf4fb8a3d0c3011c90f3a5a4f2c3dad4d6d3bb893c3ee8788d"
+      "before_sha256": "7489e6151c0e3841bb7e82d7298490a2bc88f3dd3ce766a818b1d2646eb6945d"
     },
     {
       "offset": 30362112,
@@ -7608,7 +7608,7 @@
       "kind": "delta",
       "input": "TNOVA/__FF.EXE",
       "size": 33485312,
-      "sha256": "9bf61ab9898cea125dde571de1ea48e5aa3c646332ac1184e62d1276a465247c",
+      "sha256": "4c8b073fb69abb3132b489a1d52c911eceef07bacfdb594548ed3b05eb5adb12",
       "transform": "native-le"
     },
     {
@@ -7645,5 +7645,5 @@
     "asset_mapping_source_sha256": "a98afe33b0ffcf7f6c42af2230b344ddcedf077a94ed0d9c6e6d4aee02529187",
     "relocation_source_sha256": "ebbbffe3403dde558802716efbff86de09f0b0e7ad0afbacff387ef8c995aafa"
   },
-  "setup_milestone": 153
+  "setup_milestone": 154
 }

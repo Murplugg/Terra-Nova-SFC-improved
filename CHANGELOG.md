@@ -1,16 +1,16 @@
 # Changelog
 
 Notable changes to TNova Native, grouped by subject within each release.
-The release history uses the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
-convention of keeping upcoming changes under Unreleased.
+The release history is based on the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
 
-The first public test release is being prepared. These changes are relative to
-the original game. Setup, option defaults and known limitations are in the
-[README](README.md).
+## [Unreleased]
 
-Entries marked **Fixed — original game** address faults identified in original
+The first public test release is being prepared. These changes are relative to the original game.
+Setup, option defaults and known limitations are in [README](README.md).
+
+NOTE: Entries marked **Fixed — original game** address faults identified in original
 routines or game data. Some became more apparent at higher frame rates or
 resolutions; a native crash does not necessarily mean DOSBox would crash on the
 same input. Other fixes cover porting, integration and frame-rate corrections.
@@ -30,6 +30,7 @@ same input. Other fixes cover porting, integration and frame-rate corrections.
 - Added stable horizontal variation for scenery and effect sprites, plus flips and quarter-turns for detailed brown scorch marks.
 - Extended terrain detail and scenery visibility, and optimized normal/infrared terrain, reflections and HUD composition.
 - **Fixed — original game:** renderer queue overflows corrupting object lists, and polygon drawing crashing when its temporary buffer filled during a row update.
+- **Fixed — original game:** accumulated rounding in the sky calculation making clouds jump vertically during small changes in walking tilt.
 - Fixed zoom-dependent shoreline gaps, inconsistent Ground Detail presets, scenery-list truncation and clipping capacity problems.
 - Fixed incorrect map palettes and out-of-bounds terrain-lighting reads near map edges.
 

@@ -244,6 +244,7 @@ patch,collision-and-projectiles,0x2A6478,0x2A647F,0x2A6478,0x2A647F,1,0x62478,0x
 patch,collision-and-projectiles,0x2A6AF8,0x2A6AFE,0x2A6AF8,0x2A6AFE,1,0x62AF8,0xFBF9C,0x295CF8,6,engine/feature_build.py,,"Final feature writer; includes instructions, data and padding. Source names the dispatcher."
 patch,native-renderer,0x2A73AF,0x2A73B3,0x2A73AF,0x2A73B3,1,0x633AF,0xFC853,0x2965AF,4,engine/feature_build.py,,"Final feature writer; includes instructions, data and padding. Source names the dispatcher."
 patch,native-renderer,0x2A73B5,0x2A73B9,0x2A73B5,0x2A73B9,1,0x633B5,0xFC859,0x2965B5,4,engine/feature_build.py,,"Final feature writer; includes instructions, data and padding. Source names the dispatcher."
+patch,terrain-rendering,0x2A73DE,0x2A7423,0x2A73DE,0x2A7423,1,0x633DE,0xFC882,0x2965DE,69,engine/feature_build.py,,"Final feature writer; includes instructions, data and padding. Source names the dispatcher."
 patch,native-renderer,0x2A7532,0x2A7536,0x2A7532,0x2A7536,1,0x63532,0xFC9D6,0x296732,4,engine/feature_build.py,,"Final feature writer; includes instructions, data and padding. Source names the dispatcher."
 patch,native-renderer,0x2A757F,0x2A7583,0x2A757F,0x2A7583,1,0x6357F,0xFCA23,0x29677F,4,engine/feature_build.py,,"Final feature writer; includes instructions, data and padding. Source names the dispatcher."
 patch,native-renderer,0x2A75BF,0x2A75C3,0x2A75BF,0x2A75C3,1,0x635BF,0xFCA63,0x2967BF,4,engine/feature_build.py,,"Final feature writer; includes instructions, data and padding. Source names the dispatcher."

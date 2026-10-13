@@ -4,10 +4,10 @@ All components bind directly to their maintained feature APIs. Group order below
 """
 from dataclasses import dataclass
 
-REVISION = 153
+REVISION = 154
 FOUNDATION_SHA = 'c8d6487dcbbcf21cf21a1a85a69cf1d3b980958b6138fdb54e664da4bf99fb50'
 DEMO_SHA = '886568d2d0e15c5bcce5539832cd8bf1fd2c02655825c6ddf3cc77068be2556f'
-OUTPUT_SHA = '46f8651230b6bb9c301a61ebf6132c2a94700942a1c6a531d548419845595c29'
+OUTPUT_SHA = '4b943f4b4b1083aaf21bd334d4d50394fe63befe2933420871dec2c4536fc4a7'
 
 
 @dataclass(frozen=True)
@@ -43,7 +43,7 @@ PLAN = (
     Feature('communications', ('logical-hud', )),
     Feature(
         'terrain-rendering', ('actor-and-effect-timing', 'terrain-storage'),
-        ('deployable-contacts', 'panel-compositor', 'terrain-columns', 'water-rows')
+        ('deployable-contacts', 'panel-compositor', 'terrain-columns', 'water-rows', 'sky-rows')
     ),
     Feature('native-renderer', ('terrain-rendering', 'logical-hud')),
     Feature(

@@ -61,6 +61,7 @@ def owned_component(name, write, ram, context):
         'terrain-columns':
         (terrain_raster.column_install, terrain_raster.column_verify, read, {}, {}),
         'water-rows': (terrain_raster.water_install, terrain_raster.water_verify, read, {}, {}),
+        'sky-rows': (terrain_raster.sky_install, terrain_raster.sky_verify, read, {}, {}),
         'volley-timing':
         (projectiles.install, projectiles.verify, read, dict(part='volley'), dict(part='volley')),
         'hud-infill': (

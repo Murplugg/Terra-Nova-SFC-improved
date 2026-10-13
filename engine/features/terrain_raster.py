@@ -894,3 +894,52 @@ def surface_install(write, read, *, span_audio_path, movie_audio_path):
 def surface_verify(read, *, span_audio_path, movie_audio_path):
     from features.input_views import _verify
     return _verify(surface_bodies(span_audio_path, movie_audio_path), read)
+
+
+SKY_ROW_SITE = 0x2a73de
+SKY_ROW_END = 0x2a7423
+SKY_ROW_ORIGINAL_SHA = '1fd96c54d86b3c46ad5f4793010c5dc1569be442bdeba4073a333f49f3713df5'
+
+
+def sky_row_body():
+    """Evaluate each sky ray directly to avoid accumulating rounded increments.
+
+    EAX contains the normalized 16.16 screen row. The original recurrence
+    rounds each tiny negative product down before adding it to the preceding
+    row. Small changes in walking tilt can therefore move the cloud layer by
+    a visible step. Direct evaluation keeps each rounding error below one
+    fixed-point unit, regardless of the viewport height.
+
+    EBX, ESI and EDX are the three ray components consumed by the original
+    intersection calculation. No extra storage or per-frame state is needed.
+    """
+    body = asm(
+        SKY_ROW_SITE, (
+            'mov ecx,eax;'
+            'mov eax,[0x41ebaa];imul ecx;shrd eax,edx,16;'
+            'sub eax,[0x41eb9e];mov ebx,eax;'
+            'mov eax,[0x41ebb2];imul ecx;shrd eax,edx,16;'
+            'sub eax,[0x41eba6];mov esi,eax;'
+            'mov eax,[0x41ebae];imul ecx;shrd eax,edx,16;'
+            'mov edx,[0x41eba2];sub edx,eax;'
+        )
+    )
+    assert len(body) <= SKY_ROW_END - SKY_ROW_SITE
+    return body.ljust(SKY_ROW_END - SKY_ROW_SITE, b'\x90')
+
+
+def sky_install(write, read):
+    body = sky_row_body()
+    before = bytes(read(SKY_ROW_SITE, len(body)))
+    if before == body:
+        return dict(already_installed=True, ranges=[])
+    if hashlib.sha256(before).hexdigest() != SKY_ROW_ORIGINAL_SHA:
+        raise ValueError('Unexpected original sky row calculation')
+    write(SKY_ROW_SITE, body)
+    return dict(ranges=[(SKY_ROW_SITE, SKY_ROW_END)])
+
+
+def sky_verify(read):
+    if bytes(read(SKY_ROW_SITE, SKY_ROW_END - SKY_ROW_SITE)) != sky_row_body():
+        raise ValueError('Sky row calculation differs')
+    return True

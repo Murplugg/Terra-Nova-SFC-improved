@@ -26,7 +26,7 @@ same input. Other fixes cover porting, integration and frame-rate corrections.
 
 ### Graphics and performance
 
-- Added 1280×960 world rendering, enhanced maps and support for all four suit HUDs.
+- Added 1280×960 world rendering, higher-resolution terrain detail in minimaps and the large tactical map, and support for all four suit HUDs.
 - Added stable horizontal variation for scenery and effect sprites, plus flips and quarter-turns for detailed brown scorch marks.
 - Extended terrain detail and scenery visibility, and optimized normal/infrared terrain, reflections and HUD composition.
 - **Fixed — original game:** renderer queue overflows corrupting object lists, and polygon drawing crashing when its temporary buffer filled during a row update.

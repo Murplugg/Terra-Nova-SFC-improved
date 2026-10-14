@@ -14,6 +14,7 @@ will help set the order. Larger ideas need investigation before implementation.
   compatibility separately; it is currently unverified.
 - Compare overlapping fixes with Terra Nova Plus and agree on useful ways to
   share patches, evidence and improvements.
+- Get detailed terrain draw-distance on par with Terra Nova Plus' improvements.
 - Integrate with the Terra Nova Plus launcher and keyboard/mouse remapping support.
 - Restore synthesized music alongside the existing digital audio and QSound. Terra Nova Plus already supports great Awe32 music.
 - Support mouselook/freelook. Terra Nova Plus already does.

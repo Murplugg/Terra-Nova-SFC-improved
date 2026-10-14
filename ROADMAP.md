@@ -50,6 +50,7 @@ will help set the order. Larger ideas need investigation before implementation.
   This is wasteful and it should be possible to make them act smarter to ration grenades better.
   This is the SFC after all -- tactical, best of the best! Mission 9 is suitable for testing.
 - Co-op support; split-screen. Terra Nova Plus has already started work on this.
+- Support changing the crosshair/reticle color.
 
 ## Usability and features to explore
 

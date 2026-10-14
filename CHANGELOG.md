@@ -54,7 +54,8 @@ same input. Other fixes cover porting, integration and frame-rate corrections.
 ### Weapons, collision and movement
 
 - Adjusted physics, movement and animation timing for faster rendering while retaining original weapon statistics and difficulty modifiers.
-- Improved target selection and hit coverage for selected buildings, vehicles, drones, PBA legs and articulated cannons.
+- Improved projectile hit detection and collision shapes (hitboxes) for selected buildings, vehicles, drones, PBA legs and articulated cannons.
+- Improved target selection, with an option to retain the original selection behavior.
 - Improved beam visibility and clearance past thin tree branches.
 - **Fixed — original game:** leftover projectile exclusions that could make later shots pass through a previously hit turret.
 - **Fixed — original game:** short cylinder sweeps and vertical map-cell traversal that could miss a turret entirely.

@@ -8,7 +8,7 @@ try, report problems with and contribute to.
 This is the initially uploaded working plan, not a release schedule. Feedback and reproducible bugs
 will help set the order. Larger ideas need investigation before implementation.
 
-## Initial feedback and collaboration
+## Initial feedback and continued collaboration
 
 - Check setup on clean Windows installations and other hardware. Test Wine
   compatibility separately; it is currently unverified.
@@ -16,6 +16,7 @@ will help set the order. Larger ideas need investigation before implementation.
   share patches, evidence and improvements.
 - Integrate with the Terra Nova Plus launcher and keyboard/mouse remapping support.
 - Restore synthesized music alongside the existing digital audio and QSound. Terra Nova Plus already supports great Awe32 music.
+- Support mouselook/freelook. Terra Nova Plus already does.
 - Continue campaign, Prequel, save/load and difficulty playtesting. Give special
   attention to Full-Rate AI Firing with mixed enemy groups and squad orders.
 

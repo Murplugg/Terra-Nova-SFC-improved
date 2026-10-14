@@ -6,7 +6,9 @@ Supports the four demo missions, available in-game under a new **Prequel** butto
 This is a binary adaptation, not an engine remake or recovered original source.
 
 
-2026.10.13: First public test candidate (initial commit).
+2026.10.13: First public test candidate.
+
+The [TTLG forum thread](https://www.ttlg.com/forums/showthread.php?t=153557).
 
 
 - [Roadmap](ROADMAP.md): priorities and ideas for further work.
@@ -27,9 +29,15 @@ The game uses its original software renderer at a 1280×960 world view and the o
 Rendering targets 60 FPS; demanding scenes and slower hardware can still fall below it. Development and testing was deliberately done on an old dual-core Dell M4700 laptop with the highest terrain quality setting used in-game.
 
 The four demo missions open in the same game window and use Options shared with the retail campaign. These missions preserve demo equipment and squad assignments -- no retail SFC quarters/outfitting.
-In a paused Prequel mission, the **F5** and **F9** keys open save/load pickers. Canceling leaves the mission intact. Exact mission snapshots require a matching game build; restoring one reopens the game window.
+In a paused Prequel mission, the **F5** and **F9** keys open save/load pickers.
 
-Original weapon statistics and difficulty modifiers remain the foundation. AI changes retain the original pathfinder, scripted orders and mission restrictions. Improved collision coverage does not mean every model has pixel-perfect collision.
+Exact mission snapshots require a matching game build; restoring one reopens the game window.
+
+Original weapon statistics and difficulty modifiers remain the foundation. AI changes retain the original pathfinder, scripted orders and mission restrictions.
+
+
+![Example demo mission](docs/screenshots/tnova-native-rev153-demo-mission-pirate-base.png)
+![Example demo mission](docs/screenshots/tnova-native-rev153-demo-mission-jes-river.png)
 
 
 ## New Player options
@@ -52,7 +60,6 @@ Your original installation stays intact. Afterwards, launch **Terra Nova Launche
 The contributor deliverable contains Python patch generators, readable x86 changes, a small C/assembly Windows bridge and collision helpers, launcher sources, tests and input/output manifests. Retained original routines, model geometry and edited artwork are derived from verified game files during setup. Neither download contains prepared game/resource deltas, complete game executables, original resource archives, generated model headers or saved-memory captures. Short binary-interface checks and displaced instructions remain in the patches; see the distribution account for the scope of the review.
 
 Start with `build.py` for the complete current build and `test.py` for the contributor tests. There is one supported feature plan; the compatibility IDs inside snapshots are not selectable historical builds.
-
 
 
 ### Building from this repository
@@ -118,6 +125,6 @@ Independently authored project code and documentation use the [MIT license](LICE
 
 ### AI Disclaimer:
 
-This effort was made possible with the assistance of GPT Astra in Codex run on High/Extra High effort.
+This effort was made possible with the assistance of GPT Astra in Codex run on Extra High/High effort.
 Efforts were made to keep file structure, language and documents neat and tidy. Extensive prompting, testing, and human feedback were done.
 Feedback and tips on working this way are always welcome.

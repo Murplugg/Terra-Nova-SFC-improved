@@ -1,14 +1,13 @@
 # Terra Nova: Strike Force Centauri with enhancements directly on Windows
 
-Run Terra Nova: Strike Force Centauri's original game code without DOSBox via a native Windows support layer, higher-resolution software rendering, timing and gameplay fixes, and new features.
+This project lets you run Terra Nova: Strike Force Centauri's original game code without DOSBox via a native Windows support layer.
+It runs at a higher-resolution at 60 FPS with optimized software rendering and has timing, gameplay and graphical fixes, as well as new features.
 Supports the four demo missions, available in-game under a new **Prequel** button.
 
 This is a binary adaptation, not an engine remake or recovered original source.
 
 
-2026.10.13: First public test candidate.
-
-[The TTLG forum thread where this project is mentioned](https://www.ttlg.com/forums/showthread.php?t=153557).
+[The TTLG forum thread](https://www.ttlg.com/forums/showthread.php?t=153557) where this project is mentioned (the TNova Plus project's announce thread).
 
 - [Screenshots](docs/screenshots/README.md)
 
@@ -32,7 +31,7 @@ Rendering targets 60 FPS; demanding scenes and slower hardware can still fall be
 The four demo missions open in the same game window and use Options shared with the retail campaign. These missions preserve demo equipment and squad assignments -- no retail SFC quarters/outfitting.
 In a paused Prequel mission, the **F5** and **F9** keys open save/load pickers.
 
-Exact mission snapshots require a matching game build; restoring one reopens the game window.
+Exact mission snapshots require a matching game build; restoring one reopens the game window. These are mainly intended for playtesting and troubleshooting.
 
 Original weapon statistics and difficulty modifiers remain the foundation. AI changes retain the original pathfinder, scripted orders and mission restrictions.
 

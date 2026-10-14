@@ -20,19 +20,25 @@ same input. Other fixes cover porting, integration and frame-rate corrections.
 - Added native Windows input, display, timing, file and digital-audio support for the original engine, including speech, effects, movie audio and QSound positioning.
 - Added a portable launcher and exact paused-mission snapshots alongside ordinary campaign saves, with installation and snapshot compatibility checks.
 - Fixed persistent movie-video stutter after prolonged window dragging or HDMI audio-device changes.
+- **Fixed — original game:** redundant movie read-ahead after the remaining data was already buffered, which could slow the final frames.
 - Fixed missing mission-report history when making an ordinary save after restoring a snapshot.
 - Fixed skipped opening movies on a fresh retail launch.
 - Fixed reproduced crashes involving expanded renderer/effect capacity, targeting, native input and restored saves.
 
 ### Graphics and performance
 
-- Added 1280×960 world rendering, higher-resolution terrain detail in minimaps and the large tactical map, and support for all four suit HUDs.
+- Added 1280×960 world rendering, higher-resolution camera feeds and map terrain, and support for all four suit HUDs.
+- Improved navigation-marker outlines at higher resolution while keeping their distance labels readable.
 - Added stable horizontal variation for scenery and effect sprites, plus flips and quarter-turns for detailed brown scorch marks.
 - Extended terrain detail and scenery visibility, and optimized normal/infrared terrain, reflections and HUD composition.
 - **Fixed — original game:** renderer queue overflows corrupting object lists, and polygon drawing crashing when its temporary buffer filled during a row update.
 - **Fixed — original game:** accumulated rounding in the sky calculation making clouds jump vertically during small changes in walking tilt.
 - Fixed zoom-dependent shoreline gaps, inconsistent Ground Detail presets, scenery-list truncation and clipping capacity problems.
 - Fixed incorrect map palettes and out-of-bounds terrain-lighting reads near map edges.
+- Fixed squashed night-sky planet sprites and incorrect apparent sizes on the native display.
+- Fixed rain covering only part of the enlarged view, and adjusted rain, water, particle and lightning timing for faster rendering.
+- Fixed malformed PBA leg poses drawing long streaks across the sky when units first appeared.
+- Fixed pickup-dropship engine jets jumping between positions at higher frame rates.
 
 ### HUD, controls and menus
 
@@ -46,9 +52,13 @@ same input. Other fixes cover porting, integration and frame-rate corrections.
 - **Fixed — original game:** lost room-hover notifications and rapid clicks using a stale hotspot, including incorrect navigation from the medals screen.
 - **Fixed — original game:** canceling a dialog resuming the game clock when the mission was already paused.
 - **Fixed — original game:** loss of actual magnification after closing Options while the logical zoom level remained unchanged.
-- Fixed missing mini-panel borders, arrow outlines and tooltip backgrounds, and incorrect Pirate compass transparency.
+- Fixed missing mini-panel borders, arrow and text outlines, tooltip backgrounds and quick-command menu coverage, and incorrect Pirate compass transparency.
+- Restored suit-damage static and distortion at the appropriate display scale and duration, including damaged camera feeds, while retaining the original component-health rules.
 - Fixed frame-rate-dependent suit interference and descrambler animation.
 - Fixed paused dialog/tooltip redraws and slider/map pointer jumps.
+- Fixed cursor trails, flickering and redraw lag, duplicate Windows cursors, and pointer jumps when entering rooms.
+- Fixed navigation-point placement freezing after a mission restart.
+- Fixed minimaps alternating between low and high detail, and hidden camera/map panels leaving stale images behind.
 - Fixed oval weapon/sensor range rings after display-state changes, and lost magnification when reapplying Ground Detail.
 
 ### Weapons, collision and movement

@@ -19,6 +19,8 @@ import zipfile
 
 PROJECT = Path(__file__).resolve().parent
 NAME = 'Terra Nova Launcher'
+# Public release label; game_revision separately identifies compatible snapshots.
+RELEASE_VERSION = '0.1.0'
 LIBFFI_URL = (
     'https://raw.githubusercontent.com/python/cpython-bin-deps/'
     '94cb9a1c7feb608adf2b9f8fe2dbd6925ffbf90d/amd64/libffi-8.dll'
@@ -197,7 +199,8 @@ def attach(build_root, bundle):
     switching = 'Prequel switches campaigns in the same game window.' if revision >= 138 else 'Prequel still restarts the game process.'
     release_label = 'Public test candidate.'
     payload(
-        'README.txt', f'''Terra Nova native v{revision} with portable launcher.
+        'README.txt', f'''TNova Native v{RELEASE_VERSION} with portable launcher.
+Snapshot compatibility build: {revision}.
 Open Play.cmd or Terra Nova Launcher.exe. Keep _launcher and the rest of this folder together.
 Windows 10/11 x64; no installed Python or compiler is needed to play or save/load states.
 Play opens the retail main menu, including Prequel. In a paused Prequel mission, F5 opens
@@ -234,7 +237,7 @@ Windows installation and other hardware remain unverified. See the release notes
                       'with the three official archives named in generation/generation_tools.py.\n'
                       'Existing tools may instead use --compiler and --dependencies.\n'
                       'The tools folder is not needed to play the installed game.\n')
-    readme = f'''TNova Native v{revision} - portable setup ZIP
+    readme = f'''TNova Native v{RELEASE_VERSION} - portable setup ZIP
 
 This ZIP contains {setup_content}, not a complete game.
 One-time setup requires {setup_tools} and the supported English retail v1.09 files,

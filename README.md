@@ -10,7 +10,7 @@ This is a binary adaptation, not an engine remake or recovered original source.
 
 The [TTLG forum thread](https://www.ttlg.com/forums/showthread.php?t=153557).
 
-
+- [Screenshots](docs/screenshots/README.md)
 - [Roadmap](ROADMAP.md): priorities and ideas for further work.
 - [Changelog](CHANGELOG.md): notable additions, improvements and fixes by release.
 - [Build guide](docs/building.md): supported inputs, dependencies, tests and packaging.

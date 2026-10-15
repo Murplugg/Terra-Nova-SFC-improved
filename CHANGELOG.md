@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-The first public test release is being prepared. These changes are relative to the original game.
+## [0.1.0] - 2026.10.13
+
+The first public test release. These changes are relative to the original game.
 Setup, option defaults and known limitations are in [README](README.md).
 
 NOTE: Entries marked **Fixed — original game** address faults identified in original

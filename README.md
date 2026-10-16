@@ -1,13 +1,13 @@
 # Terra Nova: Strike Force Centauri with enhancements directly on Windows
 
 This project lets you run Terra Nova: Strike Force Centauri's original game code without DOSBox via a native Windows support layer.
-It runs at a higher-resolution at 60 FPS with optimized software rendering and has timing, gameplay and graphical fixes, as well as new features.
-Supports the four demo missions, available in-game under a new **Prequel** button.
+It renders at 1280×960 and targets 60 FPS, with optimized software rendering, gameplay, graphics and stability improvements, and new features.
+The four demo missions are available under **Prequel** in the main menu.
 
 This is a binary adaptation, not an engine remake or recovered original source.
 
 
-[The TTLG forum thread](https://www.ttlg.com/forums/showthread.php?t=153557) where this project is mentioned (the TNova Plus project's announce thread).
+[The TTLG forum thread](https://www.ttlg.com/forums/showthread.php?t=153557) where this project is mentioned (the TNova Plus announcement thread).
 
 - [Screenshots](docs/screenshots/README.md)
 
@@ -16,7 +16,7 @@ This is a binary adaptation, not an engine remake or recovered original source.
 - [Build guide](docs/building.md): supported inputs, dependencies, tests and packaging.
 - [Source guide](docs/source-guide.md): where each feature lives and how the build works.
 - [Backport address table](docs/address-map.csv): DOSBox/native locations; [reading and regenerating it](docs/source-guide.md#dosbox-and-native-address-mapping).
-- [Patch catalogue](docs/patch-catalogue.md): twelve feature groups, with no user-managed patch order.
+- [Patch catalogue](docs/patch-catalogue.md): feature groups and their dependencies.
 - [Distribution contents](docs/distribution-audit.md): what each download includes and what comes from the player's originals.
 - [Contributing](CONTRIBUTING.md): making and validating a change.
 - [Credits](CREDITS.md): people, projects and tools behind the work.
@@ -26,14 +26,14 @@ This is a binary adaptation, not an engine remake or recovered original source.
 
 The game uses its original software renderer at a 1280×960 world view and the original higher-detail HUD/visor artwork shown by default.
 
-Rendering targets 60 FPS; demanding scenes and slower hardware can still fall below it. Development and testing was deliberately done on an old dual-core Dell M4700 laptop with the highest terrain quality setting used in-game.
+Rendering targets 60 FPS; demanding scenes and slower hardware can still fall below it. Development and testing were deliberately carried out on an older dual-core Dell M4700 laptop, using the highest terrain quality setting.
 
-The four demo missions open in the same game window and use Options shared with the retail campaign. These missions preserve demo equipment and squad assignments -- no retail SFC quarters/outfitting.
+The four demo missions open in the same game window and use Options shared with the retail campaign. These missions retain their original equipment and squad assignments and skip the retail campaign’s Quarters and outfitting screens.
 In a paused Prequel mission, the **F5** and **F9** keys open save/load pickers.
 
 Exact mission snapshots require a matching game build; restoring one reopens the game window. These are mainly intended for playtesting and troubleshooting.
 
-Original weapon statistics and difficulty modifiers remain the foundation. AI changes retain the original pathfinder, scripted orders and mission restrictions.
+Original weapon statistics and difficulty modifiers are preserved. AI changes retain the original pathfinder, scripted orders and mission restrictions.
 
 
 ![Example demo mission](docs/screenshots/tnova-native-rev153-demo-mission-pirate-base.png)
@@ -48,16 +48,16 @@ Original weapon statistics and difficulty modifiers remain the foundation. AI ch
 | Improved Target Selection | On | Uses precise selection and depth checks. Off restores the original rectangle-based choice, allowing units behind buildings to be selected when they appear in the target list. |
 | Full-Rate AI Firing | Off | Allows more frequent weapon-readiness checks for both sides; retains cooldowns, costs, bursts and difficulty rules. |
 | Wrist-Height Firing | On | Launches eligible player shots from animated arm hardpoints; off restores helmet-height origins. Nearby cover can block wrist shots. |
-| Shot Aim Assist | On | Off keeps unlocked direct-fire aiming on the reticle ray instead of converging toward an approximate mobile-body contact. Does not affect explicit target lock. |
+| Shot Aim Assist | On | With this enabled, unlocked shots may converge toward a nearby unit when the reticle overlaps it. Off keeps aiming along the reticle ray. Target lock is unaffected. |
 
 
 ## Setup and source
 
-The player deliverable is a portable setup ZIP. One-time setup for now needs 64-bit Windows CPython 3.12 and the supported retail/demo files and CD data. It downloads verified build tools into a separate folder, generates the adapted executable and edited resources locally, and creates a new installation.
+The player download is a portable setup ZIP. One-time setup for now needs 64-bit Windows CPython 3.12 and the supported retail/demo files and CD data. It downloads verified build tools into a separate folder, generates the adapted executable and edited resources locally, and creates a new installation.
 
 Your original installation stays intact. Afterwards, launch **Terra Nova Launcher.exe**; playing and saving snapshots need no installed Python or compiler. See the ZIP's README for the setup command and offline alternative.
 
-The contributor deliverable contains Python patch generators, readable x86 changes, a small C/assembly Windows bridge and collision helpers, launcher sources, tests and input/output manifests. Retained original routines, model geometry and edited artwork are derived from verified game files during setup. Neither download contains prepared game/resource deltas, complete game executables, original resource archives, generated model headers or saved-memory captures. Short binary-interface checks and displaced instructions remain in the patches; see the distribution account for the scope of the review.
+The contributor download contains Python patch generators, readable x86 changes, a small C/assembly Windows bridge and collision helpers, launcher sources, tests and input/output manifests. Retained original routines, model geometry and edited artwork are derived from verified game files during setup. Neither download contains prepared game/resource deltas, complete game executables, original resource archives, generated model headers or saved-memory captures. Short binary-interface checks and displaced instructions remain in the patches; see the distribution account for the scope of the review.
 
 Start with `build.py` for the complete current build and `test.py` for the contributor tests. There is one supported feature plan; the compatibility IDs inside snapshots are not selectable historical builds.
 
@@ -101,21 +101,23 @@ tools, separate original-file locations and narrower developer builds.
 
 ## Known limitations
 
-Testing so far does not cover every mission/difficulty combination. Playthrough has been done at the standard difficulty level up to Mission 32.
+Playtesting at the standard difficulty level has reached Mission 34. Testing does not yet cover every mission and difficulty combination.
 
 Linux compatibility via Wine etc. has not yet been tested. 
 
-Known gameplay observations still under review include occasional aim vs reticle offsets, sprite and 3D model depth issues (inherited from orig. TNova), the final laser segment redirecting toward the PBA body center on contact, and short smoke-particle draw-distance.
+Known gameplay observations still under review include shots appearing offset from the reticle, sprite and 3D model depth issues inherited from the original game, and the final laser segment redirecting toward the PBA body center on contact.
+
+Release 0.1.0 also has a short smoke-particle draw distance. Improvements to smoke visibility and collision are listed under [Unreleased](CHANGELOG.md#unreleased). [SMOKE]
 
 The new Full-Rate AI Firing feature/setting is optional; easier/harder difficulty balance needs more playtesting and may prove very hard against Hegemony Clones on the hardest settings.
 
-The Windows 10 laptop used for this project was used for testing. Clean Windows installation and broader hardware compatibility remain unverified!
+Testing has primarily used this Windows 10 laptop. Clean Windows installations and other hardware remain unverified.
 
 Selected timing and gameplay routines have automated checks at rates from 20 to 120 updates per second. These checks do not establish that the entire game behaves correctly at every frame rate. Human gameplay at 120 FPS or higher has not yet been tested.
 
 Mouse and keyboard remapping is not yet supported. The launcher only provides basic launch and snapshot controls; Terra Nova Plus has this covered already. See [roadmap](ROADMAP.md).
 
-Music, GPU rendering and anti-aliasing and new resolution/distance controls (Options menu) are not yet included.
+MIDI music, GPU rendering, anti-aliasing and resolution/draw-distance controls are not yet included.
 
 
 ## Licenses
@@ -125,6 +127,5 @@ Independently authored project code and documentation use the [MIT license](LICE
 
 ### AI Disclaimer:
 
-This effort was made possible with the assistance of GPT Astra in Codex run on Extra High/High effort.
-Efforts were made to keep file structure, language and documents neat and tidy. Extensive prompting, testing, and human feedback were done.
-Feedback and tips on working this way are always welcome.
+This project was developed with GPT Astra in Codex, using Extra High/High reasoning effort. Considerable work went into keeping the code and documentation readable, with automated tests, manual playtesting and human review throughout.
+Feedback and practical suggestions about this workflow are welcome.

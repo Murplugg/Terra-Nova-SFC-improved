@@ -6,6 +6,12 @@
 team** created the game, engine, artwork, sound, music and missions on which
 this project builds. Their work remains the foundation of TNova Native.
 
+Original game copyright: **Looking Glass Technologies**. The current re-release
+is published by **Nightdive Studios / Atari**. Copyright and other rights in the
+original game remain with their respective owners; they are not covered by this
+project’s MIT license. See the [official game listing](https://store.steampowered.com/app/368600/)
+and its linked license agreement.
+
 ## TNova Native
 
 - **Project direction and hands-on playtesting:** the project maintainer, who
@@ -18,10 +24,13 @@ this project builds. Their work remains the foundation of TNova Native.
 
 ## Shared research and community
 
-Thanks to **skw-1337**, maintainer of
+Thanks to **skw-1337**, author of
 [Terra Nova Plus](https://github.com/skw-1337/terra-nova-plus), for sharing patch
-sources and findings, discussing the two projects, and providing a useful point
-of comparison for rendering, timing and gameplay behavior.
+sources and reverse-engineering findings, discussing the two projects, and
+helping investigate differences in rendering and gameplay behavior. His
+observations about infrared rendering helped guide our performance investigation.
+Our exchanges also informed patch comparisons and the DOSBox/native backport
+address table.
 
 Thanks also to the **TTLG community** for keeping Terra Nova discussion and
 modding active, and to everyone who takes the time to report a problem, test a

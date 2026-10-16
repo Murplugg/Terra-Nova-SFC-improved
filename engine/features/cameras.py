@@ -734,7 +734,7 @@ The sole call-site hook is inside the original type-4 camera path. Damage yaw
 and pitch are still added by the caller. No camera clocks or actor state change.
 """
 HEADING_CODE = 0x1fff800
-HEADING_END = 0x2000000
+HEADING_END = 0x1fffa00  # The following reservation holds audio allocation guards.
 HEADING_SITE = 0x275404
 HEADING_SITES = (HEADING_SITE, )
 HEADING_ORIGINAL = asm(HEADING_SITE, 'call 0x2750cc')

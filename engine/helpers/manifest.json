@@ -8,7 +8,8 @@
     "vehicle_ray.c": "09ceb3e7a569000f8b48afbaa0d002d93a97d44bc9fa6fc3d001b22c62de443a",
     "pba_ray.c": "af169d77227adebe1defae643446e3626bd2a527d95881bf6ba819b212a572cc",
     "mobile_ray.c": "e7f884241eafda682e6d462608cea6dac6e630ad782e22171e2cc77ad1281f69",
-    "mesh-recipes.json": "d7d3ffe2ac96a7d079ce926c45fc8dd84e7e359117d969edbb79392d19734702"
+    "mesh-recipes.json": "d7d3ffe2ac96a7d079ce926c45fc8dd84e7e359117d969edbb79392d19734702",
+    "smoke_ray.c": "9b19bd649f3be5e8a2a34dbbe63ed3993e8fece5403d2ceb17dc8941ac37d25e"
   },
   "helpers": [
     {
@@ -125,6 +126,38 @@
         }
       ],
       "historical_module_sha256": "59820e55da12660ce28c50931e74dbc982063683693efe0150dc7f4b11e61e4f"
+    },
+    {
+      "module": "collision_smoke",
+      "source": "smoke_ray.c",
+      "low": 30629888,
+      "high": 30646272,
+      "ignore_headers": true,
+      "symbols": {
+        "ENTRY": "smoke_ray",
+        "TEST": "smoke_contact",
+        "ROLL": "smoke_roll"
+      },
+      "defines": {
+        "MOBILE_ENTRY": "collision_mobile"
+      },
+      "addresses": {
+        "ENTRY": 30631184,
+        "TEST": 30630000,
+        "ROLL": 30629888
+      },
+      "regions": [
+        {
+          "address": 30629888,
+          "size": 3724,
+          "sha256": "3123b488aba13ad5178c84ad58769f4bf31a1b64470de152f293bef1533e2f97"
+        },
+        {
+          "address": 30633616,
+          "size": 128,
+          "sha256": "96d8c8c3dcb5ebd0e70d3622426f7d688eb244e47d4c3dbcf0ad12477933bf79"
+        }
+      ]
     }
   ],
   "note": "Mesh headers remain original-derived checked data. No original game source is implied."

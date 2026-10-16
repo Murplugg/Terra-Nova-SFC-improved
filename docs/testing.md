@@ -1,5 +1,16 @@
 # What the checks tell us
 
+The QSound allocation regression tests follow a combat crash whose automatic
+dump contained sound function pointers in the sample-handle table. They run the
+original availability counter, selector and allocator from the contributor's
+verified executable. A reserved-but-stopped channel makes the availability
+estimate too optimistic; the unpatched code then reproduces the three corrupted
+handles. The guarded version checks both allocation results, releases an
+unfinished reservation, and preserves successful pairs and permitted mono
+playback. Sample-device calls are modeled, so these tests do not reproduce the
+whole battle or validate audible mixing. The original code stays in the user's
+game files; it is not embedded in the test source.
+
 The tests grew out of reverse engineering, reported gameplay problems and the
 work of bringing the patches into one build. They serve two purposes: checking
 the intended behavior and catching accidental changes to the executable or its
@@ -7,11 +18,76 @@ memory layout. Those are different kinds of evidence. A matching hash establishe
 that bytes stayed the same; it does not establish that the behavior is correct.
 
 Run synthetic checks with `python -B test.py`. Add `--retail-exe PATH_TO___FF.EXE`
-for the full suite. Retained renderer/scaler/cursor instructions are read from
+and `--helpers PATH_TO_BUILD_HELPERS` for the original-routine and compiled-helper
+cases. Retained renderer/scaler/cursor instructions are read from
 that hash-checked file; they are not embedded in fixtures. Without it, those
 checks report skips. Synthetic textures, pixels and expected results remain
 invented test data. The [build guide](building.md)
 lists the dependencies and the additional checks performed by a complete build.
+
+## Smoke contacts and visibility
+
+A later fresh-mission crash exposed a memory-ownership mistake in the smoke
+helper. Its initially empty storage overlapped the scenery table that mission
+initialization clears. Snapshot restoration bypassed that clear, so the earlier
+restored-fight test could not catch it. The helper now uses an explicit gap
+between the Options reservation and host log. The installer rejects placement
+outside that gap even when the supplied image is blank. A regression test runs
+the original table-clear instructions and memset implementation, with the
+expanded scenery operands, and verifies that smoke code and state survive.
+Live retail, Prequel and random-scenario starts supplement that focused check.
+
+The smoke tests follow a captured Particle Beam shot that stopped below a
+rising cloud instead of reaching a tank. The original cloud object kept a
+fixed, open-bottomed collision column while its particles moved upward. Its
+admission test also drew a new random result on repeated ray checks.
+
+The replacement follows the current particle transform and tests finite puff
+volumes. A stable shot/cloud density decision prevents additional updates from
+creating additional chances to stop that shot. This retains probabilistic smoke
+obstruction, but deliberately removes the accumulated odds of repeated checks;
+combat balance still needs player feedback. Non-projectile sight/picking queries
+use a short game-time interval. Particle movement and expiry retain their
+existing elapsed-time updates.
+
+Synthetic geometry covers clear paths above, below and beside puffs, inside and
+tangent contacts, rotation, expiry, unsupported modes, segment subdivision and
+nearer solid obstructions. The compiled C runs through Unicorn; the group
+transform and prior solid result are modeled for these independent geometry
+expectations. Separate hook checks cover installation conflicts, reused shot
+slots, display scaling and main-view distance scope. Negative projection values
+and very large positive values are included after live testing exposed an
+arithmetic overflow in the first candidate.
+
+Private captured-state comparisons execute the original transform and actual
+firing, grenade-contact and particle drawing routines. The formerly blocked
+elevated beam reaches the tank at 20, 60 and 120 supplied updates per second;
+the low trajectory still hits intervening terrain. A real smoke grenade retains
+its particle counts and lifetime. Raster checks confirm larger puffs and a later
+transition to single pixels at native resolution. These are bounded regression
+checks, not proof of every weapon, cloud combination or difficulty setting.
+Finite puff volumes approximate the artwork; original raster size caps,
+transparency, terrain collection and fog can still limit what is visible.
+
+## Detached beam trails under object pressure
+
+A Mission 34 crash dump contained 299 occupied object IDs, including 48
+detached beam segments retained briefly for smoother presentation. The original
+PBA-creation caller exits the game when allocation fails. Suit records were
+still available; the shared object-ID pool was exhausted.
+
+The pressure check releases one matching detached visual tail only when the
+object free list is empty. The synthetic tests cover available space, one-tail
+reclamation, inactive objects, reused effect-record identities, untagged live
+segments, the last valid ID and preservation of caller registers/flags. Their
+deletion callback is modeled. A separate captured-memory replay uses the real
+deletion and object/suit allocation paths: unchanged allocation fails; releasing
+one retained tail, manually or through the new hook, allocates a valid PBA slot.
+
+This does not expand the pool or evict units, live shots or arbitrary effects.
+If no eligible retained tail exists, original allocation failure remains.
+The evidence addresses the captured failure; another natural crowded battle
+is still needed for player acceptance.
 
 ## Where the evidence comes from
 

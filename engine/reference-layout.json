@@ -1,8 +1,8 @@
 {
-  "game_root": "C:\\Users\\revelator\\Documents\\Codex\\2026-09-21\\referenced-chatgpt-conversation-this-is-an\\work\\terra-nova\\native-v28\\drive-c\\TNOVA",
-  "cd_root": "C:\\Users\\revelator\\Documents\\Codex\\2026-09-21\\referenced-chatgpt-conversation-this-is-an\\work\\terra-nova\\session-v23\\cd",
-  "audio_dll": "C:\\Users\\revelator\\Documents\\Codex\\2026-09-21\\referenced-chatgpt-conversation-this-is-an\\work\\terra-nova\\native-v37\\tn-audio.dll",
-  "log_root": "C:\\Users\\revelator\\Documents\\Codex\\2026-09-21\\referenced-chatgpt-conversation-this-is-an\\work\\terra-nova\\native-v37",
-  "config_file": "C:\\Users\\revelator\\Documents\\Codex\\2026-09-21\\referenced-chatgpt-conversation-this-is-an\\work\\terra-nova\\standalone-v23\\drive-c\\TNOVA\\TN.CFG",
+  "game_root": "C:\\TNovaBuild\\fixed-width-placeholder-00000000000000000000000000000000000000000000000000\\work\\terra-nova\\native-v28\\drive-c\\TNOVA",
+  "cd_root": "C:\\TNovaBuild\\fixed-width-placeholder-00000000000000000000000000000000000000000000000000\\work\\terra-nova\\session-v23\\cd",
+  "audio_dll": "C:\\TNovaBuild\\fixed-width-placeholder-00000000000000000000000000000000000000000000000000\\work\\terra-nova\\native-v37\\tn-audio.dll",
+  "log_root": "C:\\TNovaBuild\\fixed-width-placeholder-00000000000000000000000000000000000000000000000000\\work\\terra-nova\\native-v37",
+  "config_file": "C:\\TNovaBuild\\fixed-width-placeholder-00000000000000000000000000000000000000000000000000\\work\\terra-nova\\standalone-v23\\drive-c\\TNOVA\\TN.CFG",
   "run_ms": 0
 }

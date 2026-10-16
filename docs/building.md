@@ -12,7 +12,7 @@ $env:PYTHONPATH = 'C:\TNBuild\deps'
 python -B test.py
 ```
 
-Dependency pins: Capstone 5.0.6 (x86 decoding), Keystone 0.9.2 (assembly), Unicorn 2.1.4 (execution tests). Python's standard library handles resource archives, deltas, manifests and ZIPs. Zig compiles the Windows bridge and four collision helpers.
+Dependency pins: Capstone 5.0.6 (x86 decoding), Keystone 0.9.2 (assembly), Unicorn 2.1.4 (execution tests). Python's standard library handles resource archives, deltas, manifests and ZIPs. Zig compiles the Windows bridge and collision helpers.
 
 The full build currently expects this original-input layout:
 
@@ -87,11 +87,13 @@ The engine, portable template, regenerated geometry and modified resources have 
 `test.py` selects only tests supplied in this tree. Synthetic fixtures exercise x86 code through Unicorn and check launcher/installer behavior without a live game. A few checks need retained original routines, which are extracted locally rather than stored in the test files. Without an input they report explicit skips. Run the complete suite with:
 
 ```powershell
-python -B test.py --retail-exe C:\TNBuild\originals\TNOVA\__FF.EXE
+python -B test.py --retail-exe C:\TNBuild\originals\TNOVA\__FF.EXE --helpers C:\TNBuild\output\engine\helpers
 ```
+
+The optional `--helpers` argument loads compiled collision helpers from that local build. Their ELF regions and entry points are checked against the source manifest before the execution tests use them. Without a helper folder, compiled-geometry cases report skips; the hook and installation checks still run.
 
 The complete build adds original-input, helper, engine, resource and generated-output validation. Clean-machine/player acceptance is a separate release check.
 
-`reference-layout.json` supplies fixed image-construction strings. Those directories are never read or required to exist. Packaging verifies and replaces declared path slots with portable runtime paths. Numeric snapshot/code identities and a few internal labels remain compatibility data, not a historical build sequence.
+`reference-layout.json` supplies fixed, neutral image-construction strings. Leave this file unchanged: supply your actual input paths through the build command. The zero padding preserves reserved string lengths and offsets. Those directories are never read or required to exist. Packaging verifies and replaces declared path slots with portable runtime paths. Numeric snapshot/code identities and a few internal labels remain compatibility data, not a historical build sequence.
 
 To reproduce the contributor archive, run `python -B export_source.py --output C:\TNBuild\source-export`. It creates that directory and a deterministic sibling ZIP, with a file/hash inventory.

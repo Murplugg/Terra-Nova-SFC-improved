@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "game_revision": 154,
+  "game_revision": 158,
   "iso": {
     "path": "_ISO/TNF108.ISO",
     "size": 626792448,
@@ -1785,128 +1785,128 @@
     }
   },
   "compiler_sha256": "d408dd38eed3e5204af841bcebf70502a4dbbb8399a3a3262be55059370bc018",
-  "executable_sha256": "4b943f4b4b1083aaf21bd334d4d50394fe63befe2933420871dec2c4536fc4a7",
-  "template_sha256": "4c8b073fb69abb3132b489a1d52c911eceef07bacfdb594548ed3b05eb5adb12",
+  "executable_sha256": "a9c1e7bd0801b764b9be06087bd433edce292dce911563f364c372d3bfee6270",
+  "template_sha256": "de0314cf67e7ebe7506484f404bb0277c79925ce1d129b450ba9e7bf6388d32f",
   "relocations": [
     {
       "offset": 30360064,
       "capacity": 130,
       "value": "{ROOT}\\services.bin",
-      "before_sha256": "e93a47b5ca45a959e366dc79e32beebc8e54fa345a2c5d012e92b438593512fa"
+      "before_sha256": "cc79096e1043d1f1456ac236b2904465a585d055b4e9a7e1b7b11fe0d1e6f81e"
     },
     {
       "offset": 30361088,
       "capacity": 136,
       "value": "{ROOT}\\stopped-memory.bin",
-      "before_sha256": "fba4abcf541781af766edfdfe59b91c78d833f28c6f7f2c0454cec7cb8bc07b1"
+      "before_sha256": "b310b58b54d3d0d007e6b8cbbc0eda75124c299d517e95bf4a4c349c62912dda"
     },
     {
       "offset": 30361344,
       "capacity": 133,
       "value": "{ROOT}\\framebuffer.bin",
-      "before_sha256": "844e6fa35f909f55241c1e4e9421866671ad654ef9a5b79620509ac53cfc49f6"
+      "before_sha256": "97d63d445146c54ba53e4b93bb2f298a665877a8678933849dcafa88f804a74b"
     },
     {
       "offset": 30361600,
       "capacity": 128,
       "value": "{ROOT}\\stdout.txt",
-      "before_sha256": "7489e6151c0e3841bb7e82d7298490a2bc88f3dd3ce766a818b1d2646eb6945d"
+      "before_sha256": "d3a81403487deb4026349fdedec4ec17ba3ecb6c531a966266801a1084f76fbc"
     },
     {
       "offset": 30362112,
       "capacity": 141,
       "value": "{ROOT}\\retail\\TN.CFG",
-      "before_sha256": "ebfb9073857012cb573dd197cbac3ebf02e9ec67ee2723cb0e7d07f6c07b3cf7"
+      "before_sha256": "e79918afc8028cdb81638db196aee9b5d57777ad2d3d78b0b56fbaaa08229285"
     },
     {
       "offset": 30373376,
       "capacity": 131,
       "value": "{ROOT}\\retail\\",
-      "before_sha256": "18bc76b54b460a521faf7995c0acbb01c0f694d910bef3e9cb0ab77a4be7d9dd"
+      "before_sha256": "588b5db77f5f67233fc3cfedb17a27f502624ec45af2788aea548f6f877a414d"
     },
     {
       "offset": 30373888,
       "capacity": 121,
       "value": "{ROOT}\\cd\\",
-      "before_sha256": "811883f73d847287a26fb364e3614c77b1655ea5b31c3a2b8f77ad3e68cbf8fa"
+      "before_sha256": "0f93db10f7e9be337afe9a7b45849692431fb019e01e9377e2fc944e5763d191"
     },
     {
       "offset": 30503424,
       "capacity": 129,
       "value": "{ROOT}\\tn-audio.dll",
-      "before_sha256": "639d25c256110e2874421c94e1a133239a37aa9516d516cdbcd2b07237b594ae"
+      "before_sha256": "f34c7a12580ed79b55de9abe2c4221d9468fcf13598a1548d86f51ee47938e5b"
     },
     {
       "offset": 31647744,
       "capacity": 130,
       "value": "{ROOT}\\tn-audio.dll",
-      "before_sha256": "c927f0a20f67b88b569cc47c1d44755119d8d56263557c9fadf36eecfe269e4e"
+      "before_sha256": "5e525d22b1d06f722c5b3c8b4e33d199ab3b1c6a6412685430d4c8c912384379"
     },
     {
       "offset": 33228076,
       "capacity": 137,
       "value": "{ROOT}\\prequel\\",
-      "before_sha256": "3055c82fdf99d93bc03b813c165900dde4e8c9fd91bcfc7434cb29e85a6a44ce"
+      "before_sha256": "e4f49cbf2b9d6094f11910cb1eb414e1716f6d6b997aee10bcc30d3e11e15fd3"
     },
     {
       "offset": 33228213,
       "capacity": 133,
       "value": "{ROOT}\\menu-retail.res",
-      "before_sha256": "51fa759969c18d5f14b1a83b098ec9219c8feb31f88f95d3e55a18e48798185a"
+      "before_sha256": "b01a3da76aceb48823b86b36aeb7b2b6c74917735c101a9df67261f39f14dd3c"
     },
     {
       "offset": 33228346,
       "capacity": 131,
       "value": "{ROOT}\\menu-demo.res",
-      "before_sha256": "549f24a31da7e5b5c9b3feaef44e5480e8fbbe41b8bb213c30c70664575091a2"
+      "before_sha256": "543d45c653da1f5224db56c612b45f26dec7afa567f709c2bc81b5a679054db2"
     },
     {
       "offset": 33228477,
       "capacity": 136,
       "value": "{ROOT}\\native-startup.exe",
-      "before_sha256": "181e54bdd45a81d9386fac2cd8afc026681cb4d0f1cf124a8b5979e8fcac6cdb"
+      "before_sha256": "194b53249e33f91cc3938cfda7236b4886e0afaca408f7d8d13f154d4921a2be"
     },
     {
       "offset": 33228613,
       "capacity": 138,
       "value": "\"{ROOT}\\native-startup.exe\"",
-      "before_sha256": "10dc5581ecbb37b84d11d86f5e02ce9f4083cf4f91fa29d014599103f0e6953f"
+      "before_sha256": "098f0285c8255c0e53ceda2000ae5943e34986942b18232a81a04f4b4d935fb4"
     },
     {
       "offset": 33228751,
       "capacity": 145,
       "value": "\"{ROOT}\\native-startup.exe\" --demo",
-      "before_sha256": "956cb72aef4f1efa3745c6236a285bd4f8f3980db0526c1b3c59da0d8223915b"
+      "before_sha256": "c87208b7c43d8c9878467b748fdd17bf994b15c84839c2c5d9210e4003ec0d04"
     },
     {
       "offset": 33228904,
       "capacity": 137,
       "value": "{ROOT}\\menu-retail-art.res",
-      "before_sha256": "33d38fb8da72c57649b0b99e919a21863b20d2f53864b849b9b6f269c2e6920e"
+      "before_sha256": "e98fa0674ee3216c7a57ebe20b9c9da342fa7c9ade7fc1a098a24e0b893a225e"
     },
     {
       "offset": 33229041,
       "capacity": 135,
       "value": "{ROOT}\\menu-demo-art.res",
-      "before_sha256": "d58b6d7415e6f43653c29912c76537ea95c31b0eeec8b77133c32e1d57bf7d9b"
+      "before_sha256": "1aa0b2299e63594f3ba34d84ecc49995942845b08596d254073794522039fc07"
     },
     {
       "offset": 33229176,
       "capacity": 137,
       "value": "{ROOT}\\retail\\TN.CFG",
-      "before_sha256": "77e7b72bcda1225dc1ec4e1c18918e6d33c3070779f000066fa24735eb92a434"
+      "before_sha256": "93792c48e0cb8f176d55671e44c1f0182110a91d8dd75fe993c739db396d67c2"
     },
     {
       "offset": 33233920,
       "capacity": 131,
       "value": "{ROOT}\\retail\\",
-      "before_sha256": "18bc76b54b460a521faf7995c0acbb01c0f694d910bef3e9cb0ab77a4be7d9dd"
+      "before_sha256": "588b5db77f5f67233fc3cfedb17a27f502624ec45af2788aea548f6f877a414d"
     },
     {
       "offset": 33479680,
       "capacity": 130,
       "value": "{ROOT}\\tn-audio.dll",
-      "before_sha256": "886df376d959484d3da84c5a783ec4ed312c02cabfb62e5a098edb32b340edcd"
+      "before_sha256": "b1b5f41f8e9ea73b0f61c716fba12c8c1c97983986c263085a7f9fda5b150d0c"
     }
   ],
   "copies": [
@@ -7608,7 +7608,7 @@
       "kind": "delta",
       "input": "TNOVA/__FF.EXE",
       "size": 33485312,
-      "sha256": "4c8b073fb69abb3132b489a1d52c911eceef07bacfdb594548ed3b05eb5adb12",
+      "sha256": "de0314cf67e7ebe7506484f404bb0277c79925ce1d129b450ba9e7bf6388d32f",
       "transform": "native-le"
     },
     {
@@ -7645,5 +7645,5 @@
     "asset_mapping_source_sha256": "a98afe33b0ffcf7f6c42af2230b344ddcedf077a94ed0d9c6e6d4aee02529187",
     "relocation_source_sha256": "ebbbffe3403dde558802716efbff86de09f0b0e7ad0afbacff387ef8c995aafa"
   },
-  "setup_milestone": 154
+  "setup_milestone": 158
 }

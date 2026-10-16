@@ -4,10 +4,10 @@ All components bind directly to their maintained feature APIs. Group order below
 """
 from dataclasses import dataclass
 
-REVISION = 154
-FOUNDATION_SHA = 'c8d6487dcbbcf21cf21a1a85a69cf1d3b980958b6138fdb54e664da4bf99fb50'
+REVISION = 158
+FOUNDATION_SHA = 'ec7e4eefa0bf9644206021cda6ea6673be8ed031901abdc3d3e32a0bec7f22c9'
 DEMO_SHA = '886568d2d0e15c5bcce5539832cd8bf1fd2c02655825c6ddf3cc77068be2556f'
-OUTPUT_SHA = '4b943f4b4b1083aaf21bd334d4d50394fe63befe2933420871dec2c4536fc4a7'
+OUTPUT_SHA = 'a9c1e7bd0801b764b9be06087bd433edce292dce911563f364c372d3bfee6270'
 
 
 @dataclass(frozen=True)
@@ -53,8 +53,9 @@ PLAN = (
     Feature('terminal', ('hud-and-input', )),
     Feature(
         'world-effects', ('hud-and-input', ),
-        ('terrain-surfaces', 'ai-firing-policy', 'scorch-variation')
+        ('terrain-surfaces', 'ai-firing-policy', 'scorch-variation', 'sound-allocation')
     ),
+    Feature('smoke-clouds', ('world-effects', 'actor-and-effect-timing'), ('smoke-clouds',)),
     Feature(
         'tactical-ai', ('world-effects', 'actor-and-effect-timing'), (
             'ai-response', 'ai-weapon-choice', 'ally-response', 'ai-scenery-preview', 'ai-cadence',

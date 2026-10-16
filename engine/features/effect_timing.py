@@ -411,6 +411,7 @@ BEAM_STATE = 0x1e5a800
 BEAM_ROWS = 300
 BEAM_TABLE = BEAM_STATE + 0x100
 BEAM_END = BEAM_TABLE + BEAM_ROWS * 8
+BEAM_PRESSURE = BEAM_CODE + 0xe00
 BEAM_SITES = {
     0x2a616c: bytes.fromhex('89c289442414'),
     0x2a6478: bytes.fromhex('5156575583ec0c'),
@@ -660,6 +661,45 @@ def beam_visual_bodies():
         )
     )
     hook(0x2953f5, BEAM_CODE + 0xc00)
+    # Detached tails only extend the appearance of an already finished segment.
+    # When the shared object pool is full, release one matching tail through
+    # ordinary deletion so a new unit or projectile can use its slot. Check the
+    # effect-record identity as well as the object ID to avoid deleting a reused
+    # slot. With no suitable tail, preserve the allocator's normal failure.
+    emit(
+        BEAM_PRESSURE, f'''
+        pushfd;
+        cmp word ptr [0x3c3247], 0;
+        jne done;
+        pushad;
+        mov edi, 1;
+    scan:
+        mov edx, [edi*8+{BEAM_TABLE+4}];
+        test edx, edx;
+        jz next;
+        imul esi, edi, 37;
+        cmp byte ptr [esi+0x3c3240], 1;
+        jne next;
+        cmp word ptr [esi+0x3c3241], 0x1c06;
+        jne next;
+        movzx eax, word ptr [esi+0x3c3243];
+        inc eax;
+        cmp eax, edx;
+        jne next;
+        mov eax, edi;
+        call 0x295730;
+        jmp restored;
+    next:
+        inc edi;
+        cmp edi, {BEAM_ROWS};
+        jb scan;
+    restored:
+        popad;
+    done:
+        popfd;
+        ret;
+    '''
+    )
     return out
 
 

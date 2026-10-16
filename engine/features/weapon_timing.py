@@ -41,6 +41,7 @@ QUAL_CALLS = (0x269ec5, 0x2745ac, 0x274c7f)
 
 
 def _emit(write, asm):
+    from features.effect_timing import BEAM_PRESSURE
     blocks = []
 
     def add(a, s, cap=0x200):
@@ -439,12 +440,14 @@ def _emit(write, asm):
         ), 0x80
     )
     add(
-        ALLOC + 0x80,
-        ("push ebx;"
-         " push ecx;"
-         " push edx;"
-         " mov dx,word ptr [0x3c3247];"
-         " jmp 0x296832;"), 0x80
+        ALLOC + 0x80, (
+            f"call {BEAM_PRESSURE};"
+            "push ebx;"
+            " push ecx;"
+            " push edx;"
+            " mov dx,word ptr [0x3c3247];"
+            " jmp 0x296832;"
+        ), 0x80
     )
     for a, b in HOOKS.items():
         target = {

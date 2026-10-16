@@ -8,11 +8,20 @@ START = 0x11000
 
 def owned_component(name, write, ram, context):
     """Connect each feature to its declared inputs and checked installation routine."""
-    from features import ai_response, ai_firing, ai_cadence, cameras, input_views
+    from features import ai_response, ai_firing, ai_cadence, cameras, input_views, audio_safety
     from features import actor_timing, terrain_raster, sprite_variation, campaign_switch, target_picking
     from features import terrain_distance, hud, hud_install, hud_overlays, modal_ui, maps, effect_timing, projectiles
     read = lambda a, n: ram[a:a + n]
     original = lambda a, n: bytes(context['original'][a:a + n])
+    if name == 'smoke-clouds':
+        from features import smoke
+        helper = importlib.import_module('collision_smoke')
+        prior = importlib.import_module('collision_mobile')
+        options = dict(entry=helper.ENTRY, regions=helper.REGIONS, mobile_entry=prior.ENTRY)
+        smoke.install(write, read, **options)
+        if not smoke.verify(read, **options):
+            raise ValueError('Smoke helper verification failed')
+        return
     if name in ('static-contacts', 'mobile-contacts'):
         # Compiled helpers are generated from checked C and owner resources by
         # build_helpers. Pass their outputs explicitly to the ray feature.
@@ -48,6 +57,7 @@ def owned_component(name, write, ram, context):
         ) if name == 'terrain-surfaces' else {}
     )
     bindings = {
+        'sound-allocation': (audio_safety.install, audio_safety.verify, read, {}, {}),
         'static-instance-storage':
         (terrain_distance.instance_install, terrain_distance.instance_verify, read, {}, {}),
         'hit-investigation':

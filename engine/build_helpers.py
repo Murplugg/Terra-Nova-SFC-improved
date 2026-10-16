@@ -1,4 +1,4 @@
-"""Compile and verify the four freestanding collision helpers (no game access)."""
+"""Compile and verify the freestanding collision helpers (no live game access)."""
 import hashlib
 import json
 import os

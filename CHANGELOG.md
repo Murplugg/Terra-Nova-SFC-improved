@@ -1,100 +1,119 @@
 # Changelog
 
 Notable changes to TNova Native, grouped by subject within each release.
-The release history is based on the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The release history is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+Entries marked **Fixed [legacy]** address faults found in the original game code or data.
+Some became more noticeable at higher frame rates or resolutions. A fault that crashes
+the native game may behave differently under DOSBox. Other fixes address the Windows
+port, integrated features and changes needed for higher frame rates.
+
+Bracketed references identify groups in the [patch catalogue](docs/patch-catalogue.md),
+named patches or source files. See the [source guide](docs/source-guide.md) for file locations.
 
 ## [Unreleased]
+
+### Windows, audio and saves
+
+- Fixed a combat crash when a new clone could not be created because all object slots were occupied. If a detached beam trail holds a slot, the game now removes one such trail to make room. [WEAPONS; effect_timing.py, weapon_timing.py]
+- Fixed mission-start crashes introduced by the smoke changes. The smoke code now sits outside the memory cleared for scenery at mission start. [SMOKE; smoke.py]
+- **Fixed [legacy]:** a failed QSound channel allocation could overwrite memory and crash the game during combat. If a sound pair cannot be allocated, the game releases any partially reserved channels. [AUDIO; audio_safety.py]
+
+### Graphics and performance
+
+- Improved smoke visibility at native resolutions and increased its draw distance in the main view. [SMOKE; smoke.py]
+- **Fixed [legacy]:** smoke could block shots passing below or beside the visible cloud. Collision now follows the moving smoke particles, and repeated frame updates no longer give the cloud extra chances to stop the same shot. [SMOKE; smoke.py, smoke_ray.c]
+
+---------------
 
 ## [0.1.0] - 2026.10.13
 
 The first public test release. These changes are relative to the original game.
-Setup, option defaults and known limitations are in [README](README.md).
-
-NOTE: Entries marked **Fixed — original game** address faults identified in original
-routines or game data. Some became more apparent at higher frame rates or
-resolutions; a native crash does not necessarily mean DOSBox would crash on the
-same input. Other fixes cover porting, integration and frame-rate corrections.
+See [README](README.md) for setup, option defaults and known limitations.
 
 ### Windows, audio and saves
 
-- Added native Windows input, display, timing, file and digital-audio support for the original engine, including speech, effects, movie audio and QSound positioning.
-- Added a portable launcher and exact paused-mission snapshots alongside ordinary campaign saves, with installation and snapshot compatibility checks.
-- Fixed persistent movie-video stutter after prolonged window dragging or HDMI audio-device changes.
-- **Fixed — original game:** redundant movie read-ahead after the remaining data was already buffered, which could slow the final frames.
-- Fixed missing mission-report history when making an ordinary save after restoring a snapshot.
-- Fixed skipped opening movies on a fresh retail launch.
-- Fixed reproduced crashes involving expanded renderer/effect capacity, targeting, native input and restored saves.
+- Added native Windows input, display, timing, file access and digital audio for the original engine. This includes speech, sound effects, movie audio and QSound positioning. [HOST; native_host.py, engine/bridge/]
+- Added a portable launcher and snapshots that preserve a paused mission exactly, alongside ordinary campaign saves. The launcher checks installation files and snapshot compatibility. [SAVES; tnova/]
+- Fixed persistent video stutter after dragging the game window for an extended period or changing HDMI audio devices during a movie. [AUDIO; terrain_raster.py]
+- **Fixed [legacy]:** movies could attempt to read ahead after all remaining data was already buffered, slowing their final frames. [AUDIO]
+- Fixed missing mission-report history when making an ordinary save after restoring a snapshot. [SAVES]
+- Restored opening movies on a fresh retail launch. [PREQUEL; campaign_startup.py]
+- Fixed crashes involving expanded rendering and effect limits, target selection, native input and restored saves. [RENDER, COLLISION, INPUT, SAVES]
 
 ### Graphics and performance
 
-- Added 1280×960 world rendering, higher-resolution camera feeds and map terrain, and support for all four suit HUDs.
-- Improved navigation-marker outlines at higher resolution while keeping their distance labels readable.
-- Added stable horizontal variation for scenery and effect sprites, plus flips and quarter-turns for detailed brown scorch marks.
-- Extended terrain detail and scenery visibility, and optimized normal/infrared terrain, reflections and HUD composition.
-- **Fixed — original game:** renderer queue overflows corrupting object lists, and polygon drawing crashing when its temporary buffer filled during a row update.
-- **Fixed — original game:** accumulated rounding in the sky calculation making clouds jump vertically during small changes in walking tilt.
-- Fixed zoom-dependent shoreline gaps, inconsistent Ground Detail presets, scenery-list truncation and clipping capacity problems.
-- Fixed incorrect map palettes and out-of-bounds terrain-lighting reads near map edges.
-- Fixed squashed night-sky planet sprites and incorrect apparent sizes on the native display.
-- Fixed rain covering only part of the enlarged view, and adjusted rain, water, particle and lightning timing for faster rendering.
-- Fixed malformed PBA leg poses drawing long streaks across the sky when units first appeared.
-- Fixed pickup-dropship engine jets jumping between positions at higher frame rates.
+- Added 1280×960 world rendering, higher-resolution camera feeds and map terrain. All four suit HUDs use the original higher-detail visor artwork. [RENDER, HUD; render_integration.py, cameras.py, maps.py]
+- Improved navigation-marker outlines at higher resolutions while keeping distance labels readable. [HUD; navigation-label]
+- Added horizontal flips to scenery and effect sprites, with each sprite keeping its orientation. Detailed brown scorch marks can also be flipped and rotated in quarter-turns. [RENDER; sprite_variation.py]
+- Extended terrain, scenery and unit draw distances, including detailed base pavement and markings. Optimized normal and infrared terrain rendering, reflections and HUD composition. [RENDER; terrain_distance.py, terrain_raster.py]
+- Increased the number of simultaneous effects from 127 to 255 to accommodate busy combat scenes. [RENDER; effect-storage]
+- **Fixed [legacy]:** overflowing the rendering queue could corrupt object lists. Polygon drawing could also crash when its temporary buffer filled during a row update. [RENDER; renderer-lists]
+- **Fixed [legacy]:** rounding errors in the sky calculation could make clouds jump vertically as the player walked. [RENDER; terrain_raster.py, SKY_ROW_SITE 0x2A73DE]
+- Fixed shoreline gaps when zooming, inconsistent Ground Detail settings, truncated scenery lists and insufficient clipping capacity. [RENDER; terrain_distance.py]
+- Fixed incorrect map palettes and terrain-lighting reads outside the map boundaries. [RENDER, HUD]
+- Fixed squashed night-sky planet sprites and their incorrect apparent sizes on the native display. [RENDER; logical-aspect]
+- Fixed rain covering only part of the enlarged view. Adjusted rain, water, particle and lightning timing for higher frame rates. [RENDER; rain-clock, storm-clock]
+- Fixed malformed PBA leg poses that drew long streaks across the sky when units first appeared. [RENDER; pose-repair]
+- Fixed pickup-dropship engine jets jumping between positions at higher frame rates. [RENDER; effect_timing.py]
 
 ### HUD, controls and menus
 
-- Added options for an FPS counter, Improved Target Selection, Wrist-Height Firing and Shot Aim Assist.
-- Added **N** to center the large map on the player, and pointer confinement while dragging maps.
-- Improved terminal keyboard navigation and scrolling, including the keyboard exit sound.
-- Slowed scrambled Pirate descrambler reception for clearer pacing. This deliberately changes the original effect; decoded text retains its separate scrolling pace.
-- **Fixed — original game:** the player's forward mini-camera sitting below the normal eye position, and teammate feeds following changing AI goals instead of the suit's visible heading.
-- **Fixed — original game:** head-centering sounds restarting during a single continuous reset.
-- **Fixed — original game:** Ashford's retained post-reveal Outfit entry incorrectly saying he was away on a mission.
-- **Fixed — original game:** lost room-hover notifications and rapid clicks using a stale hotspot, including incorrect navigation from the medals screen.
-- **Fixed — original game:** canceling a dialog resuming the game clock when the mission was already paused.
-- **Fixed — original game:** loss of actual magnification after closing Options while the logical zoom level remained unchanged.
-- Fixed missing mini-panel borders, arrow and text outlines, tooltip backgrounds and quick-command menu coverage, and incorrect Pirate compass transparency.
-- Restored suit-damage static and distortion at the appropriate display scale and duration, including damaged camera feeds, while retaining the original component-health rules.
-- Fixed frame-rate-dependent suit interference and descrambler animation.
-- Fixed paused dialog/tooltip redraws and slider/map pointer jumps.
-- Fixed cursor trails, flickering and redraw lag, duplicate Windows cursors, and pointer jumps when entering rooms.
-- Fixed navigation-point placement freezing after a mission restart.
-- Fixed minimaps alternating between low and high detail, and hidden camera/map panels leaving stale images behind.
-- Fixed oval weapon/sensor range rings after display-state changes, and lost magnification when reapplying Ground Detail.
+- Added options for an FPS counter, Improved Target Selection, Wrist-Height Firing and Shot Aim Assist. [OPTIONS; options.py, shot_assist.py, target_picking.py]
+- Added **N** to center the large map on the player. The mouse pointer stays inside the game window while dragging maps. [INPUT; map-centering, map-drag]
+- Improved terminal keyboard navigation and scrolling. Leaving the terminal with the keyboard now plays its exit sound. [INPUT; terminal.py]
+- Slowed the Pirate descrambler's scrambled-text animation to make the sequence easier to follow. This is a deliberate change to the original effect; decoded text keeps its separate scrolling speed. [HUD; descrambler.py]
+- **Fixed [legacy]:** the player's forward camera feed used a position below the normal eye height. Teammate feeds followed changing AI goals instead of the suit's visible heading. [HUD; cameras.py]
+- **Fixed [legacy]:** the head-centering sound could restart during a single continuous reset. [INPUT; terrain_raster.py]
+- **Fixed [legacy]:** Ashford's Outfit entry still said he was away on a mission after his departure from the SFC. [INPUT]
+- **Fixed [legacy]:** room-hover notifications could be lost, and rapid clicks could act on the previous hotspot. This included incorrect navigation from the medals screen. [INPUT; room_hover.py]
+- **Fixed [legacy]:** canceling a dialog could resume the game clock while the mission was paused. [INPUT; modal_ui.py]
+- **Fixed [legacy]:** closing Options could reset the displayed magnification while leaving the logical zoom level unchanged. [INPUT; detail-zoom]
+- Restored missing mini-panel borders, arrow and text outlines, tooltip backgrounds and quick-command menu backgrounds. Corrected Pirate compass transparency. [HUD; hud-infill, compass-coverage]
+- Restored the scale and duration of suit-damage static and distortion, including damaged camera feeds. The original component-health rules remain in use. [HUD; damage-display, camera-noise]
+- Corrected suit-interference and descrambler animation timing at higher frame rates. [HUD; descrambler.py, cameras.py]
+- Fixed dialog and tooltip redraws while paused, and mouse-pointer jumps when clicking sliders or releasing slider and map drags. [INPUT; modal_ui.py, input_views.py]
+- Fixed cursor trails, flickering, delayed redraws, duplicate Windows cursors and pointer jumps when entering rooms. [INPUT; native-cursor, room-cursor]
+- Fixed navigation-point placement freezing after a mission restart. [INPUT]
+- Fixed minimaps alternating between low and high detail, and hidden camera or map panels leaving their last image on screen. [HUD; map-persistence, panel-visibility]
+- Fixed oval weapon and sensor range rings after display-state changes, and lost magnification when reapplying Ground Detail. [HUD, INPUT; maps.py, detail-zoom]
 
 ### Weapons, collision and movement
 
-- Adjusted physics, movement and animation timing for faster rendering while retaining original weapon statistics and difficulty modifiers.
-- Improved projectile hit detection and collision shapes (hitboxes) for selected buildings, vehicles, drones, PBA legs and articulated cannons.
-- Improved target selection, with an option to retain the original selection behavior.
-- Improved beam visibility and clearance past thin tree branches.
-- **Fixed — original game:** leftover projectile exclusions that could make later shots pass through a previously hit turret.
-- **Fixed — original game:** short cylinder sweeps and vertical map-cell traversal that could miss a turret entirely.
-- **Fixed — original game:** projectile searches that skipped objects on very short movement segments or stopped before the end of a partial sampling step.
-- **Fixed — original game:** missing sound, energy and cooldown accounting when a Multipulsar/Tripulsar volley could not emit all its bolts.
-- **Fixed — original game:** small physics intervals being counted repeatedly after their accumulated time had already been consumed.
-- **Fixed — original game:** fractional protection recovery being discarded each update, slowing or stopping suit and tank recovery at higher frame rates.
-- **Fixed — original game:** fuel-tank collision volumes that left part of the visible tank unhittable.
-- **Fixed — original game:** newly deployed ASF Autoturrets floating above the ground because the model base and physics-body center used the same height.
-- **Fixed — original game:** vehicle damage reading an absent suit-subsystem record instead of applying only the applicable damage work.
-- Fixed repeated jump-launch impulses and accumulated weapon-cooldown delay at different update rates.
+- Adjusted physics, movement and animation timing for higher frame rates, including PBA idle turns, body tilt and landing poses. Original weapon statistics and difficulty modifiers are preserved. [PHYSICS; actor_timing.py]
+- Improved projectile hit detection and collision shapes (hitboxes) for selected buildings, vehicles, drones, PBA legs and articulated cannons. [COLLISION; projectiles.py, engine/helpers/]
+- Improved selection of overlapping targets using distance, visible PBA markers and armor-piece bounds. An option retains the original selection behavior. [COLLISION; target_picking.py]
+- Changed direct-fire aiming without target lock to converge on the surface under the reticle instead of a fixed distance. This reduces aiming errors caused by the offset between the camera and weapon muzzle. [WEAPONS; reticle-convergence]
+- Increased the visible density of nearby Laser and Particle Beam particles while keeping their fine, one-pixel appearance. Detached beam trails remain visible briefly after the shot ends. [WEAPONS; beam-rendering, effect_timing.py]
+- Reduced movement-collision radii by 20% for six upright tree species, allowing PBAs to walk closer to their trunks through the outer branches shown by the sprites. Weapon collision is unchanged. [COLLISION]
+- **Fixed [legacy]:** leftover projectile exclusions could make later shots pass through a previously hit turret. [COLLISION; projectiles.py]
+- **Fixed [legacy]:** collision checks against cylinders over short distances, and traversal of vertical map cells, could miss a turret entirely. [COLLISION; projectiles.py]
+- **Fixed [legacy]:** projectile collision searches could skip objects on very short movement segments or stop before the end of the final sampling step. [COLLISION; projectiles.py]
+- **Fixed [legacy]:** Multipulsar and Tripulsar volleys could omit sound, energy use and cooldown accounting when they could not create every bolt. [WEAPONS; volley-timing]
+- **Fixed [legacy]:** small physics intervals could be counted again after their accumulated time had already been used. [PHYSICS]
+- **Fixed [legacy]:** fractional armor regeneration was discarded each update, slowing or stopping PBA and tank armor regeneration at higher frame rates. [PHYSICS]
+- **Fixed [legacy]:** fuel-tank collision volumes left part of the visible tank unhittable. [COLLISION; fuel-contacts]
+- **Fixed [legacy]:** newly deployed ASF Autoturrets floated above the ground because the model base and physics-body center used the same height. [COLLISION; deployable-contacts]
+- **Fixed [legacy]:** vehicle damage could access a nonexistent suit-subsystem record. Vehicles now receive only the damage processing that applies to them. [COLLISION; damage-save-safety]
+- Fixed repeated jump-launch impulses and weapon cooldowns accumulating delays at different update rates. [PHYSICS, WEAPONS; weapon_timing.py]
 
 ### AI
 
-- Added optional **Full-Rate AI Firing**, allowing more frequent weapon-readiness checks for both sides while retaining cooldowns, costs, bursts and difficulty rules. It defaults off.
-- Stopped AI firing outside nominal weapon range and reduced friendly fire.
-- Improved responses to recent attackers and added bounded retreat/detour recovery for eligible stalled enemies, while retaining original pathfinding, Hold/scripted orders and mission restrictions.
-- Adjusted spotting, turning and retry timing for faster updates while retaining original weapon statistics and difficulty modifiers.
-- **Fixed — original game:** friendly missiles ignoring terrain/building obstructions, and PBAs firing to clear scenery when a hill still blocked the target beyond it.
-- **Fixed — original game:** correlated random retry rolls that could leave an AI route failure stuck despite repeated retry attempts.
+- Added optional **Full-Rate AI Firing** for friendly and enemy units. It checks weapon readiness more often while preserving cooldowns, costs, bursts and difficulty rules. The option defaults to off. [AI; ai_cadence.py]
+- Stopped AI units firing beyond their weapons' nominal ranges. Weapon selection now considers which weapons can reach the target, and additional firing checks reduce friendly fire. [AI; ai_firing.py, ai-weapon-choice]
+- Improved responses to recent attackers. Eligible enemies that become stuck can attempt a retreat or detour, using the original pathfinding. Hold orders, scripted orders and mission restrictions remain in effect. [AI; ai_response.py, route-recovery]
+- Adjusted spotting, turning and retry timing for higher frame rates. Original weapon statistics and difficulty modifiers are preserved. [AI; ai_response.py]
+- **Fixed [legacy]:** friendly missiles could ignore terrain and building obstructions. PBAs could also fire to clear scenery even when a hill behind it still blocked the target. [AI; ai_firing.py, ai-scenery-preview]
+- **Fixed [legacy]:** correlated random rolls could repeatedly prevent an AI unit from retrying after a route failure. [AI; route-recovery]
+- **Fixed [legacy]:** stationary defenses could access nonexistent movement-route data when reacting to an attack, causing native crashes. [AI; ai_response.py]
 
 ### Prequel missions
 
-- Added the four demo missions as **Prequel** on the main menu, with mission selection, sequential progression, shared Options and paused **F5** save / **F9** load pickers.
-- Fixed false busy-menu errors when entering Prequel after loading a game and leaving Quarters.
-- Fixed incorrect Prequel equipment, missing success narrative, premature recruitment-letter dismissal, missing target names and the dockside-craft targeting crash.
+- Added the four demo missions under **Prequel** on the main menu, with mission selection, progression between missions and shared Options. While paused, **F5** and **F9** open snapshot save and load pickers. [PREQUEL; campaign-lifecycle, snapshot-controls]
+- Fixed false “menu not ready” errors when entering Prequel after loading a game and leaving Quarters. [PREQUEL; campaign_switch.py]
+- Corrected Prequel equipment and restored missing success text and target names. Fixed the recruitment letter closing too soon and the crash when targeting the dockside craft. [PREQUEL; target-names, build_resources.py]
 
 ### Installation and contributor tools
 
-- Added local generation of the adapted executable, model geometry and edited resources from verified original files, with automatic or offline tool setup.
+- Added local generation of the adapted executable, model geometry and edited resources from verified original game files. Required tools can be set up automatically or supplied offline. [HOST; build.py, build_engine.py, build_resources.py]

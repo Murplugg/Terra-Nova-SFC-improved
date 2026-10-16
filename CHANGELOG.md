@@ -16,6 +16,8 @@ named patches or source files. See the [source guide](docs/source-guide.md) for 
 
 ### Windows, audio and saves
 
+- Installation paths are now resolved when the game starts. Moving the complete installation no longer requires rewriting its normal executable. Saved snapshots still restore against the selected installation. [HOST, SAVES; runtime_paths.py, state_core.py]
+
 - Fixed a combat crash when a new clone could not be created because all object slots were occupied. If a detached beam trail holds a slot, the game now removes one such trail to make room. [WEAPONS; effect_timing.py, weapon_timing.py]
 - Fixed mission-start crashes introduced by the smoke changes. The smoke code now sits outside the memory cleared for scenery at mission start. [SMOKE; smoke.py]
 - **Fixed [legacy]:** a failed QSound channel allocation could overwrite memory and crash the game during combat. If a sound pair cannot be allocated, the game releases any partially reserved channels. [AUDIO; audio_safety.py]

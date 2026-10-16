@@ -217,6 +217,13 @@ class Installation:
                 )
         self.pe = PE(self.fresh)
 
+    @property
+    def startup_image(self):
+        """Disk image; fresh retains the expected in-memory paths for snapshots."""
+        policy = self.meta.get('runtime_paths')
+        require(policy in (None, 'executable-directory-v1'), 'Unsupported runtime path policy')
+        return self.template if policy else self.fresh
+
     def relocate(self, memory, campaign):
         for entry in self.meta['relocations']:
             off, size = entry['offset'], entry['capacity']
@@ -562,7 +569,7 @@ def capture(install, pid, destination, executable='native-startup.exe'):
         require(sha(dllpath) == provenance['audio_sha256'], 'Restored audio bridge changed')
     else:
         require(
-            expected.read_bytes() == install.fresh,
+            expected.read_bytes() == install.startup_image,
             'Game executable does not match this relocated installation'
         )
     pe, dll = PE(expected.read_bytes()), PE(dllpath.read_bytes())
@@ -808,7 +815,7 @@ def build_restore(install, source, destination, campaign):
         'Choose a new run folder immediately under the installation\'s state-runs folder'
     )
     require(
-        (install.home / 'native-startup.exe').read_bytes() == install.fresh,
+        (install.home / 'native-startup.exe').read_bytes() == install.startup_image,
         'Run Launch.ps1 -CheckOnly after moving the installation, before restoring'
     )
     require(

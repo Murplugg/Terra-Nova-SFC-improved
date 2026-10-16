@@ -239,13 +239,13 @@ class SessionsTests(TestCase):
     def test_prepare_after_move_preserves_other_files(self):
 
         class Install:
-            fresh = b'regenerated portable entry point'
+            startup_image = b'regenerated portable entry point'
 
         (self.home / 'native-startup.exe').write_bytes(b'old location')
         (self.home / 'keep.txt').write_text('keep')
         with patch.object(self.service, 'running', return_value=[]):
             result = self.service.prepare(Install())
-        self.assertEqual(result.read_bytes(), Install.fresh)
+        self.assertEqual(result.read_bytes(), Install.startup_image)
         self.assertEqual((self.home / 'keep.txt').read_text(), 'keep')
         self.assertEqual(list(self.home.glob('*.tmp')), [])
 

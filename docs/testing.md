@@ -25,6 +25,21 @@ checks report skips. Synthetic textures, pixels and expected results remain
 invented test data. The [build guide](building.md)
 lists the dependencies and the additional checks performed by a complete build.
 
+## Runtime installation paths
+
+`test_runtime_paths` executes the startup initializer with modeled Windows APIs.
+It checks folder moves, spaces and quoted campaign commands, drive-root paths,
+startup registers/stack, and rejection of long, non-ASCII or inaccessible paths.
+Launcher contract checks distinguish the fixed disk image from relocated snapshot
+memory. The startup jump is mutable during snapshot boot, so live code guards
+cover the initializer and its constant table rather than that jump.
+
+Native Windows checks launched the unchanged executable from a foreign working
+directory, moved its installation, switched both campaign directions and entered
+a Prequel mission. A paused snapshot restored after another move with the same
+game clock, saved again and resumed. The ordinary executable remained unchanged.
+These checks do not establish Wine, clean-machine or external-data-root support.
+
 ## Smoke contacts and visibility
 
 A later fresh-mission crash exposed a memory-ownership mistake in the smoke

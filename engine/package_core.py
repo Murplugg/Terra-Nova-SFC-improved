@@ -175,6 +175,8 @@ def package(original, build_root, recipe, *, local_generation=False):
         ],
         assets=assets
     )
+    if recipe.get('runtime_paths'):
+        portable['runtime_paths'] = recipe['runtime_paths']
     payload('portable.json', (json.dumps(portable, indent=2) + '\n').encode())
     for name in recipe['support']:
         data = child(KIT / 'package-support', name).read_bytes()

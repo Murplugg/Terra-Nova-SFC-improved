@@ -10,16 +10,21 @@ foreach ($entry in $manifest.assets.psobject.Properties) {
     if (!(Test-Path -LiteralPath $asset) -or (Get-FileHash -LiteralPath $asset -Algorithm SHA256).Hash -ne $entry.Value) { throw "Missing or changed asset: $($entry.Name)" }
 }
 $bytes = [IO.File]::ReadAllBytes($template)
+if ($manifest.runtime_paths -and $manifest.runtime_paths -ne 'executable-directory-v1') { throw 'Unsupported runtime path policy.' }
 foreach ($entry in $manifest.relocations) {
     $value = [Text.Encoding]::ASCII.GetBytes($entry.value.Replace('{ROOT}', $pilotRoot))
     if ($value.Length -ge $entry.capacity) { throw 'The folder path is too long for this pilot. Move it nearer the drive root.' }
-    [Array]::Clear($bytes, [int]$entry.offset, [int]$entry.capacity)
-    [Array]::Copy($value, 0, $bytes, [int]$entry.offset, $value.Length)
+    if (!$manifest.runtime_paths) {
+        [Array]::Clear($bytes, [int]$entry.offset, [int]$entry.capacity)
+        [Array]::Copy($value, 0, $bytes, [int]$entry.offset, $value.Length)
+    }
 }
 $exe = Join-Path $pilotRoot 'native-startup.exe'
 $running = @(Get-CimInstance Win32_Process -Filter "Name='native-startup.exe'" | Where-Object { $_.ExecutablePath -eq $exe })
 if ($running.Count -gt 0) { throw 'This copy is already running.' }
-[IO.File]::WriteAllBytes($exe, $bytes)
+if (!(Test-Path -LiteralPath $exe) -or (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash -ne ([BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($bytes))).Replace('-', '')) {
+    [IO.File]::WriteAllBytes($exe, $bytes)
+}
 if ($CheckOnly) { Write-Output 'Portable files and paths verified.'; return }
 $start = New-Object System.Diagnostics.ProcessStartInfo
 $start.FileName = $exe

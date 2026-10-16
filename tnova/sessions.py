@@ -344,13 +344,13 @@ class Sessions:
         return sorted(rows, key=lambda s: (s.saved_at, s.folder.name), reverse=True)
 
     def prepare(self, install):
-        """Regenerate the normal entry point after installation relocation."""
+        """Prepare the fixed entry point, retaining relocation for older builds."""
         exe = core.inside(self.home, 'native-startup.exe')
-        if exe.exists() and exe.read_bytes() == install.fresh:
+        if exe.exists() and exe.read_bytes() == install.startup_image:
             return exe
         temp = core.inside(self.home, '.launch-' + uuid.uuid4().hex + '.tmp')
         try:
-            temp.write_bytes(install.fresh)
+            temp.write_bytes(install.startup_image)
             self.require_closed()
             os.replace(temp, exe)
         finally:

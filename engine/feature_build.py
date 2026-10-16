@@ -291,6 +291,12 @@ def install_feature(feature, write, ram, context):
         room_hover.install(write, ram)
     elif name == 'final-options':
         shot_assist.install(write, ram)
+    elif name == 'runtime-paths':
+        import json
+        from build_paths import source_path
+        from features import runtime_paths
+        recipe = json.loads(source_path('release-recipe.json').read_text(encoding='utf-8'))
+        runtime_paths.install(write, read, imports=context['imports'], relocations=recipe['relocations'])
     elif name == 'runtime-labels':
         runtime_labels(write, read, context['config'])
 

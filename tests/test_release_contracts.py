@@ -6,6 +6,18 @@ from tnova import state_core as c
 
 class Contracts(unittest.TestCase):
 
+    def test_runtime_paths_keep_disk_image_fixed(self):
+        install = c.Installation.__new__(c.Installation)
+        install.template = b'fixed portable image'
+        install.fresh = b'image with current in-memory paths'
+        install.meta = {'runtime_paths': 'executable-directory-v1'}
+        self.assertEqual(install.startup_image, install.template)
+        install.meta = {}
+        self.assertEqual(install.startup_image, install.fresh)
+        install.meta = {'runtime_paths': 'unknown'}
+        with self.assertRaisesRegex(ValueError, 'Unsupported runtime path policy'):
+            _ = install.startup_image
+
     def install(self, revision):
         return SimpleNamespace(revision=revision, profile=c.CONTRACTS[str(revision)])
 

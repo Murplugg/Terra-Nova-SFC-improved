@@ -315,3 +315,15 @@ the original instructions from the locally supplied retail executable, reproduce
 the fault with an unmapped low page, and compare valid callback selection and
 restricted rear slots against the corrected routine. The callback and audio
 boundaries are modeled; live menu selection verifies the visible outcome.
+
+
+## Unlocked aiming depth
+
+The shot-assist tests use independent sphere geometry to check contact depth,
+including tangency, the original query's grazing margin, an origin inside a body,
+all world axes and large coordinates. A body-height offset and several physics
+IDs exercise the original record layout. Accurate mesh contacts keep their depth,
+and assist-on, terrain/miss results, range limits and processor state are checked.
+A private captured encounter adds real firing and projectile updates with both
+wrists and helmet origins. These fixtures verify the calculation; the apparent
+trajectory near a visible sprite boundary still needs human playtesting.

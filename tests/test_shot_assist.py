@@ -38,6 +38,67 @@ def call(u, address, args=(), registers=()):
 
 class ShotAssistTests(unittest.TestCase):
 
+    def test_original_body_depth_and_surface_output(self):
+        # Independent axis-aligned geometry: a radius-five sphere whose centre
+        # is ten units ahead has entry depth six at lateral distance three.
+        # Tangency/tolerated grazes use depth ten; starting inside uses the exit.
+        # Exercise all world axes/signs, translated coordinates and physics IDs.
+        for axis in range(3):
+            for sign in (-1, 1):
+                for physics_id, slot in ((1, 0), (37, 62), (95, 95)):
+                    for lateral, forward, expected in ((3, 10, 6), (5, 10, 10),
+                                                       (6, 10, 10), (0, 2, 7),
+                                                       (3, 100, 96), (3, 1000, 996)):
+                        for enabled in (0, 1):
+                            u = machine(enabled)
+                            origin = [140000003, -100000007, 50000001]
+                            direction = [0, 0, 0]
+                            direction[axis] = sign * 65536
+                            centre = origin[:]
+                            centre[axis] += sign * forward * 65536
+                            centre[(axis + 1) % 3] += lateral * 65536
+                            endpoint = [a-b for a,b in zip(centre, direction)]
+                            u.mem_write(POINT, struct.pack('<3i', *origin))
+                            u.mem_write(DIRECTION, struct.pack('<3i', *direction))
+                            u.mem_write(0x44e0cc, struct.pack('<3i', *direction))
+                            u.mem_write(0x44b9e4 + physics_id*4, pack(slot))
+                            u.mem_write(0x44bb64 + slot*4, pack(physics_id))
+                            # Nonzero body-height offset must be included once.
+                            for i, value in enumerate(centre):
+                                u.mem_write(0x44e0dd+slot*48+i*16,
+                                            pack(value - (12345 if i == 2 else 0)))
+                            u.mem_write(0x44f2ec+slot*160+0x9c, pack(12345))
+                            u.mem_write(0x44f2ec+slot*160+0x7c, pack(5*65536))
+                            code = ';'.join(f'mov dword ptr [eax+{i*4}],{v}'
+                                            for i,v in enumerate(endpoint))
+                            u.mem_write(0x2f074c, asm(0x2f074c,
+                                        code+f';mov eax,{physics_id};ret 28;'))
+                            call(u, f.QUERY, (0x1000, 200000000, 1, 1,
+                                             POINT+32, POINT+36, POINT+40),
+                                 ((UC_X86_REG_EAX, POINT),
+                                  (UC_X86_REG_EDX, DIRECTION)))
+                            wanted = endpoint if enabled else origin[:]
+                            if not enabled:
+                                wanted[axis] += sign * expected * 65536
+                            self.assertEqual(struct.unpack('<3i',u.mem_read(POINT,12)),
+                                             tuple(wanted))
+                            # Same body ID, but a supplemental mesh/leg hit at
+                            # depth four: keep that true nearer contact.
+                            contact = origin[:]
+                            contact[axis] += sign*4*65536
+                            code = ';'.join(f'mov dword ptr [eax+{i*4}],{v}'
+                                            for i,v in enumerate(contact))
+                            u.mem_write(0x2f074c, asm(0x2f074c,
+                                        code+f';mov eax,{physics_id};ret 28;'))
+                            u.mem_write(POINT, struct.pack('<3i',*origin))
+                            u.ctl_remove_cache(0x2f074c, 0x2f0800)
+                            call(u, f.QUERY, (0x1000, 200000000, 1, 1,
+                                             POINT+32, POINT+36, POINT+40),
+                                 ((UC_X86_REG_EAX, POINT),
+                                  (UC_X86_REG_EDX, DIRECTION)))
+                            self.assertEqual(struct.unpack('<3i',u.mem_read(POINT,12)),
+                                             tuple(contact))
+
     def test_camera_ray_and_compatibility(self):
         # Coordinates above float32's exact-integer range exercise the reason
         # this correction uses doubles. Orthogonal directions make the expected

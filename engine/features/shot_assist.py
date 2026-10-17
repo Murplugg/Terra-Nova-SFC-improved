@@ -3,8 +3,9 @@
 The original physics query returns an approximate body center on a sphere hit
 (0x311742). The muzzle-to-reticle helper uses that endpoint, which can pull a
 shot away from the visible aiming point. With assistance off, this wrapper
-projects the endpoint onto the camera ray while preserving range and nearby
-cover checks. Explicit target locks use their existing path.
+uses the body's ray-contact depth while preserving range and nearby cover
+checks. Accurate mesh/terrain endpoints keep their existing depth. Explicit
+target locks use their existing path.
 
 The setting defaults on. Only the aiming query is wrapped; projectile collision
 and AI physics retain their original callers. options_row supplies the checkbox
@@ -151,8 +152,43 @@ def bodies():
         f"cmp dword ptr [{STATE+4}],0;"
         f"jne done;"
         f"\n        mov esi,[edi+24];"
+        f"mov dword ptr [edi+52],0;"
+        f"mov eax,[edi+220];"
+        f"cmp eax,96;"
+        f"jae project;"
+        f"mov edx,[eax*4+0x44b9e4];"
+        f"cmp edx,96;"
+        f"jae project;"
+        f"cmp [edx*4+0x44bb64],eax;"
+        f"jne project;"
+        f"imul ebx,edx,160;"
+        f"imul edx,edx,48;"
+    )
+    # The original sphere query returns centre - one ray step. Recognize that
+    # exact output before replacing its depth: the supplemental leg and vehicle
+    # queries already return actual contacts, even for the same physics ID.
+    # All scratch values live in this call's stack frame; no new game state.
+    for i in range(3):
+        s += f'mov eax,[edx+0x44e0dd+{i*16}];'
+        if i == 2:
+            s += 'add eax,[ebx+0x44f388];'
+        s += (
+            f'mov [edi+{36+i*4}],eax;'
+            f'sub eax,[0x44e0cc+{i*4}];'
+            f'cmp eax,[esi+{i*4}];'
+            'jne project;'
+        )
+    s += (
+        'mov eax,[ebx+0x44f368];'
+        'test eax,eax;'
+        'jle project;'
+        'mov [edi+48],eax;'
+        'mov dword ptr [edi+52],1;'
+        'lea esi,[edi+36];'
+        'project:'
         f"xorpd xmm4,xmm4;"
         f"xorpd xmm5,xmm5;"
+        f"xorpd xmm6,xmm6;"
     )
     # Work in doubles: raw world coordinates can exceed 2**24. A single-
     # precision reconstruction can move an endpoint visibly at close range.
@@ -161,6 +197,9 @@ def bodies():
             f"cvtsi2sd xmm0,dword ptr [esi+{i*4}];"
             f"cvtsi2sd xmm1,dword ptr [edi+{i*4}];"
             f"\n          subsd xmm0,xmm1;"
+            f"movapd xmm3,xmm0;"
+            f"mulsd xmm3,xmm3;"
+            f"addsd xmm6,xmm3;"
             f"cvtsi2sd xmm2,dword ptr [edi+{12+i*4}];"
             f"mulsd xmm0,xmm2;"
             f"\n          addsd xmm4,xmm0;"
@@ -171,12 +210,37 @@ def bodies():
         "xorpd xmm0,xmm0;"
         "ucomisd xmm5,xmm0;"
         "jbe done;"
+        "movapd xmm3,xmm4;"
         "divsd xmm4,xmm5;"
+        "cmp dword ptr [edi+52],0;"
+        "je clamp_depth;"
+    )
+    # t_c = dot(B-C,D)/dot(D,D). Subtract the sphere's half-chord to
+    # obtain the entry point. The original query also admits near misses within
+    # its thickness; those use closest approach (zero half-chord), keeping the
+    # crosshair ray unchanged. An origin inside the body uses its forward exit.
+    s += (
+        'mulsd xmm3,xmm4;'
+        'subsd xmm6,xmm3;'
+        'cvtsi2sd xmm1,dword ptr [edi+48];'
+        'mulsd xmm1,xmm1;'
+        'subsd xmm1,xmm6;'
+        'maxsd xmm1,xmm0;'
+        'divsd xmm1,xmm5;'
+        'sqrtsd xmm1,xmm1;'
+        'movapd xmm3,xmm4;'
+        'subsd xmm4,xmm1;'
+        'ucomisd xmm4,xmm0;'
+        'jae clamp_depth;'
+        'movapd xmm4,xmm3;'
+        'addsd xmm4,xmm1;'
+        'clamp_depth:'
         "\n        maxsd xmm4,xmm0;"
         "sqrtsd xmm5,xmm5;"
         "cvtsi2sd xmm0,dword ptr [edi+236];"
         "\n        divsd xmm0,xmm5;"
         "minsd xmm4,xmm0;"
+        "mov esi,[edi+24];"
     )
     for i in range(3):
         s += (

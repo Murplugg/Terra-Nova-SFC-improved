@@ -16,6 +16,8 @@ named patches or source files. See the [source guide](docs/source-guide.md) for 
 
 ### Controls and interface
 
+- Fixed steeply misdirected unlocked shots at nearby mobile units with Shot Aim Assist disabled, especially when firing from wrist height. Aiming now uses the body's contact depth along the crosshair ray. Target Lock and Shot Aim Assist enabled retain their existing behavior. [WEAPONS, OPTIONS; shot_assist.py]
+
 - **Fixed [legacy]:** clicking unit labels or gaps between buttons in Enemy Outfitting could crash the native game. The menu now checks whether a button was found before reading its action. [INPUT; input_views.py]
 
 - Manual Camera Drone and Explod-O-Drone turning now follows elapsed time, preventing faster rotation at higher frame rates. Automatic following and attack steering retain their existing behavior. [TIMING; actor_timing.py]

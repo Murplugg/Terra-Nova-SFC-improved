@@ -31,8 +31,9 @@ named patches or source files. See the [source guide](docs/source-guide.md) for 
 
 ### Graphics and performance
 
+- Fixed thick, lingering Railgun trails and intermittent missing trails introduced by the larger particle pool. Visual effects again use their original particle budget, while smoke clouds retain their extra space and protection from thinning. [SMOKE; smoke.py]
 - **Fixed [legacy]:** the last visible segment of a laser or pulsar bolt could bend toward a mobile unit on impact. The trail now follows its incoming direction, while hit detection, damage and impact effects keep their existing behavior. [WEAPONS; effect_timing.py]
-- Existing smoke clouds now keep their particles when unrelated weapon effects fill the particle pool. The pool has more room for simultaneous smoke and weapon effects; normal smoke expiry and shot interaction remain unchanged. [SMOKE; smoke.py]
+- Existing smoke clouds now keep their particles when unrelated weapon effects fill the particle pool. Additional storage lets smoke coexist with the original visual-effect budget; normal smoke expiry and shot interaction remain unchanged. [SMOKE; smoke.py]
 - Fixed narrow, oval smoke puffs on native world views. Their horizontal size now matches the original doubled vertical size. [SMOKE; smoke.py]
 - Improved smoke visibility at native resolutions and increased its draw distance in the main view. [SMOKE; smoke.py]
 - **Fixed [legacy]:** smoke could block shots passing below or beside the visible cloud. Collision now follows the moving smoke particles, and repeated frame updates no longer give the cloud extra chances to stop the same shot. [SMOKE; smoke.py, smoke_ray.c]

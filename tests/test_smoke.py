@@ -52,7 +52,7 @@ class SmokeBudget(unittest.TestCase):
         u.mem_write(0x2a414c, bytes(original_ram[0x2a414c:0x2a43ad]))
         if patched:
             bodies = dict(f.bodies(f.LOW, ()))
-            for address in (f.THIN_SITE, f.THIN_FILTER):
+            for address in (f.THIN_SITE, f.THIN_FILTER, *f.CAPACITY_SITES, f.CAPACITY_QUERY):
                 u.mem_write(address, bodies[address])
         for address, value in ((0x421a08, 64), (0x421a0c, len(groups)),
                                (0x421a24, capacity), (0x421a14, DATA),
@@ -130,6 +130,34 @@ class SmokeBudget(unittest.TestCase):
         before = self.particles(u)
         self.assertEqual(call(u, 0x2a42c8, regs={UC_X86_REG_EAX: 159}), -1)
         self.assertEqual(self.particles(u), before)
+
+    def test_visual_only_allocations_keep_original_particle_density(self):
+        # A larger backing allocation must not delay the original thinning.
+        # Railgun trails otherwise retain dense old puffs until the group table
+        # fills. Compare actual allocator/compactor output, not just a limit.
+        original = self.machine([(10, 64)] * 12, capacity=1024, patched=False)
+        guarded = self.machine([(10, 64)] * 12, capacity=4096)
+        for repeat in range(40):
+            groups = [call(u, 0x2a42c8, regs={UC_X86_REG_EAX: 64})
+                      for u in (original, guarded)]
+            self.assertEqual(groups[0], groups[1])
+            for u, group in zip((original, guarded), groups):
+                u.mem_write(DATA + 0x1000 + group * 16 + 14, b'\x0a')
+            self.assertEqual(self.particles(guarded), self.particles(original), repeat)
+
+    def test_capacity_query_counts_smoke_and_ignores_empty_group_modes(self):
+        cases = [([], 4096, 1024), ([(10, 600)], 4096, 1024),
+                 ([(0, 300), (1, 400), (8, 500), (10, 600)], 4096, 2224),
+                 ([(8, 4000)], 4096, 4096), ([(8, 400)], 1024, 1024),
+                 ([(0, 0), (1, 0), (8, 0), (10, 64)], 4096, 1024)]
+        for groups, capacity, expected in cases:
+            u = self.machine(groups, capacity)
+            regs = {UC_X86_REG_EBX: 19, UC_X86_REG_ECX: 23, UC_X86_REG_EDX: 29,
+                    UC_X86_REG_ESI: 31, UC_X86_REG_EDI: 37, UC_X86_REG_EBP: 41}
+            u.reg_write(UC_X86_REG_EFLAGS, 0x246)
+            self.assertEqual(call(u, f.CAPACITY_QUERY, regs=regs), expected)
+            self.assertEqual(u.reg_read(UC_X86_REG_EFLAGS), 0x246)
+            self.assertEqual({r: u.reg_read(r) for r in regs}, regs)
 
 
 class SmokeHooks(unittest.TestCase):

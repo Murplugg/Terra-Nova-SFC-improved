@@ -14,8 +14,11 @@ SHOT_SERIAL, CLOUD_SERIAL = STATE + 0x100, STATE + 0x800
 DRAW_MODE = STATE + 8
 THIN_SITE, THIN_FILTER = 0x2a4264, CODE + 0x900
 PARTICLE_CAPACITY_SITE, PARTICLE_CAPACITY = 0x244414, 4096
+VISUAL_CAPACITY = 1024
+CAPACITY_SITES, CAPACITY_QUERY = (0x2a4321, 0x2a433a), CODE + 0xa00
 SMOKE_CIRCLES = (0x2a5a2b, 0x2a5a6e, 0x2a5afc)
 SITES = {
+    **{site: asm(site, 'mov eax,dword ptr [0x421a24]') for site in CAPACITY_SITES},
     THIN_SITE:
     asm(THIN_SITE, 'test dword ptr [esp+12],eax; je 0x2a4282'),
     PARTICLE_CAPACITY_SITE:
@@ -188,11 +191,40 @@ def bodies(entry, regions):
         jmp 0x2a4282;
     '''
     )
+    # Retain the original budget for visual particles. Enlarging the shared
+    # allocation alone postpones thinning: Railgun trails become dense clouds
+    # and fill the separate group table, leaving later shots without a trail.
+    # Smoke counts against physical storage but has its own additional headroom.
+    # The allocator calls this before and after thinning. Its newly reserved
+    # group is empty, so skip empty intervals before reading their draw mode.
+    emit(
+        CAPACITY_QUERY, f'''
+        pushfd; push ecx; push edx; push ebx; push esi; push edi;
+        mov ecx,[0x421a0c]; mov esi,[0x421a14]; mov edi,[0x421a1c];
+        xor edx,edx;
+        test ecx,ecx; jz capacity;
+    group:
+        mov ebx,[esi+4]; sub ebx,[esi]; jle next;
+        cmp byte ptr [edi+14],0; je smoke;
+        cmp byte ptr [edi+14],1; je smoke;
+        cmp byte ptr [edi+14],8; jne next;
+    smoke:
+        add edx,ebx;
+    next:
+        add esi,4; add edi,16; loop group;
+    capacity:
+        add edx,{VISUAL_CAPACITY}; mov eax,[0x421a24];
+        cmp eax,edx; jbe done; mov eax,edx;
+    done:
+        pop edi; pop esi; pop ebx; pop edx; pop ecx; popfd; ret;
+    '''
+    )
     pieces += [
+        *[(site, asm(site, f'call {CAPACITY_QUERY}')) for site in CAPACITY_SITES],
         (THIN_SITE, asm(THIN_SITE, f'jmp {THIN_FILTER}') + b'\x90'),
         # The original initializer allocates twelve bytes per particle from
-        # this argument. More headroom lets smoke and weapon effects coexist;
-        # the unchanged allocator still bounds each new group by free space.
+        # this argument. Additional headroom is available to protected smoke;
+        # CAPACITY_QUERY preserves visual-effect density within that storage.
         # Group/handle counts and the separate object/effect pools stay intact.
         (PARTICLE_CAPACITY_SITE, asm(PARTICLE_CAPACITY_SITE, f'mov eax,{PARTICLE_CAPACITY}')),
         (0x2da1d0, b'\x31\xc0\x90\x90\x90'),

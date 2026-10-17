@@ -54,6 +54,17 @@ establish allocation behavior; crowded-scene appearance and frame rate also need
 playtesting. Group capacity remains 64, while particle capacity rises from 1,024
 to 4,096 (36 KiB of additional particle storage).
 
+A later held-fire report exposed a consequence of increasing storage alone:
+Railgun trails kept too many old particles, then exhausted the separate group
+table. Two capacity queries now count protected smoke separately and preserve
+the original 1,024-particle budget for other effects. A repeated-allocation test
+compares their particle records with the original smaller pool. Mixed-cloud,
+empty-group, physical-capacity and register/flag checks cover the new query.
+Private four-second held-fire comparisons retain normal cooldowns and physics;
+the corrected particle positions, group attributes, allocations and thinning
+match the previous pool policy on every sampled frame. Visual playtesting remains
+the final check of the reported trail appearance.
+
 ## Runtime installation paths
 
 `test_runtime_paths` executes the startup initializer with modeled Windows APIs.

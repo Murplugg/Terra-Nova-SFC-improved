@@ -2,6 +2,8 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import TestCase, main
+from unittest.mock import patch
+import errno
 import json
 import sys
 import struct, zlib
@@ -246,6 +248,83 @@ class InstallPathsTests(TestCase):
                 else:
                     with self.assertRaisesRegex(ValueError, '115 characters'):
                         check(path)
+
+    def shared_outputs(self):
+        """Model original archives, duplicate CD use and private mutable state."""
+        self.outputs[0]['path'] = 'retail/DATA/item.res'
+        self.outputs.append(dict(self.outputs[0], path='cd/DATA/item.res'))
+        self.outputs.append(dict(self.outputs[0], path='retail/TN.CFG'))
+        self.outputs.append(dict(self.outputs[0], path='retail/SAVE01.RES'))
+        self.outputs[3]['path'] = 'cd/MOVIE/intro.smk'
+        self.outputs.append(dict(self.outputs[3], path='prequel/MOVIE/intro.smk'))
+        self.write_manifest()
+
+    def test_shared_assets_reuse_originals_and_cd_cache_with_private_settings(self):
+        self.shared_outputs()
+        result = install(self.package, self.original, self.dest)
+        original = self.original / 'TNOVA/DATA/item.res'
+        self.assertTrue((self.dest / 'retail/DATA/item.res').samefile(original))
+        self.assertTrue((self.dest / 'cd/DATA/item.res').samefile(original))
+        self.assertFalse((self.dest / 'retail/TN.CFG').samefile(original))
+        self.assertFalse((self.dest / 'retail/SAVE01.RES').samefile(original))
+        (self.dest / 'retail/TN.CFG').write_bytes(b'private settings')
+        self.assertEqual(original.read_bytes(), b'TNOVA')
+        self.assertEqual(result['storage']['cache_bytes_added'], len(b'CD content'))
+        second = self.root / 'second installation'
+        second_result = install(self.package, self.original, second)
+        self.assertEqual(second_result['storage']['cache_bytes_added'], 0)
+        self.assertTrue((second / 'cd/MOVIE/intro.smk').samefile(self.dest / 'cd/MOVIE/intro.smk'))
+        # Removing an original directory entry cannot break its installed link.
+        original.unlink()
+        self.assertEqual((self.dest / 'retail/DATA/item.res').read_bytes(), b'TNOVA')
+
+    def test_copy_mode_keeps_every_file_independent_and_creates_no_cache(self):
+        self.shared_outputs()
+        result = install(self.package, self.original, self.dest, data_mode='copy')
+        self.assertEqual(result['storage']['linked_files'], 0)
+        self.assertFalse((self.root / 'TNova-shared-data').exists())
+        self.assertFalse((self.dest / 'retail/DATA/item.res').samefile(self.original / 'TNOVA/DATA/item.res'))
+        self.assertFalse((self.dest / 'cd/MOVIE/intro.smk').samefile(self.dest / 'prequel/MOVIE/intro.smk'))
+
+    def test_unsupported_links_fall_back_to_verified_copies_and_report_storage(self):
+        self.shared_outputs()
+        with patch('install_portable.os.link', side_effect=OSError(errno.EXDEV, 'Different volume')):
+            result = install(self.package, self.original, self.dest)
+        self.assertEqual(result['storage']['copy_fallbacks'], 4)
+        self.assertEqual(result['storage']['linked_files'], 0)
+        self.assertEqual((self.dest / 'cd/MOVIE/intro.smk').read_bytes(), b'CD content')
+
+    def test_shared_cache_check_only_and_invalid_locations(self):
+        self.shared_outputs()
+        install(self.package, self.original, self.dest, True)
+        self.assertFalse((self.root / 'TNova-shared-data').exists())
+        self.assertFalse(self.dest.exists())
+        for cache in (self.original, self.dest / 'cache', self.package / 'cache'):
+            with self.assertRaisesRegex(ValueError, 'shared data cache separate'):
+                install(self.package, self.original, self.dest, data_cache=cache)
+
+    def test_changed_cache_rejected_without_overwriting_shared_content(self):
+        self.shared_outputs()
+        cache = self.root / 'cache'
+        digest = sha(b'CD content')
+        entry = cache / digest[:2] / (digest + '.bin')
+        entry.parent.mkdir(parents=True)
+        entry.write_bytes(b'changed')
+        with self.assertRaisesRegex(ValueError, 'Changed shared data cache'):
+            install(self.package, self.original, self.dest, data_cache=cache)
+        self.assertFalse(self.dest.exists())
+        self.assertEqual(entry.read_bytes(), b'changed')
+
+    def test_payload_override_never_links_to_original_with_identical_bytes(self):
+        self.shared_outputs()
+        payload = self.package / 'payload/override.res'
+        payload.write_bytes(b'TNOVA')
+        self.outputs.append(dict(path='prequel/DATA/override.res', kind='payload',
+                                 payload='payload/override.res', size=5, sha256=sha(b'TNOVA')))
+        self.manifest['package_files']['payload/override.res'] = sha(b'TNOVA')
+        self.write_manifest()
+        install(self.package, self.original, self.dest)
+        self.assertFalse((self.dest / 'prequel/DATA/override.res').samefile(self.original / 'TNOVA/DATA/item.res'))
 
 
 if __name__ == '__main__':

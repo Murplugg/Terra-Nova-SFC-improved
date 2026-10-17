@@ -44,6 +44,37 @@ def source_locations(original, retail=None, download_demo=None, cd_demo=None, cd
     return folders, cd_image.resolve()
 
 
+def shared_asset(row):
+    """Only original resource directories may share storage.
+
+    Saves, mission reports and settings live elsewhere. Generated campaign
+    overrides and executable/support files always receive independent storage.
+    """
+    parts = PurePosixPath(row['path']).parts
+    return (row['kind'] == 'copy' and len(parts) >= 3
+            and parts[0] in ('retail', 'prequel', 'cd')
+            and parts[1] in ('DATA', 'MAPS', 'MOVIE', 'SOUND', 'SPEECH'))
+
+
+def cached_asset(cache, row, data, statistics):
+    """Extract CD-only content once; never modify an existing shared file."""
+    path = child(cache, row['sha256'][:2] + '/' + row['sha256'] + '.bin')
+    if path.exists():
+        if path.stat().st_size != row['size'] or file_sha(path) != row['sha256']:
+            raise ValueError('Changed shared data cache file: ' + str(path))
+        return path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    # Exclusive creation prevents overwriting a file already linked by a game.
+    try:
+        with path.open('xb') as stream:
+            stream.write(data)
+        statistics['cache_bytes_added'] += len(data)
+    except FileExistsError:
+        if path.stat().st_size != row['size'] or file_sha(path) != row['sha256']:
+            raise ValueError('Shared data cache file is incomplete: ' + str(path))
+    return path
+
+
 def validate_destination(destination, portable):
     try:
         str(destination).encode('ascii')
@@ -127,7 +158,9 @@ def install(
     compiler=None,
     dependencies=None,
     tools_cache=None,
-    tool_downloads=None
+    tool_downloads=None,
+    data_mode='shared',
+    data_cache=None
 ):
     package = package.resolve()
     destination = destination.resolve()
@@ -139,6 +172,15 @@ def install(
         protected.append(original.resolve())
     if any(destination.is_relative_to(p) or p.is_relative_to(destination) for p in protected):
         raise ValueError('Keep installation separate from original files and setup files.')
+    if data_mode not in ('shared', 'copy'):
+        raise ValueError('Unknown data mode: ' + str(data_mode))
+    shared_cache = (Path(data_cache) if data_cache is not None else
+                    destination.parent / 'TNova-shared-data').resolve()
+    if data_mode == 'shared' and any(
+        shared_cache.is_relative_to(p) or p.is_relative_to(shared_cache)
+        for p in [*protected, destination]
+    ):
+        raise ValueError('Keep shared data cache separate from originals, setup and installation')
     if tools_cache is not None:
         cache = Path(tools_cache).resolve()
         if any(cache.is_relative_to(p) or p.is_relative_to(cache) for p in [*protected, destination]):
@@ -227,6 +269,9 @@ def install(
     )
     if generation_report is not None:
         result['generation'] = generation_report
+    statistics = dict(mode=data_mode, linked_files=0, linked_bytes=0,
+                      written_bytes=0, cache_bytes_added=0, copy_fallbacks=0)
+    result['storage'] = statistics
     if check_only:
         return dict(result, check_only=True)
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -234,13 +279,42 @@ def install(
     staging.mkdir(exist_ok=False)
     # On failure leave the uniquely named staging folder for diagnosis; never alter
     # an existing installation or delete anything under the original directory.
+    # A CD entry can be byte-identical to an installed retail/demo asset. Prefer
+    # any verified loose input with those bytes before extracting it from ISO.
+    loose = {}
+    for name, row in used.items():
+        if not name.startswith('iso:'):
+            loose.setdefault(row['sha256'], source(name))
+    local_assets = {}
     for row in manifest['outputs']:
         data = reconstructed.get(row['path'])
         if data is None:
             data = read_input(row['input'])
         target = child(staging, row['path'])
         target.parent.mkdir(parents=True, exist_ok=True)
+        if data_mode == 'shared' and shared_asset(row):
+            origin = local_assets.get(row['sha256'], loose.get(row['sha256']))
+            if origin is None:
+                origin = cached_asset(shared_cache, row, data, statistics)
+            try:
+                os.link(origin, target)
+            except OSError:
+                # Different volumes and filesystems may not support hard links.
+                # Report the extra storage; installation must still be usable.
+                if target.exists():
+                    raise
+                statistics['copy_fallbacks'] += 1
+            else:
+                if target.stat().st_size != row['size'] or file_sha(target) != row['sha256']:
+                    raise ValueError('Shared input changed during installation: ' + row['path'])
+                statistics['linked_files'] += 1
+                statistics['linked_bytes'] += row['size']
+                local_assets[row['sha256']] = target
+                continue
         target.write_bytes(data)
+        statistics['written_bytes'] += len(data)
+        if shared_asset(row):
+            local_assets[row['sha256']] = target
     (staging / 'installation.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
     if destination.exists():
         raise ValueError('Destination appeared during installation; keeping staging folder.')
@@ -266,6 +340,10 @@ def main():
     parser.add_argument('--cd-image', type=Path, help='Supported retail CD ISO file')
     parser.add_argument('--destination', required=True, type=Path)
     parser.add_argument('--check-only', action='store_true')
+    parser.add_argument('--data-mode', choices=('shared', 'copy'), default='shared',
+                        help='Share unchanged assets with hard links (default), or copy all files')
+    parser.add_argument('--data-cache', type=Path,
+                        help='Shared CD-only files; defaults to TNova-shared-data beside destination')
     parser.add_argument('--compiler', type=Path, help='Pinned Zig executable for local generation')
     parser.add_argument('--dependencies', type=Path, help='Generator Python dependency folder')
     parser.add_argument('--tools-cache', type=Path, help='Prepare/reuse pinned tools in a separate folder')
@@ -286,7 +364,9 @@ def main():
                     compiler=args.compiler,
                     dependencies=args.dependencies,
                     tools_cache=args.tools_cache,
-                    tool_downloads=args.tool_downloads
+                    tool_downloads=args.tool_downloads,
+                    data_mode=args.data_mode,
+                    data_cache=args.data_cache
                 ),
                 indent=2
             )

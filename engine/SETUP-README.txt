@@ -14,6 +14,14 @@ Setup downloads about 95 MB of pinned tools into the chosen cache. Allow about
 Offline setup accepts --tool-downloads; developers may use --compiler and
 --dependencies instead. No global tools or administrator installation is needed.
 
+Unchanged assets share disk storage through hard links where supported. CD-only
+files are extracted once into TNova-shared-data beside the installation; choose
+another cache with --data-cache PATH. Saves/settings/generated files remain private.
+Use --data-mode copy for independent resource copies. Treat shared files as read-only;
+editing one linked name changes the others. Moving/deleting originals or the cache
+does not break existing links. Cross-volume/unsupported links fall back to copies;
+setup reports their storage cost. Explorer may still show full logical folder size.
+
 Choose a new destination. Add --check-only to generate and verify without
 installing. Originals and existing destinations are never overwritten.
 Start Play.cmd after setup. Move the whole installation only while the game is

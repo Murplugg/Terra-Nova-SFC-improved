@@ -211,6 +211,9 @@ States live under states/. Ordinary campaign saves remain under retail/. Load on
 your own trusted states, and use the matching game revision shown by the launcher.
 Older generated restore runs are pruned; the two newest recognized runs are kept.
 Campaign reports and saved states are never automatically removed.
+Unchanged resource files may share disk storage with originals or other installations.
+Treat those assets as read-only; use --data-mode copy during setup before editing them.
+Saves, settings and generated resources remain independent.
 Move the entire installation only while the game and launcher are closed.
 Use an ASCII installation path of at most 115 characters. Original input paths may contain Unicode. {switching}
 Launch.ps1 remains a direct-play diagnostic fallback; it does not provide state controls.
@@ -252,6 +255,14 @@ Extract this ZIP and run from its folder:
 python -B install_portable.py --original "C:\\path\\to\\originals" --destination "C:\\Games\\TNovaNative"{setup_arguments}
 
 {setup_note}
+
+Unchanged assets share disk storage through hard links where supported. CD-only
+files are extracted once into TNova-shared-data beside the installation; choose
+another cache with --data-cache PATH. Saves/settings/generated files remain private.
+Use --data-mode copy for independent resource copies. Treat shared files as read-only;
+editing one linked name changes the others. Moving/deleting originals or the cache
+does not break existing links. Cross-volume/unsupported links fall back to copies;
+setup reports their storage cost. Explorer may still show full logical folder size.
 
 Choose a new separate destination. Add --check-only to generate and verify without installing.
 Existing destinations are never overwritten. No administrator installation,

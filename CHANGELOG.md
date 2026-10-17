@@ -16,6 +16,8 @@ named patches or source files. See the [source guide](docs/source-guide.md) for 
 
 ### Windows, audio and saves
 
+- Setup now shares unchanged assets through hard links and reuses extracted CD data, reducing storage for repeated installations. Saves, settings and generated resources remain separate; `--data-mode copy` creates independent copies. [SETUP; install_portable.py]
+
 - Installation paths are now resolved when the game starts. Moving the complete installation no longer requires rewriting its normal executable. Saved snapshots still restore against the selected installation. [HOST, SAVES; runtime_paths.py, state_core.py]
 
 - Fixed a combat crash when a new clone could not be created because all object slots were occupied. If a detached beam trail holds a slot, the game now removes one such trail to make room. [WEAPONS; effect_timing.py, weapon_timing.py]

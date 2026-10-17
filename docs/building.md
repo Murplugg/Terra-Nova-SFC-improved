@@ -26,6 +26,21 @@ originals/
 
 Names alone do not establish compatibility: consumed files are checked by exact size and SHA-256. `engine/release-recipe.json` lists the setup input inventory and CD extents; `resource-manifest.json` lists resource-generation inputs. The retail executable must hash to `b762c54509f1716282c4d357a72013b8d84ba25f17b0483b733678ff81e63dd1`; the CD demo executable to `886568d2d0e15c5bcce5539832cd8bf1fd2c02655825c6ddf3cc77068be2556f`. The pinned Zig executable hash is `d408dd38eed3e5204af841bcebf70502a4dbbb8399a3a3262be55059370bc018`.
 
+## Installed data and disk space
+
+Setup shares unchanged game assets with hard links where supported, keeping saves,
+settings and generated resources independent. CD-only files are extracted once into
+`TNova-shared-data` beside the installation; `--data-cache PATH` selects another
+location. Hard links require the same volume. Unsupported links fall back to copies,
+and setup reports linked/written bytes and fallback counts. Explorer may still show
+the full logical folder size even when the file data is shared.
+
+Use `--data-mode copy` for a fully independent installation, including before editing
+original resource files in place. Shared files must be treated as read-only: editing
+one linked name changes the others. Moving or deleting the original folder/cache does
+not invalidate existing hard links. Copying a game to another drive normally creates
+independent files and uses their full space.
+
 ## Complete current build
 
 The normal build packages local generators. The optional `--local-generation`

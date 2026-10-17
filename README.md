@@ -55,6 +55,8 @@ Original weapon statistics and difficulty modifiers are preserved. AI changes re
 
 The player download is a portable setup ZIP. One-time setup for now needs 64-bit Windows CPython 3.12 and the supported retail/demo files and CD data. It downloads verified build tools into a separate folder, generates the adapted executable and edited resources locally, and creates a new installation.
 
+Setup shares unchanged assets where hard links are supported, so repeated installations use much less disk space. Saves, settings and generated files stay independent. Use `--data-mode copy` for independent resource copies; see [storage details](docs/building.md#installed-data-and-disk-space). Treat shared assets as read-only.
+
 Your original installation stays intact. Afterwards, launch **Terra Nova Launcher.exe**; playing and saving snapshots need no installed Python or compiler. See the ZIP's README for the setup command and offline alternative.
 
 The contributor download contains Python patch generators, readable x86 changes, a small C/assembly Windows bridge and collision helpers, launcher sources, tests and input/output manifests. Retained original routines, model geometry and edited artwork are derived from verified game files during setup. Neither download contains prepared game/resource deltas, complete game executables, original resource archives, generated model headers or saved-memory captures. Short binary-interface checks and displaced instructions remain in the patches; see the distribution account for the scope of the review.

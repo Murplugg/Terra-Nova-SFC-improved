@@ -216,6 +216,14 @@ be selected with --compiler PATH_TO_ZIG_EXE --dependencies PATH_TO_DEPENDENCIES.
 Use --check-only to generate and verify without installing a game.
 Generation uses temporary storage and does not change the originals.
 The finished game needs no compiler or tools folder. See the contributor build guide.
+Unchanged assets share disk storage through hard links where supported. CD-only
+files are extracted once into TNova-shared-data beside the installation; choose
+another cache with --data-cache PATH. Saves/settings/generated files remain private.
+Use --data-mode copy for independent resource copies. Treat shared files as read-only;
+editing one linked name changes the others. Moving/deleting originals or the cache
+does not break existing links. Cross-volume/unsupported links fall back to copies;
+setup reports their storage cost. Explorer may still show full logical folder size.
+
 '''
         (target / 'README.txt').write_text(readme, encoding='utf-8')
     manifest['package_files'] = {

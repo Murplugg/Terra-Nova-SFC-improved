@@ -25,6 +25,19 @@ checks report skips. Synthetic textures, pixels and expected results remain
 invented test data. The [build guide](building.md)
 lists the dependencies and the additional checks performed by a complete build.
 
+## Smoke under particle pressure
+
+`test_smoke.SmokeBudget` runs the original particle allocator, compactor and
+particle-deletion routine from the verified retail executable. Synthetic groups
+contain identifiable particle records, allowing the checks to compare retained
+positions as well as counts. Repeated allocations must preserve existing smoke
+in draw modes 0, 1 and 8, while other modes follow the original thinning rule.
+The cases cover both particle capacities, a completely smoke-filled pool and a
+full group table. Ordinary particle deletion must still free space. These tests
+establish allocation behavior; crowded-scene appearance and frame rate also need
+playtesting. Group capacity remains 64, while particle capacity rises from 1,024
+to 4,096 (36 KiB of additional particle storage).
+
 ## Runtime installation paths
 
 `test_runtime_paths` executes the startup initializer with modeled Windows APIs.

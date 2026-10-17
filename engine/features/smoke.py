@@ -12,8 +12,14 @@ LOW, HIGH = 0x1d36000, 0x1d3a000
 CODE, STATE, END = 0x1d3a000, 0x1d3b000, 0x1d3c000
 SHOT_SERIAL, CLOUD_SERIAL = STATE + 0x100, STATE + 0x800
 DRAW_MODE = STATE + 8
+THIN_SITE, THIN_FILTER = 0x2a4264, CODE + 0x900
+PARTICLE_CAPACITY_SITE, PARTICLE_CAPACITY = 0x244414, 4096
 SMOKE_CIRCLES = (0x2a5a2b, 0x2a5a6e, 0x2a5afc)
 SITES = {
+    THIN_SITE:
+    asm(THIN_SITE, 'test dword ptr [esp+12],eax; je 0x2a4282'),
+    PARTICLE_CAPACITY_SITE:
+    asm(PARTICLE_CAPACITY_SITE, 'mov eax,1024'),
     0x2da1d0:
     asm(0x2da1d0, 'call 0x28b9e0'),
     0x2d96d5:
@@ -159,7 +165,36 @@ def bodies(entry, regions):
         popfd; jmp 0x2a6af8;
     ''', 0x200
     )
+    # The particle allocator halves existing groups when it needs space. Smoke
+    # also obstructs shots, so unrelated weapon effects must not remove it.
+    # Preserve every particle in smoke draw modes; other groups retain the
+    # original thinning rule and in-place compaction. The one-based group index
+    # is on the original routine's stack. Empty, newly allocated groups never
+    # reach this predicate, so their uninitialized draw mode is not consulted.
+    emit(
+        THIN_FILTER, '''
+        push edx;
+        mov edx,[esp+8]; dec edx; shl edx,4;
+        add edx,[0x421a1c];
+        cmp byte ptr [edx+14],0; je keep;
+        cmp byte ptr [edx+14],1; je keep;
+        cmp byte ptr [edx+14],8; je keep;
+        pop edx;
+        test dword ptr [esp+12],eax; je discard;
+        jmp 0x2a426a;
+    keep:
+        pop edx; jmp 0x2a426a;
+    discard:
+        jmp 0x2a4282;
+    '''
+    )
     pieces += [
+        (THIN_SITE, asm(THIN_SITE, f'jmp {THIN_FILTER}') + b'\x90'),
+        # The original initializer allocates twelve bytes per particle from
+        # this argument. More headroom lets smoke and weapon effects coexist;
+        # the unchanged allocator still bounds each new group by free space.
+        # Group/handle counts and the separate object/effect pools stay intact.
+        (PARTICLE_CAPACITY_SITE, asm(PARTICLE_CAPACITY_SITE, f'mov eax,{PARTICLE_CAPACITY}')),
         (0x2da1d0, b'\x31\xc0\x90\x90\x90'),
         (0x2d96d5, asm(0x2d96d5, f'call {CODE}')),
         (0x2d9db5, asm(0x2d9db5, f'call {CODE+0x100}')),

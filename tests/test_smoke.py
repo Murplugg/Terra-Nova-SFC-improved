@@ -34,6 +34,104 @@ def put(u, address, *values):
     u.mem_write(address, struct.pack('<' + 'I' * len(values), *[v & 0xffffffff for v in values]))
 
 
+class SmokeBudget(unittest.TestCase):
+    """Replay the retail allocator that used to thin clouds during unrelated fire.
+
+    Invented groups contain recognizable particle records. The retained allocator,
+    compactor and particle-deletion code run from the verified retail executable;
+    expected survivors are computed independently from the published thinning rule.
+    These checks establish pool behavior, not appearance or battle frame rate.
+    """
+
+    def machine(self, groups, capacity=4096, patched=True):
+        from original_inputs import original_ram
+        if not any(original_ram[0x2a414c:0x2a43ad]):
+            self.skipTest('Supply the verified retail executable for particle-pool checks')
+        u = Uc(UC_ARCH_X86, UC_MODE_32)
+        u.mem_map(0, 0x2000000)
+        u.mem_write(0x2a414c, bytes(original_ram[0x2a414c:0x2a43ad]))
+        if patched:
+            bodies = dict(f.bodies(f.LOW, ()))
+            for address in (f.THIN_SITE, f.THIN_FILTER):
+                u.mem_write(address, bodies[address])
+        for address, value in ((0x421a08, 64), (0x421a0c, len(groups)),
+                               (0x421a24, capacity), (0x421a14, DATA),
+                               (0x421a1c, DATA + 0x1000), (0x421a00, DATA + 0x2000),
+                               (0x421a04, DATA + 0x3000), (0x421a20, DATA + 0x10000),
+                               (0x35c270, 2)):
+            put(u, address, value)
+        end = 0
+        for group, (mode, count) in enumerate(groups):
+            u.mem_write(DATA + 0x1000 + group * 16 + 14, bytes((mode,)))
+            for particle in range(count):
+                put(u, DATA + 0x10000 + end * 12, group, particle, 0x12345678)
+                end += 1
+            put(u, DATA + 4 * (group + 1), end)
+        self.assertLessEqual(end, capacity)
+        u.mem_write(DATA + 0x10000 + capacity * 12, b'GUARD' * 8)
+        return u
+
+    def particles(self, u):
+        count = struct.unpack('<I', u.mem_read(0x421a0c, 4))[0]
+        ends = struct.unpack('<' + 'I' * (count + 1), u.mem_read(DATA, 4 * (count + 1)))
+        return [bytes(u.mem_read(DATA + 0x10000 + a * 12, (b - a) * 12)) if b > a else b''
+                for a, b in zip(ends, ends[1:])]
+
+    def test_thinning_preserves_smoke_records_and_compacts_other_modes(self):
+        groups = [(mode, 7 + mode) for mode in range(12)]
+        for patched in (False, True):
+            u = self.machine(groups, patched=patched)
+            expected = self.particles(u)
+            for repeat in range(5):
+                source_index = 0
+                next_expected = []
+                for (mode, _), records in zip(groups, expected):
+                    kept = []
+                    for offset in range(0, len(records), 12):
+                        if (patched and mode in (0, 1, 8)) or source_index & 2:
+                            kept.append(records[offset:offset + 12])
+                        source_index += 1
+                    next_expected.append(b''.join(kept))
+                call(u, 0x2a420c, regs={UC_X86_REG_EAX: 2})
+                self.assertEqual(self.particles(u), next_expected, (patched, repeat))
+                expected = next_expected
+
+    def test_repeated_weapon_allocations_leave_existing_smoke_intact(self):
+        for capacity in (1024, 4096):
+            groups = [(mode, capacity // 8) for mode in (0, 3, 8, 11, 1, 3, 3, 3)]
+            u = self.machine(groups, capacity)
+            smoke = {i: records for i, records in enumerate(self.particles(u))
+                     if groups[i][0] in (0, 1, 8)}
+            for repeat in range(48):
+                group = call(u, 0x2a42c8, regs={UC_X86_REG_EAX: 159})
+                self.assertEqual(group, 8 + repeat)
+                u.mem_write(DATA + 0x1000 + group * 16 + 14, b'\x03')
+                records = self.particles(u)
+                self.assertEqual({i: records[i] for i in smoke}, smoke)
+                self.assertLessEqual(sum(map(len, records)), capacity * 12)
+                self.assertEqual(bytes(u.mem_read(DATA + 0x10000 + capacity * 12, 40)),
+                                 b'GUARD' * 8)
+
+    def test_full_smoke_pool_limits_new_effects_and_still_allows_particle_deletion(self):
+        u = self.machine([(0, 1024), (1, 1024), (8, 2048)])
+        before = self.particles(u)
+        self.assertEqual(call(u, 0x2a42c8, regs={UC_X86_REG_EAX: 159}), 3)
+        self.assertEqual(self.particles(u), before + [b''])
+        # Actual particle deletion remains effective; the protection applies
+        # only to pressure thinning, not age, impacts or normal cloud cleanup.
+        call(u, 0x2a414c, regs={UC_X86_REG_EAX: 0, UC_X86_REG_EDX: 0})
+        self.assertEqual(len(self.particles(u)[0]), 1023 * 12)
+        self.assertEqual(call(u, 0x2a42c8, regs={UC_X86_REG_EAX: 159}), 4)
+        self.assertEqual(len(self.particles(u)[4]), 12)
+        self.assertEqual(bytes(u.mem_read(DATA + 0x10000 + 4096 * 12, 40)), b'GUARD' * 8)
+
+    def test_full_group_table_rejects_new_group_without_touching_smoke(self):
+        u = self.machine([(0, 4)] * 64)
+        before = self.particles(u)
+        self.assertEqual(call(u, 0x2a42c8, regs={UC_X86_REG_EAX: 159}), -1)
+        self.assertEqual(self.particles(u), before)
+
+
 class SmokeHooks(unittest.TestCase):
 
     def machine(self):

@@ -24,10 +24,11 @@ will help set the order. Larger ideas need investigation before implementation.
 ## Next gameplay and presentation work
 
 - Investigate shots appearing offset from the reticle/crosshair center across suit arms, 
-  firing height, HUD modes and reticle positions.
+  firing height, HUD modes and reticle positions. Also check wrist-height shots emerging
+  below the visible muzzle tip when viewed through a drone camera. [AIM-02]
 - Wide-screen support. Terra Nova Plus already supports this as well as 1x1 pixel ratios.
 - Investigate short smoke-particle visibility and the occasional final laser
-  segment changing direction at impact (visible with Shot Aim Assist off and shots outside PBA body center).
+  segment changing direction at impact (visible with Shot Aim Assist off and shots outside PBA body center). [FX-03, AIM-03]
 - Document enemy AI behavior/logic in plain language, including acquisition, pursuit,
   failed routes, retreat and firing decisions. Use that foundation to assess further changes/improvements, 
   including stationary defenses in some situations acquiring in-range targets late.

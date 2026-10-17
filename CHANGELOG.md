@@ -14,6 +14,10 @@ named patches or source files. See the [source guide](docs/source-guide.md) for 
 
 ## [Unreleased]
 
+### Controls and interface
+
+- Manual Camera Drone and Explod-O-Drone turning now follows elapsed time, preventing faster rotation at higher frame rates. Automatic following and attack steering retain their existing behavior. [TIMING; actor_timing.py]
+
 ### Windows, audio and saves
 
 - Setup now shares unchanged assets through hard links and reuses extracted CD data, reducing storage for repeated installations. Saves, settings and generated resources remain separate; `--data-mode copy` creates independent copies. [SETUP; install_portable.py]

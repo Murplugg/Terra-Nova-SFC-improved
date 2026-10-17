@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "original_sha256": "b762c54509f1716282c4d357a72013b8d84ba25f17b0483b733678ff81e63dd1",
-  "native_sha256": "c4c6062f903035b11d74dae64204af0280706c8e062cb951ebb9e5ffa734d978",
+  "native_sha256": "651a1a821ce755c035c00f4e3ef2f1c56eb4ff0bef72abdd4d8aa0f31b4b7ff3",
   "guest_profile": "English retail v1.09 / Terra Nova Plus reference code and data bases",
   "native_image_base": "0x10000",
   "native_sections": [
@@ -32,9 +32,9 @@
       "virtual_size": 1112320
     }
   ],
-  "rows": 1008,
-  "complete_final_writes_checked": 858,
-  "audit_sha256": "d6d650f9308f5722a4f86ecb59744e825de52f8a3d4d297b62dbfc71db8b624c",
+  "rows": 1010,
+  "complete_final_writes_checked": 860,
+  "audit_sha256": "04b3544ae84a2028dfce0a4cf471ce790f74fb1c8db8d8fa0eef7c86dc022518",
   "foundation_sha256": "cba24f2633cb2e09682ceb463214311ad9cb19c4dac31cc387e100b27d625fb7",
   "limitations": [
     "Retail only; demo code and other editions need separate profiles.",
@@ -45,5 +45,5 @@
     "Only declared foundation recipes and audited final features are enumerated as patches.",
     "Split final writes have no independent partial hash; exact native hash still applies."
   ],
-  "csv_sha256": "4ce08b23101e24182bbafdd677d3c5c08f9cdcecdcb866455cab79c139c2d7b7"
+  "csv_sha256": "f06ed5b98aaf65443bef805fb97eb200d59e7ddc232ec4ccb7ec71ab2bb28217"
 }

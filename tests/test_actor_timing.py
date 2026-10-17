@@ -327,6 +327,121 @@ class ActorTimingTests(unittest.TestCase):
         self.assertEqual(bytes(u.mem_read(row, 32)), bytes(32))
         self.assertEqual(bytes(u.mem_read(row + 32, 32)), b'\x55' * 32)
 
+    def test_manual_drone_turn_uses_elapsed_time_and_retains_small_inputs(self):
+        # These are complete one-second schedules. The expected angle comes
+        # from the original doubled control at the 50-ms calibration interval.
+        # Execute the patched original site, including its heading store.
+        schedules = ([50] * 20, [16, 17, 17] * 20, [8, 8, 9] * 40,
+                     [100] * 10, [1] * 1000)
+        for kind in (0, 1):
+            for turn in (-820, 819, -1, 1):
+                for schedule in schedules:
+                    with self.subTest(kind=kind, turn=turn, frames=len(schedule)):
+                        u = machine('aircraft')
+                        obj, _ = actor(u, 10, cls=3, slot=1)
+                        u.mem_write(obj + 2, bytes([kind]))
+                        record = 0x39e590 + 335
+                        word(u, record, 10)
+                        word(u, record + 0x136, turn & 0xffff)
+                        word(u, 0x396868 + 6, 10)
+                        for dt in schedule:
+                            run(u, f.AIRCRAFT_TURN_SITE,
+                                end=f.AIRCRAFT_TURN_SITE + len(f.AIRCRAFT_TURN_OLD),
+                                edi=record, esi=obj, ebp=dt, ebx=0x12345678, ecx=0x87654321)
+                            self.assertEqual(u.reg_read(UC_X86_REG_EBX), 0x12345678)
+                            self.assertEqual(u.reg_read(UC_X86_REG_ECX), 0x87654321)
+                            self.assertEqual(u.reg_read(UC_X86_REG_EDI), record)
+                            self.assertEqual(u.reg_read(UC_X86_REG_ESI), obj)
+                            self.assertEqual(u.reg_read(UC_X86_REG_EBP), dt)
+                        self.assertEqual(get(u, obj + 0x1b) & 0xffff, (turn * 40) & 0xffff)
+                        self.assertEqual(get(u, f.AIRCRAFT_TABLE + 32 + 28), 0)
+
+    def test_manual_drone_turn_keeps_automatic_control_and_resets_fraction(self):
+        u = machine('aircraft')
+        obj, _ = actor(u, 10, cls=3, slot=1)
+        record, row = 0x39e590 + 335, f.AIRCRAFT_TABLE + 32
+        word(u, record, 10)
+        word(u, record + 0x136, 1)
+        word(u, 0x396868, 10)
+
+        def step(dt=16):
+            run(u, f.AIRCRAFT_TURN_SITE,
+                end=f.AIRCRAFT_TURN_SITE + len(f.AIRCRAFT_TURN_OLD),
+                edi=record, esi=obj, ebp=dt)
+            return get(u, obj + 0x1b) & 0xffff
+
+        step()
+        self.assertEqual(get(u, row + 28), 32)
+        # A changed owner cannot inherit the preceding drone's fractional turn.
+        word(u, record, 11)
+        step()
+        self.assertEqual(get(u, row + 28), 32)
+        for dt, paused in ((0, False), (-1, False), (16, True)):
+            put(u, row + 28, 32)
+            before = get(u, obj + 0x1b) & 0xffff
+            u.mem_write(0x35f3f4, bytes([paused]))
+            self.assertEqual(step(dt), before)
+            self.assertEqual(get(u, row + 28), 0)
+        u.mem_write(0x35f3f4, b'\0')
+        before = get(u, obj + 0x1b) & 0xffff
+        put(u, row + 28, 32)
+        self.assertEqual(step(1000), (before + 2) & 0xffff)
+        self.assertEqual(get(u, row + 28), 0)
+        word(u, record + 0x136, 0)
+        put(u, row + 28, 32)
+        before = get(u, obj + 0x1b) & 0xffff
+        self.assertEqual(step(), before)
+        self.assertEqual(get(u, row + 28), 0)
+
+        word(u, record, 10)
+        word(u, record + 0x136, 819)
+        for kind, following, target, selected in (
+                (0, 1, 0, 10), (1, 0, 20, 10), (1, 0, 0, 12),
+                *((k, 0, 0, 10) for k in range(2, 15))):
+            u.mem_write(obj + 2, bytes([kind]))
+            u.mem_write(0x3968b4, bytes([following]))
+            word(u, 0x396868, selected)
+            word(u, 0x397c90, target)
+            put(u, row + 24, 10)
+            put(u, row + 28, 32)
+            before = get(u, obj + 0x1b) & 0xffff
+            self.assertEqual(step(), (before + 1638) & 0xffff)
+            self.assertEqual(bytes(u.mem_read(row + 24, 8)), bytes(8))
+
+    def test_original_keyboard_conversion_reaches_manual_drone_turn(self):
+        # Retain the actual keyboard scanner, movement tables and converters.
+        # Only the unrelated AI-order cancellation boundary is modeled.
+        from original_inputs import original_ram
+        if not any(original_ram[0x2765f4:0x276813]):
+            self.skipTest('Supply the verified retail executable for keyboard checks')
+        self.assertEqual(bytes(original_ram[f.AIRCRAFT_TURN_SITE:
+                                          f.AIRCRAFT_TURN_SITE + len(f.AIRCRAFT_TURN_OLD)]),
+                         f.AIRCRAFT_TURN_OLD)
+        u = machine('aircraft')
+        for lo, hi in ((0x2765f4, 0x276813), (0x27c8b8, 0x27cc85),
+                       (0x35b338, 0x35b3bc), (0x35b618, 0x35b66e)):
+            u.mem_write(lo, bytes(original_ram[lo:hi]))
+        u.mem_write(0x24bb1c, b'\xc3')
+        obj, _ = actor(u, 10, cls=3, slot=1)
+        record, bitmap = 0x39e590 + 335, 0x1900000
+        word(u, record, 10)
+        word(u, 0x396868, 10)
+        put(u, 0x44c5d0, bitmap)
+        for scancode, expected in ((0x1e, -820), (0x20, 819)):
+            keys = bytearray(32)
+            for key in (0x1d, scancode):  # Ctrl + A/D.
+                keys[key // 8] |= 1 << (key % 8)
+            u.mem_write(bitmap, bytes(keys))
+            run(u, 0x2765f4, end=0x276813)
+            self.assertEqual(struct.unpack('<h', u.mem_read(record + 0x136, 2))[0], expected)
+            word(u, obj + 0x1b, 0)
+            put(u, f.AIRCRAFT_TABLE + 32 + 28, 0)
+            for dt in [16, 17, 17] * 20:
+                run(u, f.AIRCRAFT_TURN_SITE,
+                    end=f.AIRCRAFT_TURN_SITE + len(f.AIRCRAFT_TURN_OLD),
+                    edi=record, esi=obj, ebp=dt)
+            self.assertEqual(get(u, obj + 0x1b) & 0xffff, (expected * 40) & 0xffff)
+
     def test_mission_and_slot_resets_follow_one_table_ownership_chain(self):
         parts = ('drone', 'aircraft', 'gates', 'perception', 'avoidance', 'idle')
         u = machine(*parts)

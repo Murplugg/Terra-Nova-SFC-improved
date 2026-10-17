@@ -299,9 +299,12 @@ DRONE_SHARED = {}
 
 # Automatic non-combat aircraft execute original movement in 50-ms steps.
 # Directly controlled drones and combat aircraft bypass this compatibility clock.
+# Manual drone heading has its own elapsed-time adjustment below, so movement
+# and input continue to update on every frame.
 AIRCRAFT_CODE = 0x1ff8000
 AIRCRAFT_ORIGINAL = 0x1ff8600
 AIRCRAFT_FREE = 0x1ff8700
+AIRCRAFT_TURN = 0x1ff8800
 AIRCRAFT_TABLE = 0x1ff9000
 AIRCRAFT_COUNT = 40
 AIRCRAFT_STRIDE = 32
@@ -309,10 +312,117 @@ AIRCRAFT_LIMIT = 0x1ff9500
 AIRCRAFT_SITE = 0x283f2c
 AIRCRAFT_DELETE = 0x2844f4
 AIRCRAFT_OLD = bytes.fromhex('5351565755')
+AIRCRAFT_TURN_SITE = 0x28412f
+AIRCRAFT_TURN_OLD = bytes.fromhex('668b8736010000668b561b01c001c26689561b')
+
+
+def manual_drone_turn_body():
+    """Scale only manual Camera/Explod-O-Drone yaw by the supplied update time.
+
+    The original adds twice the turn control each update. A 50-ms reference
+    interval keeps keyboard turning near 180 degrees/second, while a signed
+    remainder preserves small mouse inputs at high frame rates. The existing
+    aircraft rows provide two spare words and their mission/deletion resets.
+    Automatic following and attack steering retain their original arithmetic.
+    """
+    body = asm(AIRCRAFT_TURN, f"""
+        pushfd
+        pushad
+        mov eax,edi
+        sub eax,0x39e590
+        xor edx,edx
+        mov ecx,335
+        div ecx
+        test edx,edx
+        jnz original
+        cmp eax,{AIRCRAFT_COUNT}
+        jae original
+        shl eax,5
+        lea ebx,[eax+{AIRCRAFT_TABLE}]
+        cmp byte ptr [esi+1],3
+        jne automatic
+        movzx ecx,word ptr [edi]
+        and ecx,0x7fff
+        test ecx,ecx
+        jz automatic
+        cmp ecx,300
+        jae automatic
+        movzx eax,byte ptr [esi+2]
+        test eax,eax
+        jz camera
+        cmp eax,1
+        jne automatic
+        xor edx,edx
+    find_drone:
+        cmp cx,word ptr [edx+0x396868]
+        je explosive
+        add edx,2
+        cmp edx,8
+        jb find_drone
+        jmp automatic
+    explosive:
+        cmp word ptr [edx+0x397c90],0
+        jne automatic
+        jmp manual
+    camera:
+        cmp byte ptr [0x3968b4],0
+        jne automatic
+    manual:
+        shl eax,16
+        or ecx,eax
+        cmp [ebx+24],ecx
+        je owner_known
+        mov [ebx+24],ecx
+        mov dword ptr [ebx+28],0
+    owner_known:
+        cmp byte ptr [0x35f3f4],0
+        jne stopped
+        test ebp,ebp
+        jle stopped
+        movsx eax,word ptr [edi+0x136]
+        test eax,eax
+        jz stopped
+        mov ecx,ebp
+        cmp ecx,250
+        jbe elapsed
+        mov ecx,50
+        mov dword ptr [ebx+28],0
+    elapsed:
+        add eax,eax
+        imul eax,ecx
+        add eax,[ebx+28]
+        cdq
+        mov ecx,50
+        idiv ecx
+        mov [ebx+28],edx
+        jmp finish
+    stopped:
+        mov dword ptr [ebx+28],0
+        xor eax,eax
+    finish:
+        mov [esp+28],eax
+        popad
+        popfd
+        mov dx,[esi+0x1b]
+        add edx,eax
+        mov [esi+0x1b],dx
+        jmp {AIRCRAFT_TURN_SITE + len(AIRCRAFT_TURN_OLD)}
+    automatic:
+        mov dword ptr [ebx+24],0
+        mov dword ptr [ebx+28],0
+    original:
+        popad
+        popfd
+    """)
+    body += AIRCRAFT_TURN_OLD
+    body += asm(AIRCRAFT_TURN + len(body),
+                f'jmp {AIRCRAFT_TURN_SITE + len(AIRCRAFT_TURN_OLD)}')
+    assert len(body) < AIRCRAFT_TABLE - AIRCRAFT_TURN
+    return body
 
 
 def aircraft_bodies():
-    # Rows: armed, owner/type, frame, clock, remainder, steps, reserved, reserved.
+    # Rows: armed, owner/type, frame, clock, remainder, steps, manual owner/remainder.
     b = asm(
         AIRCRAFT_CODE, (
             f"pushfd;"
@@ -462,12 +572,19 @@ def aircraft_bodies():
     assert len(b) < 0x600 and len(free) < 0x100
     return [
         (AIRCRAFT_CODE, b), (AIRCRAFT_ORIGINAL, trampoline), (AIRCRAFT_FREE, free),
+        (AIRCRAFT_TURN, manual_drone_turn_body()),
+        (AIRCRAFT_TURN_SITE, asm(AIRCRAFT_TURN_SITE, f'jmp {AIRCRAFT_TURN}') +
+         b'\x90' * (len(AIRCRAFT_TURN_OLD) - 5)),
         (AIRCRAFT_SITE, asm(AIRCRAFT_SITE, f'jmp {AIRCRAFT_CODE}')),
         (AIRCRAFT_DELETE, asm(AIRCRAFT_DELETE, f'jmp {AIRCRAFT_FREE}') + b'\x90\x90')
     ]
 
 
-AIRCRAFT_HOOKS = {0x283f2c: bytes.fromhex('5351565755'), 0x2844f4: bytes.fromhex('5351525683ec08')}
+AIRCRAFT_HOOKS = {
+    0x283f2c: bytes.fromhex('5351565755'),
+    0x2844f4: bytes.fromhex('5351525683ec08'),
+    AIRCRAFT_TURN_SITE: AIRCRAFT_TURN_OLD,
+}
 AIRCRAFT_SHARED = {}
 
 # Retry/orbit: elapsed credit drives the original random tests. Retry draws use

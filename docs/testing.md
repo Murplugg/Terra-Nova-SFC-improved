@@ -40,6 +40,23 @@ a Prequel mission. A paused snapshot restored after another move with the same
 game clock, saved again and resumed. The ordinary executable remained unchanged.
 These checks do not establish Wine, clean-machine or external-data-root support.
 
+## Manual drone steering
+
+The original aircraft heading update adds twice the current turn control on
+every call. Executing the original keyboard scanner and conversion routines
+confirms that held turn keys reach that field. At 60 updates per second, the
+unchanged heading code turns three times as far as it does at 20 updates.
+
+The timing tests execute the patched heading store with positive and negative
+controls over equal elapsed time, including one-millisecond steps and uneven
+frame durations. Expected angles use the existing 50-ms aircraft calibration
+interval; this is a chosen reference speed, not a measured original frame rate.
+Separate cases cover Camera Drone following, Explod-O-Drone target steering,
+other aircraft, pauses, stalls, small fractional inputs and reused records.
+Mission/deletion tests verify that the shared timing table is cleared. These
+checks establish the arithmetic and input path; they do not establish the
+feel of steering during a mission or fix simultaneous-key limitations.
+
 ## Smoke contacts and visibility
 
 A later fresh-mission crash exposed a memory-ownership mistake in the smoke

@@ -43,6 +43,63 @@ class SmokeHooks(unittest.TestCase):
             u.mem_write(address, data)
         return u
 
+    def test_smoke_circle_shape_with_original_raster_and_clipping(self):
+        # Execute the retained raster, rather than just checking a new operand.
+        # This small mask has independent, explicitly specified row spans.
+        from original_inputs import original_ram
+        if not any(original_ram[0x2a6478:0x2a6b44]):
+            self.skipTest('Supply the verified retail executable for raster checks')
+        u = self.machine()
+        u.mem_write(0x2a6478, bytes(original_ram[0x2a6478:0x2a6b44]))
+        for start, end in ((0x2e7df0, 0x2e7e08), (0x2f0e80, 0x2f1000)):
+            u.mem_write(start, bytes(original_ram[start:end]))
+        mask = bytes((4, 4, 8, 3, 1, 1, 6, 0, 8, 0, 8, 0, 8, 0, 8, 1, 6, 3, 1))
+        u.mem_write(DATA + 0x100, mask)
+        put(u, 0x423730 + 8 * 4, DATA + 0x100)
+        put(u, 0x423230 + 8 * 4, 0)
+        pixels = DATA + 0x1000
+
+        def draw(entry, height, mode, x, logical=False):
+            canvas = 0x446f78 if logical else DATA
+            u.mem_write(canvas, bytes(64))
+            put(u, 0x44b1a0, canvas)
+            put(u, canvas, pixels)
+            u.mem_write(canvas + 8, struct.pack('<3H', 256, height, 256))
+            put(u, canvas + 0x34, 256 << 16, height << 16)
+            put(u, f.DRAW_MODE, mode)
+            u.mem_write(pixels, bytes(256 * height))
+            call(u, entry, regs={UC_X86_REG_EAX: x, UC_X86_REG_EDX: 50,
+                                UC_X86_REG_EBX: 7 << 15, UC_X86_REG_ECX: 8})
+            image = bytes(u.mem_read(pixels, 256 * height))
+            return {(n % 256, n // 256) for n, value in enumerate(image) if value}
+
+        for height in (200, 400, 768):
+            for mode in (0, 1, 2, 7, 8, 11):
+                for x in (0, 100, 255):
+                    old = draw(0x2a6af8, height, mode, x)
+                    new = draw(f.CODE + 0x700, height, mode, x)
+                    if height <= 200 or mode not in (0, 1, 8):
+                        self.assertEqual(new, old)
+                    else:
+                        # Reference uses the explicit mask, with x doubled and
+                        # original two-row vertical repetition, then clips.
+                        expected = set()
+                        for row in range(8):
+                            start, count = mask[3 + row * 2:5 + row * 2]
+                            count *= 2
+                            left = x - 8 + start * 2
+                            # The retained raster reserves its rightmost column.
+                            if left + count >= 256:
+                                count = 255 - left
+                            for dx in range(count):
+                                xx = x - 8 + start * 2 + dx
+                                for dy in (0, 1):
+                                    if 0 <= xx < 256:
+                                        expected.add((xx, 42 + row * 2 + dy))
+                        self.assertEqual(new, expected)
+        self.assertEqual(draw(f.CODE + 0x700, 400, 8, 100, True),
+                         draw(0x2a6af8, 400, 8, 100, True))
+
     def test_installation_is_atomic_and_idempotent(self):
         for conflict in (None, f.LOW, f.END - 1, *f.SITES):
             ram = bytearray(0x2000000)

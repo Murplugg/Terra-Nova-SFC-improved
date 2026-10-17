@@ -26,6 +26,7 @@ named patches or source files. See the [source guide](docs/source-guide.md) for 
 
 ### Graphics and performance
 
+- Fixed narrow, oval smoke puffs on native world views. Their horizontal size now matches the original doubled vertical size. [SMOKE; smoke.py]
 - Improved smoke visibility at native resolutions and increased its draw distance in the main view. [SMOKE; smoke.py]
 - **Fixed [legacy]:** smoke could block shots passing below or beside the visible cloud. Collision now follows the moving smoke particles, and repeated frame updates no longer give the cloud extra chances to stop the same shot. [SMOKE; smoke.py, smoke_ray.c]
 

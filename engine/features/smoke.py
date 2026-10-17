@@ -11,6 +11,8 @@ from features import projectiles, terrain_distance
 LOW, HIGH = 0x1d36000, 0x1d3a000
 CODE, STATE, END = 0x1d3a000, 0x1d3b000, 0x1d3c000
 SHOT_SERIAL, CLOUD_SERIAL = STATE + 0x100, STATE + 0x800
+DRAW_MODE = STATE + 8
+SMOKE_CIRCLES = (0x2a5a2b, 0x2a5a6e, 0x2a5afc)
 SITES = {
     0x2da1d0:
     asm(0x2da1d0, 'call 0x28b9e0'),
@@ -24,6 +26,7 @@ SITES = {
     bytes.fromhex('8d0cbd00000000'),
     terrain_distance.SCENERY_SITE:
     asm(terrain_distance.SCENERY_SITE, f'jmp {terrain_distance.SCENERY_CODE}'),
+    **{site: asm(site, 'call 0x2a6af8') for site in SMOKE_CIRCLES},
 }
 
 
@@ -91,7 +94,8 @@ def bodies(entry, regions):
     # once every supported mode already reaches the largest raster circle, so
     # very close particles cannot overflow the multiply/divide or size arithmetic.
     emit(
-        CODE + 0x500, '''
+        CODE + 0x500, f'''
+        mov [{DRAW_MODE}],eax;
         cmp eax,0; je scale; cmp eax,1; je scale; cmp eax,8; jne done;
     scale:
         test edi,edi; jle done;
@@ -114,12 +118,54 @@ def bodies(entry, regions):
     done: jmp {terrain_distance.SCENERY_CODE};
     '''
     )
+    # The original circle drawer doubles mask rows when canvas height exceeds
+    # 200. That suits its logical HUD, but makes smoke twice as tall as wide on
+    # native world canvases. Expand the horizontal row spans in a stack-local
+    # mask, preserving the current vertical size, center, shading and clipping.
+    # A mode embedded in another particle type can reach these same calls;
+    # DRAW_MODE retains the outer mode so that those effects stay unchanged.
+    emit(
+        CODE + 0x700, f'''
+        pushfd;
+        cmp dword ptr [{DRAW_MODE}],0; je canvas;
+        cmp dword ptr [{DRAW_MODE}],1; je canvas;
+        cmp dword ptr [{DRAW_MODE}],8; jne original;
+    canvas:
+        push eax; mov eax,[0x44b1a0];
+        cmp eax,0x446f78; je logical;
+        cmp word ptr [eax+10],200;
+        pop eax; jle original;
+        popfd; pushad; sub esp,144;
+        lea eax,[ebx+0x8000]; cmp eax,0x10000; jl small;
+        sar eax,15; cmp eax,65; jb index;
+        mov eax,64;
+    index:
+        mov esi,[eax*4+0x423730];
+        movzx ecx,byte ptr [esi+2]; cmp ecx,64; ja small;
+        mov edi,esp; lodsb; add al,al; stosb;
+        movsb; movsb; add ecx,ecx;
+        test ecx,ecx; jz draw;
+    span:
+        lodsb; add al,al; stosb; loop span;
+    draw:
+        mov eax,[esp+172]; mov edx,[esp+164];
+        mov ecx,[esp+168]; mov ebx,esp; call 0x2a6564;
+        add esp,144; popad; ret;
+    small:
+        add esp,144; popad; jmp 0x2a6af8;
+    logical:
+        pop eax;
+    original:
+        popfd; jmp 0x2a6af8;
+    ''', 0x200
+    )
     pieces += [
         (0x2da1d0, b'\x31\xc0\x90\x90\x90'),
         (0x2d96d5, asm(0x2d96d5, f'call {CODE}')),
         (0x2d9db5, asm(0x2d9db5, f'call {CODE+0x100}')),
         (0x2a62d3, asm(0x2a62d3, f'jmp {CODE+0x400}')),
         (0x2a59f3, asm(0x2a59f3, f'jmp {CODE+0x500}') + b'\x90\x90'),
+        *[(site, asm(site, f'call {CODE+0x700}')) for site in SMOKE_CIRCLES],
         (terrain_distance.SCENERY_SITE, asm(terrain_distance.SCENERY_SITE, f'jmp {CODE+0x600}')),
         (
             projectiles.VEHICLE_POST, dict(projectiles.vehicle_bodies(entry,

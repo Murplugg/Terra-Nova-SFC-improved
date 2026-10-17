@@ -4,10 +4,10 @@ All components bind directly to their maintained feature APIs. Group order below
 """
 from dataclasses import dataclass
 
-REVISION = 159
+REVISION = 160
 FOUNDATION_SHA = 'ec7e4eefa0bf9644206021cda6ea6673be8ed031901abdc3d3e32a0bec7f22c9'
 DEMO_SHA = '886568d2d0e15c5bcce5539832cd8bf1fd2c02655825c6ddf3cc77068be2556f'
-OUTPUT_SHA = '80fc6b21b468cf2780ed845b5e5322f50509455eaf4d3ad1844bd356e123a612'
+OUTPUT_SHA = 'c4c6062f903035b11d74dae64204af0280706c8e062cb951ebb9e5ffa734d978'
 
 
 @dataclass(frozen=True)

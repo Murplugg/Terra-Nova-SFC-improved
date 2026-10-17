@@ -57,6 +57,7 @@ def owned_component(name, write, ram, context):
         ) if name == 'terrain-surfaces' else {}
     )
     bindings = {
+        'enemy-outfitting-click': (input_views.outfit_install, input_views.outfit_verify, read, {}, {}),
         'weapon-readiness': (weapon_timing.readiness_install, weapon_timing.readiness_verify, read, {}, {}),
         'sound-allocation': (audio_safety.install, audio_safety.verify, read, {}, {}),
         'static-instance-storage':

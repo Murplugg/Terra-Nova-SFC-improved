@@ -9,6 +9,38 @@ from patch_support import asm
 from features.render_views import assemble as code
 
 
+# Enemy Outfitting labels and gaps have no button record. The original handler
+# read that record's callback before checking for null, which crashes on Windows.
+# Check first, then retain the original restrictions on rear weapon slots.
+# Comparing the callback in memory leaves room for this check in the same span;
+# ESI supplies the record to the following slot test instead of a redundant EDX.
+OUTFIT_BEFORE = {
+    0x2cf68c: bytes.fromhex('89c28b480c89c681f9000c2d00752d'),
+    0x2cf69d: bytes.fromhex('8a4210'),
+}
+
+
+def outfit_bodies():
+    return [
+        (0x2cf68c, asm(0x2cf68c, '''
+            test eax, eax;
+            jz 0x2cf6f0;
+            mov esi, eax;
+            cmp dword ptr [eax+12], 0x2d0c00;
+            jne 0x2cf6c8;
+        ''')),
+        (0x2cf69d, asm(0x2cf69d, 'mov al, byte ptr [esi+16]')),
+    ]
+
+
+def outfit_install(write, read):
+    return _install(outfit_bodies(), OUTFIT_BEFORE, write, read)
+
+
+def outfit_verify(read):
+    return _verify(outfit_bodies(), read)
+
+
 def api_slots(imports):
     result = []
     for name in ('GetModuleHandleA', 'GetProcAddress'):

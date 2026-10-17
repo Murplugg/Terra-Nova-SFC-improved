@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'engine'))
 from features import input_views as f
 from patch_support import asm
 from tests.test_render_views import Fixture, put, word, get, STACK, STOP, ENTRY
-from unicorn import UC_HOOK_CODE
+from unicorn import Uc, UcError, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
 IMPORTS = {'GetModuleHandleA': 0x120000, 'GetProcAddress': 0x120004}
@@ -62,6 +62,7 @@ class InputViewTests(unittest.TestCase):
                     self.assertEqual(u.reg_read(UC_X86_REG_ESP), STACK - 4)
                     self.assertEqual(get(u, STACK - 4), f.ZOOM_DETAIL_SITE + 5)
                     self.assertEqual(get(u, STACK), STOP)
+
 
     def test_detail_zoom_install_is_checked_atomic_and_repeatable(self):
         for issue in ('none', 'hook', 'reservation', 'partial', 'short'):
@@ -465,6 +466,80 @@ class InputViewTests(unittest.TestCase):
             run(u, f.ASPECT_RENDER, edx=CONTEXT if invalid == 'owner' else context)
             self.assertFalse(angles)
             self.assertEqual(get(u, context + 4), 0)
+
+
+
+
+class EnemyOutfittingTests(unittest.TestCase):
+    """A unit-label click exposed a null read before the original null check.
+
+    Replay the locally supplied original dispatch instructions with an unmapped
+    null page, as on Windows. Authored button records cover ordinary callbacks
+    and the original restrictions on the last two slots of certain unit types.
+    Sound and callback execution are boundaries; they are not simulated here.
+    """
+
+    def machine(self, fixed=True, null_page=False):
+        from original_inputs import original_ram
+        if not any(original_ram[0x2cf68c:0x2cf6fc]):
+            self.skipTest('Requires the original retail executable')
+        u = Uc(UC_ARCH_X86, UC_MODE_32)
+        u.mem_map(0, 0x2000000)
+        u.mem_write(0, bytes(original_ram))
+        if not null_page:
+            u.mem_unmap(0, 0x1000)
+        if fixed:
+            f.outfit_install(u.mem_write, u.mem_read)
+        u.mem_write(0x247b60, b'\xc2\x0c\0')
+        return u
+
+    def dispatch(self, u, pointer):
+        def stop(cpu, address, size, data):
+            if address in (0x2cf6ed, 0x2cf6f0):
+                cpu.emu_stop()
+        u.hook_add(UC_HOOK_CODE, stop)
+        u.reg_write(UC_X86_REG_ESP, STACK)
+        u.reg_write(UC_X86_REG_EAX, pointer)
+        u.emu_start(0x2cf68c, STOP, count=1000)
+        return (u.reg_read(UC_X86_REG_EIP), u.reg_read(UC_X86_REG_EAX) & 255,
+                u.reg_read(UC_X86_REG_ESI), u.reg_read(UC_X86_REG_ESP))
+
+    def test_empty_click_is_ignored_before_reading_a_button(self):
+        old = self.machine(fixed=False)
+        with self.assertRaises(UcError):
+            self.dispatch(old, 0)
+        self.assertEqual(old.reg_read(UC_X86_REG_EIP), 0x2cf68e)
+        self.assertEqual(self.dispatch(self.machine(), 0)[0], 0x2cf6f0)
+        # A readable low page allows the original late check to be reached.
+        self.assertEqual(self.dispatch(self.machine(False, True), 0)[0], 0x2cf6f0)
+
+    def test_valid_callbacks_and_restricted_slots_match_original(self):
+        for callback in (0x2d0c00, 0x2d1000):
+            for unit_type in range(5):
+                for slot in range(4):
+                    results = []
+                    for fixed in (False, True):
+                        u = self.machine(fixed)
+                        put(u, CONTEXT + 12, callback)
+                        u.mem_write(CONTEXT + 16, bytes([8 + slot]))
+                        u.mem_write(0x442f20 + 8, bytes([unit_type]))
+                        results.append(self.dispatch(u, CONTEXT))
+                    self.assertEqual(results[0], results[1], (callback, unit_type, slot))
+                    expected = 0x2cf6f0 if (callback == 0x2d0c00 and
+                                unit_type in (2, 3) and slot >= 2) else 0x2cf6ed
+                    self.assertEqual(results[1][0], expected)
+
+    def test_installer_checks_both_original_spans_before_writing(self):
+        u = self.machine(False)
+        f.outfit_install(u.mem_write, u.mem_read)
+        self.assertTrue(f.outfit_verify(u.mem_read))
+        self.assertTrue(f.outfit_install(u.mem_write, u.mem_read)['already_installed'])
+        u = self.machine(False)
+        u.mem_write(0x2cf69d, b'\xcc')
+        with self.assertRaises(ValueError):
+            f.outfit_install(u.mem_write, u.mem_read)
+        self.assertEqual(bytes(u.mem_read(0x2cf68c, 15)), f.OUTFIT_BEFORE[0x2cf68c])
+
 
 
 if __name__ == '__main__':

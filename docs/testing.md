@@ -305,3 +305,13 @@ coordinates, including glancing angles, terrain/miss controls and large signed
 positions. They check the original call stack and preserved processor state.
 A captured-game comparison separately checks unchanged collision results, damage
 and player state; visual appearance still requires playtesting.
+
+
+### Enemy Outfitting click safety
+
+A native crash on a unit-name label exposed an original null read before the
+button dispatcher checked whether a button was found. The input-view tests run
+the original instructions from the locally supplied retail executable, reproduce
+the fault with an unmapped low page, and compare valid callback selection and
+restricted rear slots against the corrected routine. The callback and audio
+boundaries are modeled; live menu selection verifies the visible outcome.

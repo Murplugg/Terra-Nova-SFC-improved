@@ -4,10 +4,10 @@ All components bind directly to their maintained feature APIs. Group order below
 """
 from dataclasses import dataclass
 
-REVISION = 165
+REVISION = 166
 FOUNDATION_SHA = 'ec7e4eefa0bf9644206021cda6ea6673be8ed031901abdc3d3e32a0bec7f22c9'
 DEMO_SHA = '886568d2d0e15c5bcce5539832cd8bf1fd2c02655825c6ddf3cc77068be2556f'
-OUTPUT_SHA = '01ad7ce1d29aa08813f7ed7ee131d542cbc84776af666025d1e44bcbcc6de80c'
+OUTPUT_SHA = '96d9269488402885815126f16e56b1b8f981000314de8508e80c6643c7cb169d'
 
 
 @dataclass(frozen=True)
@@ -50,7 +50,7 @@ PLAN = (
         'hud-and-input', ('native-renderer', 'collision-and-projectiles'),
         ('volley-timing', 'hud-infill', 'camera-heading', 'sprite-variation', 'damage-save-safety')
     ),
-    Feature('terminal', ('hud-and-input', )),
+    Feature('terminal', ('hud-and-input', ), ('enemy-outfitting-click',)),
     Feature(
         'world-effects', ('hud-and-input', ),
         ('terrain-surfaces', 'ai-firing-policy', 'scorch-variation', 'sound-allocation', 'weapon-readiness')

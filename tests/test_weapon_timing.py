@@ -9,7 +9,7 @@ from tests.test_render_views import Fixture, put, get, STACK
 from tests.test_input_views import run
 from tests.test_ai_firing import actor, execute_until
 from patch_support import asm
-from unicorn import UC_HOOK_CODE
+from unicorn import Uc, UcError, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
 WEAPON = 0x160000
@@ -31,6 +31,90 @@ def machine():
 
 def mark(u, **args):
     run(u, w.MARK, **dict(dict(eax=WEAPON, edx=10, ecx=20, ebx=1), **args))
+
+
+class WeaponReadinessSafetyTests(unittest.TestCase):
+    """Original-code regressions for a Hornet crash during weapon damage.
+
+    The generic actor lookup returns no energy record for drones. Its damage
+    caller nevertheless queries another weapon's readiness. Run those original
+    routines with authored drone records and an unmapped null page, matching
+    Windows' failure rather than silently reading zeros in the CPU fixture.
+    Original routines come from the locally supplied game executable.
+    """
+
+    def machine(self, fixed=True):
+        from original_inputs import original_ram
+        if not any(original_ram[0x286794:0x286992]):
+            self.skipTest('Requires the original retail executable')
+        u = Uc(UC_ARCH_X86, UC_MODE_32)
+        u.mem_map(0, 0x2000000)
+        u.mem_write(0, bytes(original_ram))
+        u.mem_unmap(0, 0x1000)
+        if fixed:
+            w.readiness_install(u.mem_write, u.mem_read)
+        put(u, 0x446ae8, 1000)
+        # The original game loads this catalog from resources at startup.
+        # Supply only the charge, ammunition capacity and health fields read
+        # by these routines: Particle Beam and Railgun respectively.
+        for weapon, cost, capacity, health in ((6, 180, 1, 200), (7, 0, 100, 300)):
+            u.mem_write(0x395118+weapon*36, struct.pack('<3H', cost, capacity, health))
+        return u
+
+    def damage(self, u, *, spare_health=200, spare_id=6, spare_ammo=0):
+        # Object 16 is a Hornet in drone slot 3. Its energy weapon is the
+        # alternative checked before the damage routine touches weapon two.
+        base = 0x39e590 + 3 * 335
+        u.mem_write(0x3c3240 + 16*37, struct.pack('<BBBHH', 1, 3, 2, 3, 0))
+        u.mem_write(base+0x2a, struct.pack('<BBHHIIB', spare_id, 0, spare_health,
+                                        spare_ammo, 0, 0, 0))
+        u.mem_write(base+0x39, struct.pack('<BBHHIIB', 7, 0, 100, 5, 0, 0, 0))
+        u.mem_write(base+0x4a, b'\x02')  # Two weapon records; energy follows them.
+        run(u, 0x28f950, eax=16, edx=base+0x39, ebx=7)
+        return struct.unpack('<H', u.mem_read(base+0x3b, 2))[0]
+
+    def test_original_drone_weapon_damage_reads_null_and_guarded_case_completes(self):
+        original = self.machine(fixed=False)
+        with self.assertRaises(UcError):
+            self.damage(original)
+        self.assertEqual(original.reg_read(UC_X86_REG_EIP), 0x28b855)
+        self.assertEqual(self.damage(self.machine()), 93)
+
+    def test_damage_still_preserves_last_intact_weapon(self):
+        self.assertEqual(self.damage(self.machine(), spare_health=0), 100)
+        self.assertEqual(self.damage(self.machine(), spare_id=7, spare_ammo=0), 100)
+        self.assertEqual(self.damage(self.machine(), spare_id=7, spare_ammo=1), 93)
+
+    def test_valid_energy_queries_match_original_status_and_registers(self):
+        for charge, deadline in ((0, 0), (50, 0), (1000, 0), (1000, 1001)):
+            results = []
+            for fixed in (False, True):
+                u = self.machine(fixed)
+                u.mem_write(WEAPON, struct.pack('<BBHHIIB', 6, 0, 200, 0, 0, deadline, 0))
+                put(u, FRAME, charge << 16)
+                run(u, 0x28f024, eax=WEAPON, edx=FRAME, ebx=123,
+                    ecx=456, esi=789, edi=321)
+                results.append(tuple(u.reg_read(r) for r in (UC_X86_REG_EAX,
+                    UC_X86_REG_EBX, UC_X86_REG_ECX, UC_X86_REG_EDX,
+                    UC_X86_REG_ESI, UC_X86_REG_EDI, UC_X86_REG_ESP)))
+                self.assertEqual(get(u, FRAME), charge << 16)
+            self.assertEqual(results[0], results[1], (charge, deadline))
+
+    def test_null_energy_reports_charge_status_after_health_and_ammunition(self):
+        for weapon, health, ammo, expected in ((6, 200, 0, 3), (6, 0, 0, 1),
+                                              (7, 100, 0, 2), (7, 100, 1, 0)):
+            u = self.machine()
+            u.mem_write(WEAPON, struct.pack('<BBHHIIB', weapon, 0, health, ammo, 0, 0, 0))
+            run(u, 0x28f024, eax=WEAPON, edx=0)
+            self.assertEqual(u.reg_read(UC_X86_REG_EAX) & 255, expected)
+
+    def test_readiness_install_checks_existing_instructions(self):
+        u = self.machine()
+        self.assertTrue(w.readiness_verify(u.mem_read))
+        w.readiness_install(u.mem_write, u.mem_read)
+        u.mem_write(w.READINESS_SITE, b'\xcc')
+        with self.assertRaises(ValueError):
+            w.readiness_install(u.mem_write, u.mem_read)
 
 
 class WeaponTimingTests(unittest.TestCase):

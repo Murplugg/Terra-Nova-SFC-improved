@@ -7,6 +7,41 @@ the original function. A stall may discard phase, never emit a backlog.
 """
 from features.ai_firing import selected_weapon_source
 
+# Drone damage queries receive no power-plant record from the
+# generic actor lookup. Readiness previously dereferenced that null pointer
+# when checking another energy weapon. Report insufficient charge instead;
+# the damage caller counts that as an intact weapon, preserving its existing
+# protection for the last functioning weapon. Normal firing supplies a real
+# energy record and keeps its original charge and cooldown checks.
+READINESS_SITE = 0x28f05f
+READINESS_BEFORE = bytes.fromhex('31ffbb01000000668bb818513900')
+
+
+def readiness_body():
+    from patch_support import asm
+    body = asm(READINESS_SITE, '''
+        test edx, edx;
+        jz 0x28f07f;
+        push 1;
+        pop ebx;
+        movzx edi, word ptr [eax+0x395118];
+    ''')
+    # PUSH/POP and MOVZX leave room for the guard within the existing span.
+    # The following original instructions still query charge without consuming it.
+    assert len(body) == len(READINESS_BEFORE)
+    return body
+
+
+def readiness_install(write, read):
+    from features.input_views import _install
+    return _install([(READINESS_SITE, readiness_body())],
+                    {READINESS_SITE: READINESS_BEFORE}, write, read)
+
+
+def readiness_verify(read):
+    from features.input_views import _verify
+    return _verify([(READINESS_SITE, readiness_body())], read)
+
 POST = 0x1dc8000
 MARK = 0x1dc8400
 RESOLVE = 0x1dc8800

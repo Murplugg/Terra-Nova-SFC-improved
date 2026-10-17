@@ -25,6 +25,22 @@ checks report skips. Synthetic textures, pixels and expected results remain
 invented test data. The [build guide](building.md)
 lists the dependencies and the additional checks performed by a complete build.
 
+## Drone weapon damage
+
+`test_weapon_timing.WeaponReadinessSafetyTests` follows a native crash while a
+Hornet was taking damage. The original actor lookup supplies no energy record
+for drones, but the weapon-damage routine checks another weapon's readiness.
+An energy weapon then reads through the missing pointer. Normal drone firing
+supplies its energy record through a separate path.
+
+The tests run the original lookup, readiness and damage routines with authored
+weapon records and an unmapped null page. The original case must fail at the
+observed instruction; the guarded case must apply damage and still protect the
+last intact, nonempty weapon. Other cases compare charge checks, cooldowns and
+registers with the original behavior. The guard occupies fourteen existing code
+bytes at `0x28F05F` and adds no persistent state. Captured-crash replay also passes;
+these checks do not replace longer combat playtesting.
+
 ## Smoke under particle pressure
 
 `test_smoke.SmokeBudget` runs the original particle allocator, compactor and

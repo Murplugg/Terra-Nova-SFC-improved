@@ -25,7 +25,8 @@ class BeamInstallTests(unittest.TestCase):
         expected = bytearray(ram)
         previous = (
             effects.beam_visual_bodies() + effects.beam_pixel_bodies() +
-            effects.beam_density_bodies() + effects.beam_spread_bodies()
+            effects.beam_density_bodies() + effects.beam_spread_bodies() +
+            effects.beam_impact_bodies()
         )
         for address, data in previous:
             expected[address:address + len(data)] = data

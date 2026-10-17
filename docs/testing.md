@@ -270,3 +270,11 @@ The suite runs without original game assets. Public tests contain neither saved
 player memory nor a requirement to reconstruct development builds. Private
 comparisons can supply additional regression evidence without becoming part of
 the contributor workflow.
+
+## Beam impact direction
+
+The beam-impact tests exercise the assembled visual endpoint hook with invented
+coordinates, including glancing angles, terrain/miss controls and large signed
+positions. They check the original call stack and preserved processor state.
+A captured-game comparison separately checks unchanged collision results, damage
+and player state; visual appearance still requires playtesting.

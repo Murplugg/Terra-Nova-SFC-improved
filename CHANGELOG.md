@@ -30,6 +30,7 @@ named patches or source files. See the [source guide](docs/source-guide.md) for 
 
 ### Graphics and performance
 
+- **Fixed [legacy]:** the last visible segment of a laser or pulsar bolt could bend toward a mobile unit on impact. The trail now follows its incoming direction, while hit detection, damage and impact effects keep their existing behavior. [WEAPONS; effect_timing.py]
 - Existing smoke clouds now keep their particles when unrelated weapon effects fill the particle pool. The pool has more room for simultaneous smoke and weapon effects; normal smoke expiry and shot interaction remain unchanged. [SMOKE; smoke.py]
 - Fixed narrow, oval smoke puffs on native world views. Their horizontal size now matches the original doubled vertical size. [SMOKE; smoke.py]
 - Improved smoke visibility at native resolutions and increased its draw distance in the main view. [SMOKE; smoke.py]

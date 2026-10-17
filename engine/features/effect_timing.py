@@ -412,6 +412,8 @@ BEAM_ROWS = 300
 BEAM_TABLE = BEAM_STATE + 0x100
 BEAM_END = BEAM_TABLE + BEAM_ROWS * 8
 BEAM_PRESSURE = BEAM_CODE + 0xe00
+BEAM_IMPACT = BEAM_CODE + 0xd00
+BEAM_IMPACT_SITE = 0x2d9759
 BEAM_SITES = {
     0x2a616c: bytes.fromhex('89c289442414'),
     0x2a6478: bytes.fromhex('5156575583ec0c'),
@@ -813,10 +815,57 @@ def beam_spread_bodies():
     return beam_density_bodies(half_spread=True)
 
 
+def beam_impact_bodies():
+    """Keep the final visible beam segment aligned with its incoming direction.
+
+    The original mobile-body query returns a point relative to the body's centre.
+    That point can lie beside the incoming ray. Project only the trail builder's
+    endpoint onto that ray; collision results, damage and impact effects retain
+    their original coordinates. Misses and terrain contacts bypass this helper.
+
+    After PUSHFD/PUSHAD, the caller's hit flag/result are at +108/+96. The trail
+    arguments are start Z at +40 and end XYZ at +44. EBP still identifies the
+    projectile record, whose direction begins at +10. SSE state is preserved.
+    """
+    save = ';'.join(f'movdqu [esp+{i*16}],xmm{i}' for i in range(4))
+    restore = ';'.join(f'movdqu xmm{i},[esp+{i*16}]' for i in range(4))
+    body = asm(BEAM_IMPACT, f'''
+        pushfd; pushad; mov esi,esp;
+        cmp byte ptr [esi+108],0; je done;
+        cmp dword ptr [esi+96],0; jle done;
+        sub esp,96; {save}; stmxcsr [esp+64];
+        mov [esp+80],ebx; mov [esp+84],ecx;
+        mov eax,[esi+40]; mov [esp+88],eax;
+        xorpd xmm2,xmm2; xorpd xmm3,xmm3; xor edi,edi;
+    dot:
+        cvtsi2sd xmm0,dword ptr [esi+edi*4+44];
+        cvtsi2sd xmm1,dword ptr [esp+edi*4+80]; subsd xmm0,xmm1;
+        cvtsi2sd xmm1,dword ptr [ebp+edi*4+10];
+        mulsd xmm0,xmm1; addsd xmm2,xmm0;
+        mulsd xmm1,xmm1; addsd xmm3,xmm1;
+        inc edi; cmp edi,3; jb dot;
+        xorpd xmm0,xmm0; ucomisd xmm3,xmm0; jbe restore;
+        divsd xmm2,xmm3; maxsd xmm2,xmm0; xor edi,edi;
+    endpoint:
+        cvtsi2sd xmm0,dword ptr [ebp+edi*4+10]; mulsd xmm0,xmm2;
+        cvtsi2sd xmm1,dword ptr [esp+edi*4+80]; addsd xmm0,xmm1;
+        cvttsd2si eax,xmm0; mov [esi+edi*4+44],eax;
+        inc edi; cmp edi,3; jb endpoint;
+    restore:
+        ldmxcsr [esp+64]; {restore}; add esp,96;
+    done:
+        popad; popfd; jmp 0x28d730;
+    ''')
+    assert len(body) <= BEAM_PRESSURE - BEAM_IMPACT, len(body)
+    return [(BEAM_IMPACT, body),
+            (BEAM_IMPACT_SITE, asm(BEAM_IMPACT_SITE, f'call {BEAM_IMPACT}'))]
+
+
 def beam_pieces():
     """Emit final beam hooks once and retain accepted helper/state addresses."""
     parts = (
         beam_visual_bodies() + beam_pixel_bodies() + beam_density_bodies() + beam_spread_bodies()
+        + beam_impact_bodies()
     )
     # The sampling and restored raster hooks supersede the temporary heavier
     # pixel treatment. Its helper bytes remain for exact image compatibility.
@@ -825,6 +874,7 @@ def beam_pieces():
 
 def beam_providers():
     return {
+        BEAM_IMPACT_SITE: asm(BEAM_IMPACT_SITE, 'call 0x28d730'),
         **BEAM_SITES,
         BEAM_PIXEL_SITE: asm(BEAM_PIXEL_SITE, 'call 0x2fad20'),
         **{

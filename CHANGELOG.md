@@ -43,6 +43,10 @@ named patches or source files. See the [source guide](docs/source-guide.md) for 
 
 ### AI and squad behavior
 
+- **Fixed [legacy]:** AI weapon selection could favor the last eligible weapon in the loadout instead of the one with the highest calculated score. The selector now retains its best eligible score, using the original scoring weights. [AI; ai_firing.py, 0x2510B5]
+
+- **Fixed [legacy]:** AI units could keep firing a previously selected weapon after it became unsuitable for the target, including explosive weapons against drones. Reusing a weapon now applies the original eligibility checks, and the firing controller withholds fire when no weapon qualifies. [AI; ai_firing.py]
+
 - **Fixed [legacy]:** enemy units could reject a working Laser assigned through Customized Enemy Outfitting solely because of their faction. The selector now evaluates it with the normal readiness and scoring rules. [AI; ai_firing.py, 0x25124B]
 
 - **Fixed [legacy]:** selecting an otherwise eligible Thermal Disruptor could depend on an uninitialized temporary value. The selector now takes its existing acceptance path while retaining the weapon's target and timing restrictions. [AI; ai_firing.py, 0x251170]

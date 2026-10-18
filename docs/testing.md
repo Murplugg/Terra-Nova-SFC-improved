@@ -416,3 +416,22 @@ map caches. Tests execute the restore read, preserve complete map caches, reject
 payloads and retain cross-build incompatibility checks. Snapshot metadata cannot
 choose a different allocation size. Live capture, restore and map interaction
 complement these checks.
+
+
+## AI weapon suitability and score retention
+
+Weapon-selection tests execute the original routine with controlled loadouts,
+target classes and readiness states. They check that a full scan retains the
+highest eligible score in either loadout order, and that reusing a ready weapon
+applies the same target and explosive-clearance rules. The original half-second
+rescoring schedule, cooldown behavior, resource costs and navigation wrapper
+remain part of the comparison.
+
+Controller admission tests distinguish the raw selection result from the
+wrapper's fallback approach distance. No eligible weapon must skip firing while
+preserving the original movement/reporting continuation. A separate private
+copied-state replay follows real preflight, firing dispatch and ammunition
+accounting for drone and ground targets. Modeled aim readiness isolates weapon
+admission; these tests do not establish natural aiming, projectile interception,
+full ballistic clearance or protection from every explosion. Squad combat and
+weapon switching still require gameplay acceptance.

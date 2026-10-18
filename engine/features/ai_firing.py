@@ -389,7 +389,8 @@ CHOICE_SITES = {
     0x251034: bytes.fromhex('0fb6336bf624'),
     0x250f38: b'\x30',
     0x25128e: bytes.fromhex('8b44241c83c430'),
-    0x25124b: bytes.fromhex('750e')
+    0x25124b: bytes.fromhex('750e'),
+    0x251170: bytes.fromhex('0f83ea000000')
 }
 
 
@@ -522,7 +523,11 @@ def choice_bodies():
         # Customized Enemy Outfitting offers the Laser, but the original scan
         # rejects it solely for faction 2. Let it pass this final faction check;
         # readiness, weapon scoring, range and firing safety still apply.
-        (0x25124b, asm(0x25124b, 'jmp 0x25125b'))
+        (0x25124b, asm(0x25124b, 'jmp 0x25125b')),
+        # The Thermal Disruptor's eligible branch skipped setting its acceptance
+        # flag, so selection depended on old stack contents. Set the flag through
+        # the existing accepted path; target and time restrictions remain intact.
+        (0x251170, asm(0x251170, 'jae 0x25125b'))
     ]
 
 

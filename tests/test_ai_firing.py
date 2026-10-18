@@ -79,7 +79,7 @@ class EnemyLaserSelectionTests(unittest.TestCase):
                21, 22, 23, 24, 25, 26, 27, 29, 30, 31, 32)
 
     def prepare(self, *, fixed=True, faction=2, weapon=4, health=300,
-                charge=1000, ammo=1, deadline=0, ai_class=1):
+                charge=1000, ammo=1, deadline=0, ai_class=1, clock=1000):
         from original_inputs import original_ram
         from unicorn import Uc, UC_ARCH_X86, UC_MODE_32
         if not any(original_ram[0x250e58:0x25129b]):
@@ -89,7 +89,10 @@ class EnemyLaserSelectionTests(unittest.TestCase):
         u.mem_write(0, bytes(original_ram))
         if fixed:
             self.assertEqual(bytes(u.mem_read(0x25124b, 2)), f.CHOICE_SITES[0x25124b])
-            u.mem_write(0x25124b, dict(f.choice_bodies())[0x25124b])
+            for address in (0x25124b, 0x251170):
+                self.assertEqual(bytes(u.mem_read(address, len(f.CHOICE_SITES[address]))),
+                                 f.CHOICE_SITES[address])
+                u.mem_write(address, dict(f.choice_bodies())[address])
         cls, base, stride, count, selected, equipped, energy = self.PROFILES[ai_class]
         actor(u, 10, cls=cls, slot=1, team=faction)
         ai = 0x3832f0 + 334
@@ -100,7 +103,7 @@ class EnemyLaserSelectionTests(unittest.TestCase):
         u.mem_write(record + equipped,
                     struct.pack('<BBHHIIB', weapon, 2, health, ammo, 0, deadline, 0))
         put(u, record + energy, charge << 16)
-        put(u, 0x446ae8, 1000)
+        put(u, 0x446ae8, clock)
         # Direct-fire catalog: damage, charge/ammo/health, range and cooldown.
         cat = 0x395110 + weapon*36
         u.mem_write(cat, bytes(36))
@@ -139,7 +142,7 @@ class EnemyLaserSelectionTests(unittest.TestCase):
         for ai_class in self.PROFILES:
             for faction in (1, 2):
                 for weapon in self.OFFERED:
-                    args = dict(ai_class=ai_class, faction=faction, weapon=weapon)
+                    args = dict(ai_class=ai_class, faction=faction, weapon=weapon, clock=20000)
                     with self.subTest(**args):
                         before = self.select(fixed=False, **args)
                         after = self.select(**args)
@@ -173,6 +176,44 @@ class EnemyLaserSelectionTests(unittest.TestCase):
                     expected += [(50, 0), (50, 0)] if fixed else [(4, 1), (4, 1)]
                     self.assertEqual(samples, expected)
 
+    def test_thermal_disruptor_eligible_branch_initializes_acceptance(self):
+        # The original allowed branch reaches [ESP+0x28] without defining it.
+        # Seed that dead stack byte explicitly and retain the real timestamp and
+        # target-class checks. The corrected jump reaches the existing flag=1.
+        for ai_class in self.PROFILES:
+            for fixed in (False, True):
+                for seed in (0, 1, 255):
+                    u, ai, _ = self.prepare(fixed=fixed, ai_class=ai_class, weapon=9)
+                    u.mem_write(ai + 0xc9, b'\x02')
+                    u.mem_write(0x3832f0 + 2 * 334 + 13, b'\x01')
+                    u.mem_write(STACK - 20 - 48 + 0x28, bytes([seed]))
+                    run(u, 0x250e58, eax=ai, edx=1)
+                    with self.subTest(ai_class=ai_class, fixed=fixed, seed=seed):
+                        self.assertEqual(u.reg_read(UC_X86_REG_EAX) & 65535,
+                                         100 if fixed or seed else 0)
+
+    def test_thermal_disruptor_keeps_target_and_unsigned_time_restrictions(self):
+        # Preserve the original unsigned (squad timestamp + 10000) >= clock
+        # comparison, including its existing wrap behavior and exact boundary.
+        clocks = ((0, 0), (1000, 11000), (1000, 11001),
+                  (0xfffffff0, 0), (0xfffffff0, 9984),
+                  (0xfffffff0, 9985), (0, 0xffffffff))
+        for target_class in (1, 2, 3, 4):
+            for timestamp, clock in clocks:
+                for seed in (0, 255):
+                    u, ai, _ = self.prepare(weapon=9, clock=clock)
+                    u.mem_write(ai + 0xc9, b'\x02')
+                    u.mem_write(0x3832f0 + 2 * 334 + 13, bytes([target_class]))
+                    put(u, 0x3804f0 + 0xef, timestamp)
+                    u.mem_write(STACK - 20 - 48 + 0x28, bytes([seed]))
+                    run(u, 0x250e58, eax=ai, edx=1)
+                    allowed = (target_class not in (3, 4) and
+                               ((timestamp + 10000) & 0xffffffff) >= clock)
+                    with self.subTest(target_class=target_class, timestamp=timestamp,
+                                      clock=clock, seed=seed):
+                        self.assertEqual(u.reg_read(UC_X86_REG_EAX) & 65535,
+                                         100 if allowed else 0)
+
     def test_unusable_weapons_remain_unavailable(self):
         for ai_class in self.PROFILES:
             for args in (dict(health=0), dict(charge=0), dict(deadline=1001),
@@ -188,7 +229,7 @@ class AIFiringTests(unittest.TestCase):
             'build_paths.source_path', side_effect=AssertionError('source parsing')
         ):
             self.assertEqual(len(f.bodies()), 8)
-            self.assertEqual(len(f.choice_bodies()), 11)
+            self.assertEqual(len(f.choice_bodies()), 12)
             self.assertTrue(f.selected_weapon_body())
             self.assertTrue(f.preflight_source())
         for choice in (False, True):

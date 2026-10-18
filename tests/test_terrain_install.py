@@ -98,7 +98,7 @@ class TerrainInstallTests(unittest.TestCase):
         for a, b in pieces:
             combined[a:a + len(b)] = b
         self.assertEqual(previous, combined)
-        self.assertEqual(len(pieces), 8)
+        self.assertEqual(len(pieces), 10)
         self.assertEqual(dict(pieces)[d.ZOOM_SITE], asm(d.ZOOM_SITE, f'jmp {d.ZOOM_CODE}'))
 
     def test_combined_storage_preserves_snapshot_helpers_and_final_preference(self):
@@ -186,6 +186,68 @@ class SkyRowTests(unittest.TestCase):
         result = f.sky_install(lambda a, b: writes.append((a, b)), lambda a, n: before)
         self.assertEqual(writes, [(f.SKY_ROW_SITE, f.sky_row_body())])
         self.assertEqual(result['ranges'], [(f.SKY_ROW_SITE, f.SKY_ROW_END)])
+
+
+class ObjectRowHandoffTests(unittest.TestCase):
+    """Keep actor collection timely without shortening distant scenery.
+
+    A Target Camera reproduction exposed the shared scenery/row flag: increasing
+    scenery range delayed nearby bodies until the clipping horizon was complete.
+    These execution cases check the split thresholds and the unchanged fallback.
+    Captured world-render comparisons supplement these small contract tests.
+    """
+
+    def test_native_row_boundary_and_legacy_flag_are_independent(self):
+        from unicorn import Uc, UC_ARCH_X86, UC_MODE_32
+        from unicorn.x86_const import UC_X86_REG_ESP, UC_X86_REG_EAX
+        stack, stop, result = 0x1800000, 0x1801000, 0x1802000
+        u = Uc(UC_ARCH_X86, UC_MODE_32)
+        u.mem_map(0, 0x2000000)
+        u.mem_write(d.ROW_SITE, asm(d.ROW_SITE, f'jmp {d.ROW_GATE}'))
+        u.mem_write(d.ROW_GATE, d.object_row_body())
+        for address, value in ((0x2b58da, 0), (0x2b5859, 1)):
+            u.mem_write(address, asm(address, f'mov dword ptr [{result}],{value};ret;'))
+        for canvas in (0x9c34e8, 0x123400):
+            for enabled in (0, 1):
+                for cutoff in (20, 40, 68, 120):
+                    for radius in (cutoff - 1, cutoff, cutoff + 1):
+                        for flag in (0, 1):
+                            for address, value in ((0x44b1a0, canvas), (d.CONFIG, enabled),
+                                                   (d.ROW_CUTOFF, cutoff), (0x43cad8, radius),
+                                                   (stack, stop)):
+                                u.mem_write(address, struct.pack('<I', value))
+                            u.mem_write(0x43cc0b, bytes([flag]))
+                            u.reg_write(UC_X86_REG_ESP, stack)
+                            u.reg_write(UC_X86_REG_EAX, 0xabcdef)
+                            u.emu_start(d.ROW_SITE, stop, count=100)
+                            expected = radius > cutoff if canvas == 0x9c34e8 and enabled else not flag
+                            self.assertEqual(int.from_bytes(u.mem_read(result, 4), 'little'), expected)
+                            self.assertEqual(u.reg_read(UC_X86_REG_EAX), 0xabcdef)
+                            self.assertEqual(u.reg_read(UC_X86_REG_ESP), stack + 4)
+                            self.assertEqual(bytes(u.mem_read(0x43cc0b, 1)), bytes([flag]))
+
+    def test_cutoff_is_saved_before_both_scenery_extensions(self):
+        from unicorn import Uc, UC_ARCH_X86, UC_MODE_32
+        from unicorn.x86_const import UC_X86_REG_ESP, UC_X86_REG_EDX
+        stack, stop, context, result = 0x1800000, 0x1801000, 0x1802000, 0x1803000
+        for zoom, base, extended in ((0x10000, 20, 84), (0x100000, 40, 120)):
+            u = Uc(UC_ARCH_X86, UC_MODE_32)
+            u.mem_map(0, 0x2000000)
+            for a, b in d.scenery_bodies() + d.scenery_range_bodies():
+                u.mem_write(a, b)
+            u.mem_write(d.DETAIL_ENTRY, asm(d.DETAIL_ENTRY,
+                f'push eax;movzx eax,word ptr [edx+0x38];mov [{result}],eax;pop eax;ret;'))
+            for address, value in ((stack, stop), (context, zoom), (context + 28, 0x9c34e8),
+                                   (d.CONFIG, 1)):
+                u.mem_write(address, struct.pack('<I', value))
+            u.mem_write(context + 0x38, struct.pack('<HHH', base, 50, 80))
+            u.reg_write(UC_X86_REG_ESP, stack)
+            u.reg_write(UC_X86_REG_EDX, context)
+            u.emu_start(d.RANGE_SITE, stop, count=1000)
+            self.assertEqual(int.from_bytes(u.mem_read(d.ROW_CUTOFF, 4), 'little'), base)
+            self.assertEqual(int.from_bytes(u.mem_read(result, 4), 'little'), extended)
+            self.assertEqual(bytes(u.mem_read(context + 0x38, 6)), struct.pack('<HHH', base, 50, 80))
+            self.assertEqual(u.reg_read(UC_X86_REG_ESP), stack + 4)
 
 
 if __name__ == '__main__':

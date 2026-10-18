@@ -726,10 +726,40 @@ RANGE_CODE = 0x1e4fc00
 RANGE_END = 0x1e50000
 RANGE_SITE = ENTRY
 RANGE_SITES = {RANGE_SITE: asm(RANGE_SITE, f'jmp {SCENERY_GATHER}')}
+ROW_GATE = RANGE_CODE + 0x200
+ROW_CUTOFF = RANGE_END - 4
+ROW_SITE = 0x2b584c
+ROW_ORIGINAL = asm(ROW_SITE, 'cmp byte ptr [0x43cc0b],0;jne 0x2b58da;')
+
+
+def object_row_body():
+    """Scan unit rows at their original handoff while scenery continues farther.
+
+    The original flag serves both terrain-cell scenery and the spatial unit
+    lists. Extending its range postpones the unit scan until terrain has already
+    filled the clipping horizon, hiding otherwise visible bodies. Keep that
+    extended flag for scenery; only the row scan uses the saved caller cutoff.
+    Normal per-object distance and terrain-clipping checks still follow.
+    """
+    return asm(ROW_GATE, (
+        'pushfd;'
+        'cmp dword ptr [0x44b1a0],0x9c34e8;jne original;'
+        f'cmp dword ptr [{CONFIG}],0;je original;'
+        'popfd;push eax;'
+        f'mov eax,[{ROW_CUTOFF}];'
+        'cmp [0x43cad8],eax;pop eax;'
+        'jle 0x2b58da;jmp 0x2b5859;'
+        'original:popfd;cmp byte ptr [0x43cc0b],0;'
+        'jne 0x2b58da;jmp 0x2b5859;'
+    ))
 
 
 def scenery_range_bodies():
     s = (
+        # Capture before the unzoomed and general scenery multipliers. Every
+        # world view enters this wrapper, including the three camera slots.
+        'push eax;movzx eax,word ptr [edx+0x38];'
+        f'mov [{ROW_CUTOFF}],eax;pop eax;'
         f"cmp dword ptr [edx+28],0x9c34e8;"
         f"jne original;"
         f"\n cmp dword ptr [{CONFIG}],0;"
@@ -769,8 +799,11 @@ def scenery_range_bodies():
         f"\n original:jmp {SCENERY_GATHER};"
     )
     b = asm(RANGE_CODE, s)
-    assert len(b) < RANGE_END - RANGE_CODE
-    return [(RANGE_CODE, b), (RANGE_SITE, asm(RANGE_SITE, f'jmp {RANGE_CODE}'))]
+    row = object_row_body()
+    assert len(b) < ROW_GATE - RANGE_CODE and len(row) < ROW_CUTOFF - ROW_GATE
+    return [(RANGE_CODE, b), (RANGE_SITE, asm(RANGE_SITE, f'jmp {RANGE_CODE}')),
+            (ROW_GATE, row),
+            (ROW_SITE, asm(ROW_SITE, f'jmp {ROW_GATE}').ljust(len(ROW_ORIGINAL), b'\x90'))]
 
 
 # Match repeated-scenery clip records to the full 16-bit instance IDs.
@@ -862,7 +895,8 @@ def profile_providers():
     return {
         ZOOM_SITE: asm(ZOOM_SITE, f'jmp {PRESET_ENTRY}'),
         ZOOM_RAY_SITE: asm(ZOOM_RAY_SITE, f'call {RAYS}'),
-        RANGE_SITE: asm(RANGE_SITE, f'jmp {SCENERY_GATHER}')
+        RANGE_SITE: asm(RANGE_SITE, f'jmp {SCENERY_GATHER}'),
+        ROW_SITE: ROW_ORIGINAL,
     }
 
 

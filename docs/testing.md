@@ -25,6 +25,21 @@ checks report skips. Synthetic textures, pixels and expected results remain
 invented test data. The [build guide](building.md)
 lists the dependencies and the additional checks performed by a complete build.
 
+## Camera unit visibility
+
+`test_terrain_install.ObjectRowHandoffTests` follows a Target Camera report in
+which two nearby Clones disappeared while a farther Clone remained visible.
+The extended scenery cutoff also delayed the original spatial unit scan. By the
+time that scan ran, its terrain clipping rows could already hide visible bodies.
+The correction retains the caller's original cutoff for that scan and leaves
+the extended scenery flag in place for terrain-cell collection.
+
+Execution tests cover the threshold boundary, disabled and original canvases,
+register/stack preservation, and both scenery multipliers. Captured rendering
+comparisons check unit admission and scenery submissions in main and camera
+views. A deliberately lowered-body control still fails the original terrain
+clipping test. These checks do not replace visual playtesting of tracking cameras.
+
 ## Drone weapon damage
 
 `test_weapon_timing.WeaponReadinessSafetyTests` follows a native crash while a

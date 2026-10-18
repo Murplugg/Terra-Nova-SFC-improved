@@ -47,6 +47,8 @@ named patches or source files. See the [source guide](docs/source-guide.md) for 
 
 ### Graphics and performance
 
+- Fixed visible units disappearing from camera feeds when the extended scenery range delayed their visibility scan. Unit collection now keeps its original timing while distant scenery retains the increased range. [RENDER; terrain_distance.py]
+
 - Fixed thick, lingering Railgun trails and intermittent missing trails introduced by the larger particle pool. Visual effects again use their original particle budget, while smoke clouds retain their extra space and protection from thinning. [SMOKE; smoke.py]
 - **Fixed [legacy]:** the last visible segment of a laser or pulsar bolt could bend toward a mobile unit on impact. The trail now follows its incoming direction, while hit detection, damage and impact effects keep their existing behavior. [WEAPONS; effect_timing.py]
 - Existing smoke clouds now keep their particles when unrelated weapon effects fill the particle pool. Additional storage lets smoke coexist with the original visual-effect budget; normal smoke expiry and shot interaction remain unchanged. [SMOKE; smoke.py]

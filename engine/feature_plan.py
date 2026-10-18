@@ -4,10 +4,10 @@ All components bind directly to their maintained feature APIs. Group order below
 """
 from dataclasses import dataclass
 
-REVISION = 173
+REVISION = 174
 FOUNDATION_SHA = 'ec7e4eefa0bf9644206021cda6ea6673be8ed031901abdc3d3e32a0bec7f22c9'
 DEMO_SHA = '886568d2d0e15c5bcce5539832cd8bf1fd2c02655825c6ddf3cc77068be2556f'
-OUTPUT_SHA = '97de2afea68546b8d8f2e4721c4ba3aae7f6906b9d721e3ea2dd1fe42c7210db'
+OUTPUT_SHA = '85d15bc8a5d0daf93f3483427fcf2adf86c45d47098f822024e4a5de1261302f'
 
 
 @dataclass(frozen=True)
@@ -62,7 +62,8 @@ PLAN = (
             'target-names', 'map-centering', 'scenery-clipping', 'route-recovery', 'camera-noise'
         )
     ),
-    Feature('campaign-startup', ('tactical-ai', )),
+    Feature('ballistic-safety', ('tactical-ai', 'smoke-clouds'), ('ballistic-safety',)),
+    Feature('campaign-startup', ('tactical-ai', 'ballistic-safety')),
     Feature('shared-options', ('tactical-ai', 'campaign-startup', 'terminal')),
     Feature('modal-ui', ('native-renderer', 'hud-and-input'), ('modal-dialog', 'modal-tooltip')),
     Feature('campaign-lifecycle', ('campaign-startup', 'shared-options', 'modal-ui')),

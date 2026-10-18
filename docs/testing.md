@@ -25,6 +25,32 @@ checks report skips. Synthetic textures, pixels and expected results remain
 invented test data. The [build guide](building.md)
 lists the dependencies and the additional checks performed by a complete build.
 
+## Squad explosive safety
+
+`test_ballistic_safety` checks the preallocation guard for squad Missile Launcher
+and M-B Cannon shots. The helper predicts up to about three seconds of flight
+using the prepared muzzle position, velocity, gravity and collision radius. It
+queries the original terrain routine and follows the original physical-body
+contact rules, then checks the predicted blast against active allied PBAs and
+vehicles. Refusal uses the existing cleanup and movement-feedback paths.
+
+Captured-world comparisons established the contact and blast update order;
+controlled blocked, clear, relocated-ally and near-ground-muzzle cases check
+ammunition and object/physics allocation. The public tests cover calling-state
+preservation, admission scope, unknown results and atomic patch installation.
+Actor positions are held fixed during prediction, which can overestimate danger
+around moving units. Budget expiry or unsupported context retains the existing
+firing decision. This is not complete friendly-fire prevention: grenades,
+unlinked buildings and later movement remain outside this guard's scope.
+
+## Water and haze columns
+
+`test_terrain_install.HazeColumnTrialTests` compares the optimized loop with the
+original routine from the verified executable. It checks pixels, memory writes,
+registers and flags, including short spans, alignment and overlapping buffers.
+Separate routine timings measure the loop itself; they do not establish a
+whole-scene frame-rate gain. Terrain quality and draw distance are unchanged.
+
 ## Camera unit visibility
 
 `test_terrain_install.ObjectRowHandoffTests` follows a Target Camera report in

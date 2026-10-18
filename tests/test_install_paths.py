@@ -146,6 +146,13 @@ class InstallPathsTests(TestCase):
             window.poll()
         self.assertIn('Unsupported CD image', error.call_args.args[1])
         self.assertIn('ValueError: Unsupported CD image', window.log.read_text())
+        window.pending = Future()
+        window.pending.set_exception(RuntimeError('Setup generation failed:\nTraceback: long internal details\nValueError: Invalid tool cache'))
+        with patch('setup_ui.messagebox.showerror') as error:
+            window.poll()
+        self.assertIn('Invalid tool cache', error.call_args.args[1])
+        self.assertNotIn('Traceback', error.call_args.args[1])
+        self.assertIn('long internal details', window.log.read_text())
 
     def multi_source(self):
         names = ['TNOVA/DATA/item.res', 'TNDEMO2/DATA/item.res']

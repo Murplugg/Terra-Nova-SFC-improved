@@ -9,7 +9,8 @@
     "pba_ray.c": "af169d77227adebe1defae643446e3626bd2a527d95881bf6ba819b212a572cc",
     "mobile_ray.c": "e7f884241eafda682e6d462608cea6dac6e630ad782e22171e2cc77ad1281f69",
     "mesh-recipes.json": "d7d3ffe2ac96a7d079ce926c45fc8dd84e7e359117d969edbb79392d19734702",
-    "smoke_ray.c": "9b19bd649f3be5e8a2a34dbbe63ed3993e8fece5403d2ceb17dc8941ac37d25e"
+    "smoke_ray.c": "9b19bd649f3be5e8a2a34dbbe63ed3993e8fece5403d2ceb17dc8941ac37d25e",
+    "ballistic_safety.c": "00fa7e10cde80556c80b47030a91aa86ad0e1a5166d2765d69fb584ebf27c1a7"
   },
   "helpers": [
     {
@@ -156,6 +157,35 @@
           "address": 30633616,
           "size": 128,
           "sha256": "96d8c8c3dcb5ebd0e70d3622426f7d688eb244e47d4c3dbcf0ad12477933bf79"
+        }
+      ]
+    },
+    {
+      "module": "ballistic_safety_code",
+      "source": "ballistic_safety.c",
+      "low": 31309824,
+      "high": 31314944,
+      "ignore_headers": true,
+      "symbols": {
+        "ENTRY": "ballistic_unsafe",
+        "FORECAST": "ballistic_forecast",
+        "CONTACT": "ballistic_contact"
+      },
+      "addresses": {
+        "ENTRY": 31312288,
+        "FORECAST": 31311408,
+        "CONTACT": 31309904
+      },
+      "regions": [
+        {
+          "address": 31309824,
+          "size": 3119,
+          "sha256": "5afbe098c2fddef6189efb79a8aaa1ca36c3a949f25ce73dfc22aba76c0effea"
+        },
+        {
+          "address": 31312944,
+          "size": 64,
+          "sha256": "4b896e5da61a62ad20603e815cf3b0569538f838b2c0dea7e77ad6e28ca05589"
         }
       ]
     }

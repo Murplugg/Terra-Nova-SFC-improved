@@ -13,6 +13,14 @@ def owned_component(name, write, ram, context):
     from features import terrain_distance, hud, hud_install, hud_overlays, modal_ui, maps, effect_timing, projectiles
     read = lambda a, n: ram[a:a + n]
     original = lambda a, n: bytes(context['original'][a:a + n])
+    if name == 'ballistic-safety':
+        from features import ballistic_safety
+        helper = importlib.import_module('ballistic_safety_code')
+        options = dict(entry=helper.ENTRY, regions=helper.REGIONS)
+        ballistic_safety.install(write, read, **options)
+        if not ballistic_safety.verify(read, **options):
+            raise ValueError('Ballistic helper verification failed')
+        return
     if name == 'smoke-clouds':
         from features import smoke
         helper = importlib.import_module('collision_smoke')

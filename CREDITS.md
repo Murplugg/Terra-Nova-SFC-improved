@@ -32,6 +32,10 @@ observations about infrared rendering helped guide our performance investigation
 Our exchanges also informed patch comparisons and the DOSBox/native backport
 address table.
 
+The water/haze column optimization is adapted from Terra Nova Plus's
+`tools/view_fix.py`, shared under the MIT license. Its copyright and license
+notice are retained beside the implementation in `engine/features/terrain_raster.py`.
+
 Thanks also to the **TTLG community** for keeping Terra Nova discussion and
 modding active, and to everyone who takes the time to report a problem, test a
 change or explain how the original game behaves.

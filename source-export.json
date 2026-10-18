@@ -46,6 +46,7 @@
     "engine/features/ai_firing.py",
     "engine/features/ai_response.py",
     "engine/features/audio_safety.py",
+    "engine/features/ballistic_safety.py",
     "engine/features/cameras.py",
     "engine/features/campaign_startup.py",
     "engine/features/campaign_switch.py",
@@ -91,6 +92,7 @@
     "engine/foundation_weather.py",
     "engine/generate_local.py",
     "engine/generation_tools.py",
+    "engine/helpers/ballistic_safety.c",
     "engine/helpers/cannon_ray.c",
     "engine/helpers/manifest.json",
     "engine/helpers/mesh-recipes.json",
@@ -148,6 +150,7 @@
     "tests/test_ai_recovery.py",
     "tests/test_ai_response.py",
     "tests/test_audio_safety.py",
+    "tests/test_ballistic_safety.py",
     "tests/test_beam_impact.py",
     "tests/test_beam_install.py",
     "tests/test_beam_pressure.py",
@@ -233,6 +236,7 @@
     "tests.test_target_picking",
     "tests.test_target_profiles",
     "tests.test_terrain_install",
-    "tests.test_weapon_timing"
+    "tests.test_weapon_timing",
+    "tests.test_ballistic_safety"
   ]
 }

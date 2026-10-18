@@ -5,7 +5,7 @@ import struct
 import hashlib
 from features import frame_clock
 
-# The optional water/haze prototype below adapts SHIPPED_BODY from Terra Nova
+# The water/haze column routine below adapts SHIPPED_BODY from Terra Nova
 # Plus tools/view_fix.py, commit 51c56c0604ef514532bff3ad2987fcb8909775ca.
 # Copyright (c) 2026 skw-1337
 #
@@ -29,7 +29,7 @@ from features import frame_clock
 
 
 def haze_column_candidate(address):
-    """Trial replacement for 0x2B2785; not installed by the feature plan.
+    """Equivalent replacement for the original water/haze pass at 0x2B2785.
 
     Ordinary pixels need no reflection-source or remap-row calculation. Defer
     those calculations until a pixel needs them, and keep the table address in
@@ -90,7 +90,10 @@ def haze_column_candidate(address):
 # Pixel-identical terrain columns without writing the next loop instruction.
 COLUMN_CODE = 0x1e4c000
 
-COLUMN_END = COLUMN_CODE + 0x800
+COLUMN_END = COLUMN_CODE + 0x1000
+HAZE_CODE = COLUMN_CODE + 0x800
+HAZE_SITE = 0x2b2785
+HAZE_ORIGINAL = asm(HAZE_SITE, 'push ebp; mov ebp,0x2b279c')
 
 COLUMN_SITE = 0x2b2a85
 
@@ -421,9 +424,12 @@ def infrared_bodies():
 
 def column_bodies():
     b = column_candidate()
-    assert len(b) <= COLUMN_END - COLUMN_CODE
+    haze = haze_column_candidate(HAZE_CODE)
+    assert len(b) <= HAZE_CODE - COLUMN_CODE
+    assert len(haze) <= COLUMN_END - HAZE_CODE
     return [(COLUMN_CODE, b), (COLUMN_SITE, asm(COLUMN_SITE, f'jmp {COLUMN_CODE}') + b'\x90'),
-            *infrared_bodies()]
+            *infrared_bodies(), (HAZE_CODE, haze),
+            (HAZE_SITE, asm(HAZE_SITE, f'jmp {HAZE_CODE}') + b'\x90')]
 
 
 # Pixel-identical reflective terrain rows without per-row executable writes.
@@ -893,7 +899,7 @@ def column_install(write, read):
     """Validate original hooks and the complete cold reservation before writing."""
     from features.input_views import _install
     return _install(
-        column_bodies(), {COLUMN_SITE: COLUMN_ORIGINAL, **IR_ORIGINAL},
+        column_bodies(), {COLUMN_SITE: COLUMN_ORIGINAL, HAZE_SITE: HAZE_ORIGINAL, **IR_ORIGINAL},
         write,
         read,
         cold_state=((COLUMN_CODE, COLUMN_END - COLUMN_CODE), )

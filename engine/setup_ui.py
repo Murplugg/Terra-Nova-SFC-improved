@@ -180,7 +180,13 @@ class Setup:
         except Exception as exc:
             self.record(traceback.format_exc())
             self.status.set('Setup stopped. Correct the selected paths or see the setup log, then try again.')
-            messagebox.showerror('Setup stopped', f'{exc}\n\nDetails: {self.log}', parent=self.root)
+            # A subprocess failure can include its entire traceback. Keep that
+            # in the log and show the final cause in a readable dialog.
+            lines = str(exc).strip().splitlines()
+            reason = lines[-1] if lines else type(exc).__name__
+            if len(reason) > 300:
+                reason = reason[:297] + '…'
+            messagebox.showerror('Setup stopped', f'{reason}\n\nFull details are available with Open setup log.', parent=self.root)
 
     def close(self):
         if self.pending:

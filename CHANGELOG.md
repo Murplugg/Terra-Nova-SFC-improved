@@ -26,6 +26,8 @@ named patches or source files. See the [source guide](docs/source-guide.md) for 
 
 ### Windows, audio and saves
 
+- Added a setup window with folder pickers, installation stages and an accessible error log. It uses the same verified installer as command-line setup and shares unchanged game data by default. [SETUP; setup_ui.py]
+
 - **Fixed [legacy]:** a projectile hitting at very close range could cancel its queued firing sound before playback. Projectile deletion now removes only the flight-sound association; deleting the shooter still cancels its pending sound. [AUDIO; audio_safety.py]
 
 - Fixed an intermittent restart error when the Windows process list still included a game that had just exited. The launcher confirms termination before ignoring that entry. [SAVES; sessions.py]
@@ -43,6 +45,8 @@ named patches or source files. See the [source guide](docs/source-guide.md) for 
 
 ### AI and squad behavior
 
+- Squadmates now check the curved flight path of Missile Launcher and M-B Cannon shots for an early impact that could harm themselves or nearby allies. Unsafe shots are withheld before ammunition is consumed, allowing the existing repositioning logic to run. [AI; ballistic_safety.py, ballistic_safety.c]
+
 - Fixed squadmates retaining firing permission after the final range or ally-clearance check refused their shot. The controller now receives that refusal so its existing repositioning rules can run. Normal weapon cooldown and resource checks retain their behavior. [AI; ai_firing.py]
 
 - **Fixed [legacy]:** AI weapon selection could favor the last eligible weapon in the loadout instead of the one with the highest calculated score. The selector now retains its best eligible score, using the original scoring weights. [AI; ai_firing.py, 0x2510B5]
@@ -54,6 +58,8 @@ named patches or source files. See the [source guide](docs/source-guide.md) for 
 - **Fixed [legacy]:** selecting an otherwise eligible Thermal Disruptor could depend on an uninitialized temporary value. The selector now takes its existing acceptance path while retaining the weapon's target and timing restrictions. [AI; ai_firing.py, 0x251170]
 
 ### Graphics and performance
+
+- Optimized water and haze column drawing while preserving its original pixel results. Adapted from Terra Nova Plus. [RENDER; terrain_raster.py]
 
 - Fixed map detail flickering and repeated terrain drawing when several maps were open. Each map now retains its own terrain cache, including maps sharing the same camera slot. [RENDER; maps.py, render_views.py, render_compositor.py]
 

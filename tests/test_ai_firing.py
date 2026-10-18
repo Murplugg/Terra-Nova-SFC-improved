@@ -222,6 +222,136 @@ class EnemyLaserSelectionTests(unittest.TestCase):
                     self.assertEqual(self.select(ai_class=ai_class, **args), 0)
 
 
+class WeaponSuitabilityTests(unittest.TestCase):
+    """Original selector execution with explicit catalog/clearance fixtures.
+
+    These controls isolate the observed score loss and cached-policy bypass.
+    Clearance outputs are modeled at 0x250ce0 for exact boundary tests; they
+    do not claim to simulate blast damage or moving actors.
+    """
+    PROFILES = EnemyLaserSelectionTests.PROFILES
+    prepare = EnemyLaserSelectionTests.prepare
+
+    def loadout(self, weapons, *, selected=0, target_class=1, fixed=True):
+        u, ai, record = self.prepare(faction=1, weapon=4)
+        if fixed:
+            for address, body in f.choice_bodies() + [(f.RANGE, dict(f.bodies())[f.RANGE])]:
+                u.mem_write(address, body)
+        u.mem_write(record + 0x81, bytes([len(weapons)]))
+        u.mem_write(record + 0xce, bytes([selected]))
+        for slot, (wid, damage, explosive) in enumerate(weapons):
+            u.mem_write(record + 0x45 + 15 * slot,
+                        struct.pack('<BBHHIIB', wid, 2, 300, 100, 0, 0, 0))
+            cat = 0x395110 + 36 * wid
+            u.mem_write(cat, bytes(36))
+            u.mem_write(cat+4, bytes([explosive]))
+            u.mem_write(cat+5, struct.pack('<H', damage))
+            u.mem_write(cat+10, struct.pack('<H', 100))
+            u.mem_write(cat+14, struct.pack('<H', 100))
+            u.mem_write(cat+22, struct.pack('<H', 100))
+        _, target_ai = actor(u, 20, slot=2, team=2, xyz=(10*65536, 0, 0))
+        u.mem_write(target_ai+13, bytes([target_class]))
+        u.mem_write(ai+0xc3, b'\x01')
+        u.mem_write(ai+0xc9, b'\x02\x14')
+        self.clearance(u, target=10*65536, shooter=2*65536)
+        return u, ai, record
+
+    def clearance(self, u, *, target, shooter):
+        u.mem_write(0x250ce0, asm(0x250ce0,
+                    f'mov dword ptr [ebx],{target};mov dword ptr [edx],{shooter};ret'))
+
+    def select(self, u, ai, record, force):
+        saved = dict(ebx=0x12345678, ecx=0x23456789, esi=0x3456789a,
+                     edi=0x456789ab, ebp=0x56789abc)
+        run(u, 0x250e58, eax=ai, edx=force, **saved)
+        self.assertEqual(u.reg_read(UC_X86_REG_ESP), STACK+4)
+        for reg, value in saved.items():
+            self.assertEqual(u.reg_read(globals()['UC_X86_REG_'+reg.upper()]), value)
+        slot = u.mem_read(record+0xce, 1)[0]
+        return u.reg_read(UC_X86_REG_EAX)&65535, u.mem_read(record+0x45+15*slot, 1)[0]
+
+    def test_best_eligible_score_wins_independent_of_equipment_order(self):
+        for weapons in (((5, 10, 0), (6, 30, 0)), ((6, 30, 0), (5, 10, 0))):
+            u, ai, rec = self.loadout(weapons)
+            self.assertEqual(self.select(u, ai, rec, 1), (100, 6))
+
+    def test_equal_scores_keep_first_and_rejected_high_score_does_not_win(self):
+        u, ai, rec = self.loadout(((5, 10, 0), (6, 10, 0)))
+        self.assertEqual(self.select(u, ai, rec, 1), (100, 5))
+        u, ai, rec = self.loadout(((4, 10, 0), (13, 250, 1), (6, 30, 0)), target_class=4)
+        self.assertEqual(self.select(u, ai, rec, 1), (100, 6))
+
+    def test_cached_explosives_and_close_range_weapon_recheck_drone_target(self):
+        for wid in (3, 10, 13, 14, 21, 29, 30, 31, 32, 12):
+            for force in (0, 1):
+                with self.subTest(weapon=wid, force=force):
+                    u, ai, rec = self.loadout(((4, 10, 0), (wid, 250, int(wid != 12))),
+                                              selected=1, target_class=4)
+                    self.assertEqual(self.select(u, ai, rec, force), (100, 4))
+
+    def test_cached_explosive_rechecks_original_clearance_boundaries(self):
+        for target, shooter, expected in ((6*65536, 65536, 4),
+                (6*65536+1, 65536, 13), (7*65536, 65535, 4)):
+            for force in (0, 1):
+                u, ai, rec = self.loadout(((4, 10, 0), (13, 250, 1)), selected=1)
+                self.clearance(u, target=target, shooter=shooter)
+                self.assertEqual(self.select(u, ai, rec, force), (100, expected))
+
+    def test_valid_cached_weapon_keeps_selection_until_normal_rescan(self):
+        u, ai, rec = self.loadout(((4, 10, 0), (6, 250, 0)))
+        put(u, ai+0xfe, 1000)
+        seen = []
+        u.hook_add(UC_HOOK_CODE, lambda c,a,n,d: seen.append(a),
+                   begin=0x2510b5, end=0x2510b5)
+        for clock, slot, scans in ((1000, 0, 0), (1499, 0, 0), (1500, 1, 2)):
+            put(u, 0x446ae8, clock)
+            run(u, 0x25129c, eax=ai)
+            self.assertEqual(u.mem_read(rec+0xce, 1)[0], slot)
+            self.assertEqual(len(seen), scans)
+
+    def test_noncombat_cache_ignores_stale_target_metadata(self):
+        u, ai, rec = self.loadout(((4, 10, 0), (13, 250, 1)), selected=1, target_class=4)
+        u.mem_write(ai+0xc3, b'\0')
+        self.assertEqual(self.select(u, ai, rec, 0), (100, 13))
+
+    def test_unready_cache_does_not_rescan_and_no_eligible_returns_zero(self):
+        u, ai, rec = self.loadout(((4, 10, 0), (13, 250, 1)), selected=1, target_class=4)
+        put(u, rec+0x45+15+10, 1001)
+        self.assertEqual(self.select(u, ai, rec, 0), (0, 13))
+        u, ai, rec = self.loadout(((13, 250, 1),), target_class=4)
+        self.assertEqual(self.select(u, ai, rec, 0), (0, 13))
+        # The original API leaves the equipped slot unchanged when it returns0;
+        # its caller decides how a failed selection affects movement/firing.
+
+    def test_rejected_cache_cannot_escape_policy_through_range_fallback(self):
+        u, ai, rec = self.loadout(((4, 10, 0), (13, 250, 1)), selected=1, target_class=4)
+        u.mem_write(0x39511e+4*36, struct.pack('<H', 1))
+        self.assertEqual(self.select(u, ai, rec, 0), (1, 4))
+
+    def test_controller_admission_obeys_selection_failure_and_keeps_timer(self):
+        for elapsed in (0, 499, 500):
+            for target_class in (1, 4):
+                for ready_beam in (False, True):
+                    u, ai, rec = self.loadout(((4, 10, 0), (13, 250, 1)),
+                                              selected=1, target_class=target_class)
+                    put(u, ai+0xfe, 1000)
+                    put(u, 0x446ae8, 1000+elapsed)
+                    if not ready_beam:
+                        put(u, rec+0x45+10, 5000)
+                    before = bytes(u.mem_read(rec+0x45, 30))
+                    stop = execute_until(u, f.CHOICE_ADMISSION, {0x251d97, 0x251edf},
+                                         eax=ai, ebx=123, ecx=456, edx=789)
+                    allowed = target_class == 1 or ready_beam
+                    self.assertEqual(stop, 0x251d97 if allowed else 0x251edf)
+                    self.assertEqual(get(u, ai+0xfe), 1500 if elapsed == 500 else 1000)
+                    self.assertEqual(u.reg_read(UC_X86_REG_ESP), STACK)
+                    for register, value in ((UC_X86_REG_EBX,123), (UC_X86_REG_ECX,456),
+                                            (UC_X86_REG_EDX,789)):
+                        self.assertEqual(u.reg_read(register), value)
+                    self.assertEqual(bytes(u.mem_read(rec+0x45, 30)), before)
+
+
+
 class AIFiringTests(unittest.TestCase):
 
     def test_history_free_generators_and_atomic_installation_contracts(self):
@@ -229,7 +359,7 @@ class AIFiringTests(unittest.TestCase):
             'build_paths.source_path', side_effect=AssertionError('source parsing')
         ):
             self.assertEqual(len(f.bodies()), 8)
-            self.assertEqual(len(f.choice_bodies()), 12)
+            self.assertEqual(len(f.choice_bodies()), 18)
             self.assertTrue(f.selected_weapon_body())
             self.assertTrue(f.preflight_source())
         for choice in (False, True):
@@ -375,7 +505,7 @@ class AIFiringTests(unittest.TestCase):
         u.mem_write(WEAPON, b'\5')
         u.mem_write(0x39511e + 36 * 5, struct.pack('<H', 10))
         for entry, accepted, rejected in (
-            (f.CHOICE_FAST, 0x250f20, 0x250fed), (f.CHOICE_SCAN, 0x25103a, 0x251279)
+            (f.CHOICE_FAST, 0x2510bf, 0x250fed), (f.CHOICE_SCAN, 0x25103a, 0x251279)
         ):
             for fallback in (0, 1):
                 u.mem_write(STACK + 0x30, bytes([fallback]))

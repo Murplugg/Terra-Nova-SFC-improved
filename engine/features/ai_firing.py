@@ -383,6 +383,9 @@ CHOICE_SCAN = CHOICE_CODE + 0x100
 CHOICE_CHECK = CHOICE_CODE + 0x200
 CHOICE_INIT = CHOICE_CODE + 0x400
 CHOICE_FINISH = CHOICE_CODE + 0x500
+CHOICE_SCORE = CHOICE_CODE + 0x600
+CHOICE_DECISION = CHOICE_CODE + 0x680
+CHOICE_ADMISSION = CHOICE_CODE + 0x700
 CHOICE_SITES = {
     0x250e58: bytes.fromhex('535156575583ec30'),
     0x250f15: bytes.fromhex('31d28a138d04d500000000'),
@@ -390,7 +393,10 @@ CHOICE_SITES = {
     0x250f38: b'\x30',
     0x25128e: bytes.fromhex('8b44241c83c430'),
     0x25124b: bytes.fromhex('750e'),
-    0x251170: bytes.fromhex('0f83ea000000')
+    0x251170: bytes.fromhex('0f83ea000000'),
+    0x2510b5: bytes.fromhex('3b5424140f8eba010000'),
+    0x251260: bytes.fromhex('807c242800'),
+    0x251d92: asm(0x251d92, 'call 0x25129c')
 }
 
 
@@ -446,21 +452,24 @@ def choice_bodies():
             f"ret;"
         )
     )
+    # Reuse the original eligibility block for the current ready weapon. This
+    # keeps the half-second scoring cadence, while target changes and nearby
+    # allies can invalidate a cached explosive choice before the next scan.
+    # Byte +0x32 distinguishes this single check from the ordinary full scan.
     fast = asm(
         CHOICE_FAST, (
-            f"cmp byte ptr [esp+0x30],1;"
-            f"je accepted;"
-            f"\n push eax;"
-            f"call {CHOICE_CHECK};"
-            f"test eax,eax;"
-            f"pop eax;"
+            f"cmp byte ptr [esp+0x30],1;je eligible;"
+            f"push eax;call {CHOICE_CHECK};test eax,eax;pop eax;"
             f"jnz reconsider;"
-            f"\n accepted:\n xor edx,edx;"
-            f"mov dl,[ebx];"
-            f"lea eax,[edx*8];"
-            f"jmp 0x250f20;"
-            f"\n reconsider:mov byte ptr [esp+0x30],2;"
-            f"jmp 0x250fed;"
+            "eligible:cmp byte ptr [ecx+0xc3],0;je noncombat;"
+            "cmp byte ptr [ebx],8;je unsuitable;"
+            "cmp byte ptr [ebx],28;je unsuitable;"
+            "mov byte ptr [esp+0x32],1;"
+            "movzx esi,byte ptr [ebx];imul esi,esi,36;add esi,0x395110;"
+            "jmp 0x2510bf;"
+            "noncombat:xor edx,edx;mov dl,[ebx];lea eax,[edx*8];jmp 0x250f20;"
+            "unsuitable:mov byte ptr [esp+0x31],1;jmp 0x250fed;"
+            "reconsider:mov byte ptr [esp+0x30],2;jmp 0x250fed;"
         )
     )
     scan = asm(
@@ -492,6 +501,7 @@ def choice_bodies():
             "sub esp,0x34;"
             "mov byte ptr [esp+0x30],0;"
             "mov byte ptr [esp+0x31],dl;"
+            "mov byte ptr [esp+0x32],0;"
             "jmp 0x250e60;"
         )
     )
@@ -513,10 +523,52 @@ def choice_bodies():
             "jmp 0x251295;"
         )
     )
-    assert len(fast) < 0x100 and len(scan) < 0x100 and len(check) < 0x200 and len(finish) < 0x300
+    # The original damage scratch at +0x10 is no longer read after scoring.
+    # Preserve the candidate score there while eligibility calls use EDX, then
+    # retain it as the best score only when that candidate is accepted.
+    score = asm(CHOICE_SCORE, (
+        "mov [esp+0x10],edx;cmp edx,[esp+0x14];"
+        "jle 0x251279;jmp 0x2510bf;"
+    ))
+    decision = asm(CHOICE_DECISION, (
+        "cmp byte ptr [esp+0x32],0;je scanned;"
+        "mov byte ptr [esp+0x32],0;"
+        "cmp byte ptr [esp+0x28],0;je reconsider;"
+        "movzx eax,word ptr [esi+0xe];mov [esp+0x1c],eax;"
+        f"jmp {CHOICE_FINISH};"
+        # A failed cached policy check must not return to that cached weapon
+        # during the existing out-of-range approach-distance fallback.
+        "reconsider:mov byte ptr [esp+0x31],1;jmp 0x250fed;"
+        "scanned:cmp byte ptr [esp+0x28],0;je 0x251279;"
+        "mov eax,[esp+0x10];mov [esp+0x14],eax;jmp 0x251267;"
+    ))
+    # The general wrapper maps selection failure to an approach distance of 4.
+    # That is useful for movement, but the firing controller discarded the
+    # failure and could launch its stale selected weapon. Keep the same timing
+    # shell here and pass the raw result to the controller's permission branch.
+    # Other callers retain the original wrapper and its approach result.
+    admission = asm(CHOICE_ADMISSION, (
+        "push ebx;push ecx;push edx;mov ebx,eax;"
+        "mov ecx,[0x446ae8];mov eax,ecx;sub eax,[ebx+0xfe];"
+        "cmp eax,500;jge rescan;"
+        "mov eax,ebx;xor edx,edx;call 0x250e58;jmp result;"
+        "rescan:mov edx,1;mov eax,ebx;call 0x250e58;mov [ebx+0xfe],ecx;"
+        "result:pop edx;pop ecx;pop ebx;test ax,ax;"
+        "jnz 0x251d97;jmp 0x251edf;"
+    ))
+    assert len(fast) < 0x100 and len(scan) < 0x100 and len(check) < 0x200
+    assert len(finish) < CHOICE_SCORE - CHOICE_FINISH
+    assert len(score) < CHOICE_DECISION - CHOICE_SCORE
+    assert len(decision) < CHOICE_ADMISSION - CHOICE_DECISION
+    assert len(admission) < CHOICE_END - CHOICE_ADMISSION
     return [
         (CHOICE_FAST, fast), (CHOICE_SCAN, scan), (CHOICE_CHECK, check), (CHOICE_INIT, init),
-        (CHOICE_FINISH, finish), (0x250e58, asm(0x250e58, f'jmp {CHOICE_INIT}') + b'\x90' * 3),
+        (CHOICE_FINISH, finish), (CHOICE_SCORE, score), (CHOICE_DECISION, decision),
+        (CHOICE_ADMISSION, admission),
+        (0x251d92, asm(0x251d92, f'jmp {CHOICE_ADMISSION}')),
+        (0x2510b5, asm(0x2510b5, f'jmp {CHOICE_SCORE}') + b'\x90' * 5),
+        (0x251260, asm(0x251260, f'jmp {CHOICE_DECISION}')),
+        (0x250e58, asm(0x250e58, f'jmp {CHOICE_INIT}') + b'\x90' * 3),
         (0x250f38, b'\x34'), (0x25128e, asm(0x25128e, f'jmp {CHOICE_FINISH}') + b'\x90' * 2),
         (0x250f15, asm(0x250f15, f'jmp {CHOICE_FAST}') + b'\x90' * 6),
         (0x251034, asm(0x251034, f'jmp {CHOICE_SCAN}') + b'\x90'),

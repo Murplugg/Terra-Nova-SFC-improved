@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "game_revision": 170,
+  "game_revision": 171,
   "iso": {
     "path": "_ISO/TNF108.ISO",
     "size": 626792448,
@@ -1785,32 +1785,32 @@
     }
   },
   "compiler_sha256": "d408dd38eed3e5204af841bcebf70502a4dbbb8399a3a3262be55059370bc018",
-  "executable_sha256": "a8dec30ac365ac250b042b9cd487fadd8190f74dc930c1b0c106ac7176eff12c",
-  "template_sha256": "ce6c5309e814b6c081ca0a51f3a8ca6e320de45c1968c2a729689b04cc47c3c2",
+  "executable_sha256": "72cf941e5a2a4e7f7c22f40082ad615e6a3ba42f5bd69637b74a7e76b4733904",
+  "template_sha256": "29d4b3751f147ce22202408c5fd0a6f66bb9490329fe4bd857c2724db06c66ea",
   "relocations": [
     {
       "offset": 30360064,
       "capacity": 130,
       "value": "{ROOT}\\services.bin",
-      "before_sha256": "fc40684d3124c1e2f2d942b54fc2286857c3f17e6276a8ced492f2dc677da4d1"
+      "before_sha256": "1544e2d8333c068447c1f28fef28ea7e3c32472a21d3ca1e909a862cb1c6146c"
     },
     {
       "offset": 30361088,
       "capacity": 136,
       "value": "{ROOT}\\stopped-memory.bin",
-      "before_sha256": "06c93c8be69d8c31378887563bed29f5111c58a04adf7e6e0108afc484bfd005"
+      "before_sha256": "608c163b4b95055b981bf0baac6171ab4dfdb6f992bda7fc87345fb5aa90abff"
     },
     {
       "offset": 30361344,
       "capacity": 133,
       "value": "{ROOT}\\framebuffer.bin",
-      "before_sha256": "d382d010b9f304e59ea3a4cfa50ce65ab23ae37a645ebfccfea755665cf8db4b"
+      "before_sha256": "eac2f18dbff743e49afafdbb627d5d98bb84f3b851ffee9d4a9e99fb10ac5185"
     },
     {
       "offset": 30361600,
       "capacity": 128,
       "value": "{ROOT}\\stdout.txt",
-      "before_sha256": "f0b094290fda799405b098fc5c8fa5bb9a33231fa8ce0e1de268787cf1a33fb9"
+      "before_sha256": "f6132cbb758f97c2a72cb361d2401024786b81e03f318821d4fc89853e667ee3"
     },
     {
       "offset": 30362112,
@@ -7608,7 +7608,7 @@
       "kind": "delta",
       "input": "TNOVA/__FF.EXE",
       "size": 33485312,
-      "sha256": "ce6c5309e814b6c081ca0a51f3a8ca6e320de45c1968c2a729689b04cc47c3c2",
+      "sha256": "29d4b3751f147ce22202408c5fd0a6f66bb9490329fe4bd857c2724db06c66ea",
       "transform": "native-le"
     },
     {
@@ -7645,6 +7645,6 @@
     "asset_mapping_source_sha256": "a98afe33b0ffcf7f6c42af2230b344ddcedf077a94ed0d9c6e6d4aee02529187",
     "relocation_source_sha256": "ebbbffe3403dde558802716efbff86de09f0b0e7ad0afbacff387ef8c995aafa"
   },
-  "setup_milestone": 170,
+  "setup_milestone": 171,
   "runtime_paths": "executable-directory-v1"
 }

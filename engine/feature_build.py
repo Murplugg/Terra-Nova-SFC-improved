@@ -99,6 +99,7 @@ def owned_component(name, write, ram, context):
         'scenery-distance':
         (terrain_distance.scenery_install, terrain_distance.scenery_verify, read, {}, {}),
         'keyboard-state': (input_views.keyboard_install, input_views.keyboard_verify, read, {}, {}),
+        'drone-controls': (input_views.drone_controls_install, input_views.drone_controls_verify, read, {}, {}),
         'renderer-lists':
         (terrain_distance.list_install, terrain_distance.list_verify, read, {}, {}),
         'railgun-provider': (ai_cadence.railgun_install, ai_cadence.railgun_verify, read, {}, {}),

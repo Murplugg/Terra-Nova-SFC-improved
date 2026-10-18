@@ -167,6 +167,12 @@ class RendererLayouts(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Unsupported renderer layout'):
             c.renderer_layout(bad)
 
+    def test_exact_restore_preserves_live_map_caches(self):
+        # Original map draw scheduling is restored too. Clearing valid records
+        # would suppress detailed panels until that scheduler redraws them.
+        layout = c.renderer_layout(self.install(True), self.published_layout)
+        self.assertEqual(layout['restore_zero'], [])
+
     def test_real_legacy_declaration_keeps_image_guards_and_rejects_unmapped_gap(self):
         # The shipped declaration guards both the low executable image and
         # the external arena. An arena-only synthetic fixture missed this ABI.

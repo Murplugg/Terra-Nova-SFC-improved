@@ -4,13 +4,15 @@ import hashlib
 import json
 from pathlib import Path
 
-EXPECTED = 'b26e8afee2c3cfec0648aa37f18779d7dd9cb6b1927abcc61f65e16ef8617b63'
+EXPECTED = 'cdf5467a4d8e7b083fce34edda76dcaaaebba003cf63de43824fb3711eb2b8eb'
 
 
 @dataclass(frozen=True)
 class Contract:
     guards: tuple
     external: tuple
+    arena_size: int
+    restore_zero: tuple
 
 
 def capture(integration):
@@ -26,7 +28,7 @@ def capture(integration):
     regions += tuple((address, 12800) for address in (*hud.REFS, *hud.MASKS))
     regions += maps.BUFFERS
     guards += [edge for address, size in regions for edge in (address - 256, address + size)]
-    if len(guards) != 52:
+    if len(guards) != 78:
         raise ValueError('Unexpected snapshot guard layout')
     external = []
     spans = []
@@ -42,7 +44,7 @@ def capture(integration):
         raise ValueError('Overlapping snapshot payloads')
     if not external:
         raise ValueError('Snapshot export requires a built renderer plan')
-    return Contract(tuple(guards), tuple(external))
+    return Contract(tuple(guards), tuple(external), SIZE, ())
 
 
 def encode(contract, revision=120):
@@ -54,7 +56,10 @@ def encode(contract, revision=120):
 
     def serialize(value):
         return (
-            json.dumps(dict(revision=value, guards=contract.guards, external=external), indent=2) +
+            json.dumps(dict(revision=value, arena_size=contract.arena_size,
+                            guards=contract.guards, external=external,
+                            restore_zero=[dict(address=a, size=n)
+                                          for a, n in contract.restore_zero]), indent=2) +
             '\n'
         ).encode()
 

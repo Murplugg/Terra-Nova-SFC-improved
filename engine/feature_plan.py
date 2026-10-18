@@ -4,10 +4,10 @@ All components bind directly to their maintained feature APIs. Group order below
 """
 from dataclasses import dataclass
 
-REVISION = 170
+REVISION = 171
 FOUNDATION_SHA = 'ec7e4eefa0bf9644206021cda6ea6673be8ed031901abdc3d3e32a0bec7f22c9'
 DEMO_SHA = '886568d2d0e15c5bcce5539832cd8bf1fd2c02655825c6ddf3cc77068be2556f'
-OUTPUT_SHA = 'a8dec30ac365ac250b042b9cd487fadd8190f74dc930c1b0c106ac7176eff12c'
+OUTPUT_SHA = '72cf941e5a2a4e7f7c22f40082ad615e6a3ba42f5bd69637b74a7e76b4733904'
 
 
 @dataclass(frozen=True)
@@ -34,7 +34,7 @@ PLAN = (
     Feature(
         'collision-and-projectiles', ('target-acquisition', 'route-storage', 'terrain-storage'), (
             'map-drag', 'reticle-convergence', 'beam-rendering', 'hit-alert', 'fuel-contacts',
-            'scenery-distance', 'keyboard-state', 'renderer-lists', 'railgun-provider',
+            'scenery-distance', 'keyboard-state', 'drone-controls', 'renderer-lists', 'railgun-provider',
             'static-contacts', 'static-instance-storage', 'hit-investigation', 'pose-repair',
             'room-cursor', 'storm-clock', 'mobile-contacts', 'compass-coverage'
         )

@@ -393,3 +393,26 @@ repeated deletion before draining, an empty second drain, and successful as well
 as failed host dispatch. A private close Tripulsar replay
 checks identical object/suit state alongside restored firing-sample dispatch.
 Natural close-range and ordinary-range audio remain playtest acceptance.
+
+## Combined drone controls and simultaneous maps
+
+Drone input tests execute the original key scanner and command conversion with
+authored key states. They check independent movement/turn combinations, opposing
+keys, modifier variants, aliases and press/hold/release sequences. They preserve
+the original two-action limit. Physical key delivery and how the controls feel
+still require gameplay checks.
+
+Map tests reproduce multiple contexts sharing a camera slot. They verify separate
+terrain caches, zoom/infrared invalidation, widget replacement, overlay coverage
+and guarded buffer boundaries. HUD layout changes may reassign a map to a new
+canvas while retaining its original context; a regression check covers that path. Integration checks include the final compositor,
+which replaces the earlier renderer hooks. A private captured two-map replay
+compares the original terrain routine's pixels and redraw counts; it establishes
+cache reuse, rather than a complete-frame performance measurement.
+
+Snapshot tests select the renderer allocation from the matching build profile.
+They retain the older 16 MiB layout alongside the 32 MiB layout used by independent
+map caches. Tests execute the restore read, preserve complete map caches, reject incomplete
+payloads and retain cross-build incompatibility checks. Snapshot metadata cannot
+choose a different allocation size. Live capture, restore and map interaction
+complement these checks.

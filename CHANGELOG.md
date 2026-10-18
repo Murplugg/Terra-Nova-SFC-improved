@@ -16,6 +16,8 @@ named patches or source files. See the [source guide](docs/source-guide.md) for 
 
 ### Controls and interface
 
+- **Fixed [legacy]:** manual drone control could discard the second movement key. Independent movement and turning now work together; conflicting controls keep their existing priority. [INPUT; input_views.py]
+
 - Fixed steeply misdirected unlocked shots at nearby mobile units with Shot Aim Assist disabled, especially when firing from wrist height. Aiming now uses the body's contact depth along the crosshair ray. Target Lock and Shot Aim Assist enabled retain their existing behavior. [WEAPONS, OPTIONS; shot_assist.py]
 
 - **Fixed [legacy]:** clicking unit labels or gaps between buttons in Enemy Outfitting could crash the native game. The menu now checks whether a button was found before reading its action. [INPUT; input_views.py]
@@ -46,6 +48,8 @@ named patches or source files. See the [source guide](docs/source-guide.md) for 
 - **Fixed [legacy]:** selecting an otherwise eligible Thermal Disruptor could depend on an uninitialized temporary value. The selector now takes its existing acceptance path while retaining the weapon's target and timing restrictions. [AI; ai_firing.py, 0x251170]
 
 ### Graphics and performance
+
+- Fixed map detail flickering and repeated terrain drawing when several maps were open. Each map now retains its own terrain cache, including maps sharing the same camera slot. [RENDER; maps.py, render_views.py, render_compositor.py]
 
 - Fixed visible units disappearing from camera feeds when the extended scenery range delayed their visibility scan. Unit collection now keeps its original timing while distant scenery retains the increased range. [RENDER; terrain_distance.py]
 

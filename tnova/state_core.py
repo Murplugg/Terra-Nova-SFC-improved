@@ -837,7 +837,7 @@ def capture(install, pid, destination, executable='native-startup.exe'):
         campaign=campaign,
         files=len(files),
         clock=meta['game_clock'],
-        guards=52,
+        guards=len(renderer_layout(install)['guards']),
         capture_released=True,
         bytes=sum(len(b) for b in blobs.values())
     )
@@ -1143,7 +1143,8 @@ def main():
         result = build_restore(install, a.snapshot, a.output, a.campaign)
     else:
         meta, _ = validate_snapshot(install, a.snapshot, a.campaign)
-        result = dict(valid=True, campaign=meta['campaign'], files=len(meta['files']), guards=52)
+        result = dict(valid=True, campaign=meta['campaign'], files=len(meta['files']),
+                      guards=len(renderer_layout(install)['guards']))
     print(json.dumps(result, indent=2))
 
 

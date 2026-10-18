@@ -67,8 +67,19 @@ class EnemyLaserSelectionTests(unittest.TestCase):
     this does not simulate controller movement or a complete firefight.
     """
 
-    def select(self, *, fixed=True, faction=2, weapon=4, health=300,
-               charge=1000, ammo=1, deadline=0, force=1):
+    # The selector's AI classes differ from object classes for structures/drones.
+    PROFILES = {
+        1: (1, 0x3a5608, 0x582, 0x81, 0xce, 0x45, 0x86),
+        2: (2, 0x3a19e8, 296, 0x35, 0x36, 0x17, 0x37),
+        3: (4, 0x39c750, 121, 0x0d, 0x0e, 0x33, 0x56),
+        4: (3, 0x39e590, 335, 0x4a, 0x4b, 0x2a, 0x4c),
+    }
+    # Customized Enemy Outfitting maps its 26 nonempty choices to these IDs.
+    OFFERED = (2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 18, 19, 20,
+               21, 22, 23, 24, 25, 26, 27, 29, 30, 31, 32)
+
+    def prepare(self, *, fixed=True, faction=2, weapon=4, health=300,
+                charge=1000, ammo=1, deadline=0, ai_class=1):
         from original_inputs import original_ram
         from unicorn import Uc, UC_ARCH_X86, UC_MODE_32
         if not any(original_ram[0x250e58:0x25129b]):
@@ -79,14 +90,16 @@ class EnemyLaserSelectionTests(unittest.TestCase):
         if fixed:
             self.assertEqual(bytes(u.mem_read(0x25124b, 2)), f.CHOICE_SITES[0x25124b])
             u.mem_write(0x25124b, dict(f.choice_bodies())[0x25124b])
-        actor(u, 10, slot=1, team=faction)
+        cls, base, stride, count, selected, equipped, energy = self.PROFILES[ai_class]
+        actor(u, 10, cls=cls, slot=1, team=faction)
         ai = 0x3832f0 + 334
-        suit = 0x3a5608 + 0x582
-        u.mem_write(ai + 13, b'\x01')
-        u.mem_write(suit + 0x81, b'\x01')
-        u.mem_write(suit + 0xce, b'\x00')
-        u.mem_write(suit + 0x45, struct.pack('<BBHHIIB', weapon, 2, health, ammo, 0, deadline, 0))
-        put(u, suit + 0x86, charge << 16)
+        record = base + stride
+        u.mem_write(ai + 13, bytes([ai_class]))
+        u.mem_write(record + count, b'\x01')
+        u.mem_write(record + selected, b'\x00')
+        u.mem_write(record + equipped,
+                    struct.pack('<BBHHIIB', weapon, 2, health, ammo, 0, deadline, 0))
+        put(u, record + energy, charge << 16)
         put(u, 0x446ae8, 1000)
         # Direct-fire catalog: damage, charge/ammo/health, range and cooldown.
         cat = 0x395110 + weapon*36
@@ -98,6 +111,10 @@ class EnemyLaserSelectionTests(unittest.TestCase):
         u.mem_write(cat+22, struct.pack('<H', 100))
         for a in (0x3598dc, 0x3598e0, 0x3598e4):
             put(u, a, 1)
+        return u, ai, record
+
+    def select(self, *, force=1, **kwargs):
+        u, ai, _ = self.prepare(**kwargs)
         run(u, 0x250e58, eax=ai, edx=force)
         return u.reg_read(UC_X86_REG_EAX) & 65535
 
@@ -115,11 +132,53 @@ class EnemyLaserSelectionTests(unittest.TestCase):
                         args = dict(faction=faction, weapon=weapon, force=force)
                         self.assertEqual(self.select(fixed=False, **args), self.select(**args))
 
+    def test_custom_weapon_scan_changes_only_enemy_laser_across_record_layouts(self):
+        # Real selector/readiness execution with an authored direct-fire catalog.
+        # The resource-backed investigation separately exercises all 21 menu
+        # types. This protects class dispatch and the narrow faction correction.
+        for ai_class in self.PROFILES:
+            for faction in (1, 2):
+                for weapon in self.OFFERED:
+                    args = dict(ai_class=ai_class, faction=faction, weapon=weapon)
+                    with self.subTest(**args):
+                        before = self.select(fixed=False, **args)
+                        after = self.select(**args)
+                        if faction == 2 and weapon == 4:
+                            self.assertEqual((before, after), (0, 100))
+                        else:
+                            self.assertEqual(before, after)
+
+    def test_controller_rescans_empty_selection_at_half_second_boundary(self):
+        # 0x25129c uses a cached selection before 500 ms, then asks the selector
+        # to scan again. Preserve that controller schedule and ordinary cooldowns.
+        for ai_class in self.PROFILES:
+            for fixed in (False, True):
+                with self.subTest(ai_class=ai_class, fixed=fixed):
+                    u, ai, record = self.prepare(fixed=fixed, ai_class=ai_class)
+                    _, _, _, count, selected, equipped, _ = self.PROFILES[ai_class]
+                    u.mem_write(record + count, b'\x02')
+                    u.mem_write(record + selected, b'\x01')
+                    u.mem_write(record + equipped + 15,
+                                struct.pack('<BBHHIIB', 7, 3, 300, 0, 0, 0, 0))
+                    # Railgun is ammunition-fed, even though its ammo is empty.
+                    u.mem_write(0x395110 + 7 * 36 + 10, struct.pack('<H', 300))
+                    put(u, ai + 0xfe, 1000)
+                    samples = []
+                    for clock in (1000, 1499, 1500, 1501):
+                        put(u, 0x446ae8, clock)
+                        run(u, 0x25129c, eax=ai)
+                        samples.append((u.reg_read(UC_X86_REG_EAX),
+                                        u.mem_read(record + selected, 1)[0]))
+                    expected = [(4, 1), (4, 1)]
+                    expected += [(50, 0), (50, 0)] if fixed else [(4, 1), (4, 1)]
+                    self.assertEqual(samples, expected)
+
     def test_unusable_weapons_remain_unavailable(self):
-        for args in (dict(health=0), dict(charge=0), dict(deadline=1001),
-                     dict(weapon=7, ammo=0)):
-            with self.subTest(**args):
-                self.assertEqual(self.select(**args), 0)
+        for ai_class in self.PROFILES:
+            for args in (dict(health=0), dict(charge=0), dict(deadline=1001),
+                         dict(weapon=7, ammo=0)):
+                with self.subTest(ai_class=ai_class, **args):
+                    self.assertEqual(self.select(ai_class=ai_class, **args), 0)
 
 
 class AIFiringTests(unittest.TestCase):

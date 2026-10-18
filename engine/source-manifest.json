@@ -4,7 +4,8 @@
     "keystone-engine": "0.9.2"
   },
   "files": {
-    "SETUP-README.txt": "06c76bdb4afdba2e6a7cd84ad50e64169fef3b0f394be5a2931980b22556fdb9",
+    "SETUP-README.txt": "2466690b5996bbd5dc1b6f07ee3dd3177dcb6110173bebeed5d37159bea5ce8c",
+    "Setup.cmd": "4538f7aa9e61b58bbdac29526806e7d96854286ebfcfa593733bb731d96d7b79",
     "address_map.py": "bb08969fc5141f708a49772802a18db2f8f77098ac82fe228ea2317fced5d077",
     "bridge/audio.c": "a4ced44877136926b2ced4a597e925f29a0b390c4044c6b872a8480c8fcca184",
     "bridge/audio_abi.S": "9a12e29fb45de8aa8f123a095855f134c922648b518bc6c84c95792f96ada0f0",
@@ -81,7 +82,7 @@
     "host_services.py": "4edb4dc7b060bf881a83e8bbcbb7cd32bf954880089844953783d78896afae39",
     "host_video.py": "9302c40cad3b2e397e2224cf39287221ad2d2597afa7ec0b7e915473e002e281",
     "host_window.py": "4430a8e90fbfbc7301df115fd45af49c162c3051b9cc263e2d550ad847f0cdff",
-    "install_portable.py": "b90021cf3cf1f9e30b838e336a4e87563bf691a83650598fbe012e69379d0906",
+    "install_portable.py": "e7e66adcb93c04611aab44fd7cd263b9abf9788091a183e09ecede2b80fd8187",
     "le_image.py": "2c14dc1fb580b1b92584871bd9c8de11cd729f237c3d5eaff498266c0e9f1fd4",
     "mesh_geometry.py": "f66a8408a266302ffdb62463fa46f12f3d6ba7db91f7b51a60f90c97d35ada12",
     "native_host.py": "9384ace3546c18fab3b7525699bb11e82c489dcdd995b39f13db6944aee88174",
@@ -92,7 +93,7 @@
     "package-support/prequel/TN.CFG": "263f234aaa393f2ece1f1df3fd2379be4d307947501bae03f3cb18e939eb7269",
     "package-support/retail/TN.CFG": "263f234aaa393f2ece1f1df3fd2379be4d307947501bae03f3cb18e939eb7269",
     "package-support/retail/TNHR.INI": "068559314b4cdbac80eb76c88e6e0c3b75cb293e7e5168168d4784a18d972b9f",
-    "package_core.py": "a73ba77da625a2853b8d8239c5d7c45cef4278894d6d18b66e7bf4b044302c37",
+    "package_core.py": "b6e722ed3aadf3d8930fa6d0c46355ab9117ce0dc0def4ee5860c0c24350507d",
     "package_delta.py": "f8ae5eeb872f5d6d578e5eeb498387c04a9f297187c56b79a3eaf445845c2704",
     "patch_audit.py": "a787a01a31644b3bf136056fcad5298cb671b2f2a76435446f6272d24869be71",
     "patch_engine.py": "10880fc5d362952c60ab667578050a02991b6845288ec95ee6d863767b9c8e22",
@@ -108,6 +109,7 @@
     "resource_codec.py": "7c823a95149731149280ce27e6f52d9a6233a965687f3d1a334534fdec57135e",
     "resource_transforms.py": "7f7cab43cfa1906fe78aa7e86e07f81d2abbb116dc3d081e4be4d48fd8c9fbe7",
     "room_clicks.py": "2e929bc3d1dea6bd98fadf86e66bf28de219cf85688f96a62550432b040f2609",
+    "setup_ui.py": "d3721dcb03b9a75a4aff3d869fafcdf376a0c75c220978121fb6cb207859e75c",
     "source_integrity.py": "ca3c5ac20eab3a08c2505c1600e995e2d88b55c2e38ce1d2ad16dfc5f3dfc04f"
   }
 }

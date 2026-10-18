@@ -183,7 +183,7 @@ def package(original, build_root, recipe, *, local_generation=False):
         if name == 'README.txt':
             data = readme_text(revision, milestone, installed=True).encode('utf-8')
         payload(name, data)
-    for name in ('install_portable.py', 'package_delta.py', 'le_image.py'):
+    for name in ('install_portable.py', 'setup_ui.py', 'Setup.cmd', 'package_delta.py', 'le_image.py'):
         shutil.copyfile(KIT / name, target / name)
     if local_generation:
         copy_generators(target)
@@ -206,8 +206,12 @@ This package generates the native executable and seven edited resources from
 your verified original files. It carries no prepared game/resource deltas.
 The matching source download explains the changes and their input requirements.
 
-One-time setup needs 64-bit Windows CPython 3.12. Run install_portable.py with
-the usual original locations and destination, plus --tools-cache C:\\TNovaTools.
+One-time setup needs 64-bit Windows CPython 3.12 with Tcl/Tk and the Python launcher.
+Extract the ZIP, then double-click Setup.cmd to choose the original folders,
+CD image and a new destination. Setup shows its current stage and keeps an error
+log you can open from the window. After completion, open the game folder.
+Command-line setup remains available: run install_portable.py with the original
+locations and destination, plus --tools-cache C:\\TNovaTools.
 Setup downloads about 95 MB of verified tools into that separate folder;
 it installs nothing globally. Allow about 700 MB for tools and temporary work.
 For offline setup, add --tool-downloads with the folder containing the three

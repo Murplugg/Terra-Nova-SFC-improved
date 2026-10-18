@@ -78,6 +78,75 @@ class InstallPathsTests(TestCase):
     def write_manifest(self):
         (self.package / 'install.json').write_text(json.dumps(self.manifest))
 
+    def test_setup_progress_follows_success_and_check_only_without_creating_game(self):
+        events = []
+        report = lambda stage, message: events.append((stage, message))
+        install(self.package, self.original, self.dest, True, progress=report)
+        self.assertEqual([stage for stage, _ in events], [1, 3, 5])
+        self.assertFalse(self.dest.exists())
+        events.clear()
+        install(self.package, self.original, self.dest, progress=report)
+        self.assertEqual([stage for stage, _ in events], [1, 3, 4, 5])
+        self.assertTrue((self.dest / 'installation.json').is_file())
+
+    def test_setup_does_not_report_completion_after_bad_original(self):
+        events = []
+        (self.original / 'TNOVA/DATA/item.res').write_bytes(b'unsupported')
+        with self.assertRaisesRegex(ValueError, 'unsupported original'):
+            install(self.package, self.original, self.dest,
+                    progress=lambda stage, message: events.append(stage))
+        self.assertEqual(events, [1])
+        self.assertFalse(self.dest.exists())
+
+    def test_setup_form_keeps_space_paths_and_sharing_choice(self):
+        from setup_ui import setup_options, storage_summary
+        values = dict(retail=str(self.original / 'TNOVA'),
+                      download_demo=str(self.original / 'TNDEMO1'),
+                      cd_demo=str(self.original / 'TNDEMO2'),
+                      cd_image=str(self.original / '_ISO/TNF108.ISO'),
+                      destination=str(self.dest), tools_cache=str(self.root / 'tools & cache'))
+        options = setup_options(values)
+        self.assertEqual(options['destination'], self.dest)
+        self.assertEqual(options['data_mode'], 'shared')
+        self.assertEqual(setup_options(values, True)['data_mode'], 'copy')
+        result = install(self.package, None, **options)
+        self.assertIn('Files copied', storage_summary(result))
+        values['retail'] = ''
+        with self.assertRaisesRegex(ValueError, 'Choose retail'):
+            setup_options(values)
+        values['retail'] = str(self.root / 'missing')
+        with self.assertRaisesRegex(ValueError, 'Folder not found'):
+            setup_options(values)
+
+    def test_setup_window_reports_success_and_preserves_error_details(self):
+        # Exercise the asynchronous completion path without opening a desktop window.
+        from concurrent.futures import Future
+        from queue import Queue
+        from unittest.mock import Mock
+        from setup_ui import Setup
+        window = Setup.__new__(Setup)
+        window.events = Queue()
+        window.events.put('[3/5] Verifying files')
+        window.log = self.root / 'setup.log'
+        window.log.write_text('Setup started\n')
+        window.controls = [Mock()]
+        window.bar, window.status, window.open_game = Mock(), Mock(), Mock()
+        window.root = Mock()
+        result = install(self.package, self.original, self.dest)
+        window.pending = Future()
+        window.pending.set_result(result)
+        window.poll()
+        self.assertIsNone(window.pending)
+        self.assertEqual(window.destination, str(self.dest))
+        window.open_game.state.assert_called_once_with(['!disabled'])
+        self.assertIn('Ready to play', window.log.read_text())
+        window.pending = Future()
+        window.pending.set_exception(ValueError('Unsupported CD image: fixture.iso'))
+        with patch('setup_ui.messagebox.showerror') as error:
+            window.poll()
+        self.assertIn('Unsupported CD image', error.call_args.args[1])
+        self.assertIn('ValueError: Unsupported CD image', window.log.read_text())
+
     def multi_source(self):
         names = ['TNOVA/DATA/item.res', 'TNDEMO2/DATA/item.res']
         a = (self.original / names[0]).read_bytes()

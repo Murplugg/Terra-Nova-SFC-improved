@@ -251,7 +251,13 @@ Folder options point to the contents of TNOVA/TNDEMO1/TNDEMO2; --cd-image is a f
 Options may override individual locations beneath --original. No search or conversion
 is performed: the same supported English editions and exact hashes are required.
 
-Extract this ZIP and run from its folder:
+Extract this ZIP, then double-click Setup.cmd. The setup window lets you browse
+for each original folder, the CD ISO, a new game folder and the tools folder.
+Use 64-bit Windows CPython 3.12 with Tcl/Tk and the Python launcher installed.
+Setup shows the current stage and offers an error log if it cannot finish.
+After completion, click Open game folder and start Terra Nova Launcher.exe.
+
+Alternatively, run from the extracted folder:
 python -B install_portable.py --original "C:\\path\\to\\originals" --destination "C:\\Games\\TNovaNative"{setup_arguments}
 
 {setup_note}

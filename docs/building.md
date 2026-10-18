@@ -28,6 +28,21 @@ Names alone do not establish compatibility: consumed files are checked by exact 
 
 ## Installed data and disk space
 
+The extracted setup ZIP includes `Setup.cmd`, which opens a folder-picker window
+using Windows x64 CPython 3.12 with Tcl/Tk. Select the retail folder, both demo
+folders, retail CD ISO, a new destination and the build-tools cache. Browsing for
+a destination selects its parent and proposes a new `TNovaNative` folder; the
+text field lets you change that name. Selecting the retail folder also fills
+empty demo/CD fields when the standard sibling layout exists.
+
+The window calls the same verified installer as the command-line entry. Its
+stage indicator remains active during generation; it is not an estimated
+percentage or completion time. Setup logs are saved as `TNovaNative-setup-*.log`
+in your Windows temporary folder, with an **Open setup log** button. Logs contain
+the selected local paths; check them before sharing. After installation, **Open
+game folder** leads to `Terra Nova Launcher.exe` (or `Play.cmd` in a developer
+package). Existing installations are never overwritten.
+
 Setup shares unchanged game assets with hard links where supported, keeping saves,
 settings and generated resources independent. CD-only files are extracted once into
 `TNova-shared-data` beside the installation; `--data-cache PATH` selects another

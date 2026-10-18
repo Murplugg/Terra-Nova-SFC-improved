@@ -160,8 +160,12 @@ def install(
     tools_cache=None,
     tool_downloads=None,
     data_mode='shared',
-    data_cache=None
+    data_cache=None,
+    progress=None
 ):
+    # Callers can display stages without duplicating validation or installation.
+    report = progress or (lambda stage, message: None)
+    report(1, 'Checking folders, setup files and original game data…')
     package = package.resolve()
     destination = destination.resolve()
     folders, iso_path = source_locations(original, retail, download_demo, cd_demo, cd_image)
@@ -238,9 +242,11 @@ def install(
         child(destination, row['path'])
     reconstructed, generation_report = {}, None
     if manifest['schema'] == 3:
+        report(2, 'Preparing tools and generating the game. First setup may take several minutes…')
         reconstructed, generation_report = generate_outputs(
             package, folders, manifest, compiler, dependencies, tools_cache, tool_downloads
         )
+    report(3, 'Verifying every generated file and game asset…')
     for row in manifest['outputs']:
         child(destination, row['path'])
         if row['kind'] == 'copy':
@@ -273,7 +279,9 @@ def install(
                       written_bytes=0, cache_bytes_added=0, copy_fallbacks=0)
     result['storage'] = statistics
     if check_only:
+        report(5, 'Verification complete. No game installation was created.')
         return dict(result, check_only=True)
+    report(4, 'Creating the installation and sharing unchanged game data…')
     destination.parent.mkdir(parents=True, exist_ok=True)
     staging = destination.with_name(destination.name + '.installing-' + uuid.uuid4().hex)
     staging.mkdir(exist_ok=False)
@@ -319,6 +327,7 @@ def install(
     if destination.exists():
         raise ValueError('Destination appeared during installation; keeping staging folder.')
     staging.rename(destination)
+    report(5, 'Installation complete.')
     return result
 
 
@@ -366,7 +375,10 @@ def main():
                     tools_cache=args.tools_cache,
                     tool_downloads=args.tool_downloads,
                     data_mode=args.data_mode,
-                    data_cache=args.data_cache
+                    data_cache=args.data_cache,
+                    progress=lambda stage, message: print(
+                        f'[{stage}/5] {message}', file=sys.stderr, flush=True
+                    )
                 ),
                 indent=2
             )

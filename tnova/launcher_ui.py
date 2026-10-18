@@ -1,4 +1,4 @@
-"""Small development UI. Long operations run off the Tk event thread."""
+"""Game launcher and exact mission snapshots; long operations run off the UI thread."""
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import logging
@@ -17,13 +17,13 @@ class Launcher:
         self.pending = None
         self.rows = []
         self.last_error = None
-        root.title('Terra Nova — portable launcher (development)')
+        root.title('TNova Native')
         root.geometry('780x490')
         root.minsize(660, 430)
         root.protocol('WM_DELETE_WINDOW', self.close)
         outer = ttk.Frame(root, padding=20)
         outer.pack(fill='both', expand=True)
-        ttk.Label(outer, text='Terra Nova', font=('Segoe UI', 21, 'bold')).pack(anchor='w')
+        ttk.Label(outer, text='TNova Native', font=('Segoe UI', 21, 'bold')).pack(anchor='w')
         ttk.Label(
             outer, text='Retail and Prequel share the in-game main menu.'
         ).pack(
@@ -68,7 +68,7 @@ class Launcher:
         ).pack(
             anchor='w', pady=(9, 2)
         )
-        self.status = tk.StringVar(value='Ready. Development build — use your own saved states.')
+        self.status = tk.StringVar(value='Ready to play. Load only your own saved states from this game build.')
         ttk.Label(outer, textvariable=self.status, wraplength=715).pack(anchor='w')
         self.buttons = (self.play, self.load, self.refresh, self.save, self.name)
         self.refresh_states()

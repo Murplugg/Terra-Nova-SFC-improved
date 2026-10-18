@@ -55,6 +55,8 @@ Original weapon statistics and difficulty modifiers are preserved. AI changes re
 
 The player download is a portable setup ZIP. One-time setup for now needs 64-bit Windows CPython 3.12 and the supported retail/demo files and CD data. It downloads verified build tools into a separate folder, generates the adapted executable and edited resources locally, and creates a new installation.
 
+Extract the ZIP and double-click **Setup.cmd**. Browse to the retail game, both demo folders and the retail CD ISO, then choose a new game folder and click **Set up game**. Keep Python's **Tcl/Tk** and **Python launcher** options enabled when installing Python. The setup window shows the current stage and offers a diagnostic log if something goes wrong. Command-line and offline setup remain available in the ZIP's README.
+
 Setup shares unchanged assets where hard links are supported, so repeated installations use much less disk space. Saves, settings and generated files stay independent. Use `--data-mode copy` for independent resource copies; see [storage details](docs/building.md#installed-data-and-disk-space). Treat shared assets as read-only.
 
 Your original installation stays intact. Afterwards, launch **Terra Nova Launcher.exe**; playing and saving snapshots need no installed Python or compiler. See the ZIP's README for the setup command and offline alternative.

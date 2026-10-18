@@ -4,7 +4,12 @@ This ZIP contains local generators and native support. Setup creates the adapted
 executable and edited resources from verified English retail v1.09 files, both
 demos and the supported retail CD ISO. It carries no prepared game/resource deltas.
 
-One-time setup needs 64-bit Windows Python 3.12. From this extracted folder:
+One-time setup needs 64-bit Windows Python 3.12 with Tcl/Tk and the Python launcher.
+Extract the ZIP and double-click Setup.cmd. Choose your original folders, CD ISO
+and a new game folder. Progress and a diagnostic log are available in the window.
+After setup, click Open game folder and start Play.cmd.
+
+Alternatively, run from this extracted folder:
 python -B install_portable.py --original "C:\path\to\originals" --destination "C:\Games\TNovaNative" --tools-cache "C:\TNovaTools"
 
 The original root contains TNOVA, TNDEMO1, TNDEMO2 and _ISO. Separate --retail,

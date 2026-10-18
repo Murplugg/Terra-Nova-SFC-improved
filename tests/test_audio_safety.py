@@ -129,7 +129,7 @@ class AudioSafetyTests(unittest.TestCase):
                     self.assertEqual(old.mem_read(address, size), new.mem_read(address, size))
 
     def test_installation_rejects_conflicts_before_writing(self):
-        for conflict in (f.FIRST_SITE, f.SECOND_SITE, f.CODE, f.END-1):
+        for conflict in (*f.SITES, f.CODE, f.END-1):
             ram = bytearray(0x2000000)
             for a, b in f.SITES.items():
                 ram[a:a+len(b)] = b
@@ -138,6 +138,111 @@ class AudioSafetyTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 f.install(lambda a, b: writes.append((a, b)), lambda a, n: ram[a:a+n])
             self.assertFalse(writes)
+
+
+class QueuedWeaponSoundTests(unittest.TestCase):
+    """Original two-entry queue and drain with modeled host audio dispatch.
+
+    A captured close Tripulsar impact deletes its bolt before the queue drains.
+    Authored entries isolate projectile versus shooter lifetime and ID reuse.
+    These tests verify dispatch, not audible mixing or game-loop timing.
+    """
+
+    def machine(self, fixed, host_success=False):
+        if not any(original_ram[0x2904f8:0x290857]):
+            self.skipTest('Requires the original retail executable')
+        u = Uc(UC_ARCH_X86, UC_MODE_32)
+        u.mem_map(0, 0x2000000)
+        u.mem_write(0, bytes(original_ram))
+        if fixed:
+            f.install(u.mem_write, u.mem_read)
+        entries = struct.pack('<4HI', 19, 267, 0x828, 0x81c, 100)
+        entries += struct.pack('<4HI', 20, 268, 0x829, 0x81d, 200)
+        u.mem_write(0x397a50, entries)
+        for oid, slot in ((19, 1), (20, 2)):
+            u.mem_write(0x3c3240 + oid*37 + 3, struct.pack('<H', slot))
+            u.mem_write(0x3a5608 + slot*0x582 + 0x82, b'\xff'*4)
+        # Model failed dispatch or one stable successful handle. Callback
+        # registration is a boundary; this does not exercise the audio device.
+        # The flight boundary records which projectile would receive its sound.
+        handle = 42 if host_success else 0xffffffff
+        u.mem_write(0x247b60, b'\xb8' + struct.pack('<I', handle) + b'\xc2\x0c\x00')
+        u.mem_write(0x247e30, b'\xc3')
+        u.mem_write(0x249388, b'\xc3')
+        events = []
+
+        def dispatch(cpu, address, size, unused):
+            events.append((address, cpu.reg_read(UC_X86_REG_EAX),
+                           cpu.reg_read(UC_X86_REG_EDX)))
+
+        for address in (0x247b60, 0x249388, 0x247e30):
+            u.hook_add(UC_HOOK_CODE, dispatch, begin=address, end=address)
+        return u, entries, events
+
+    def call(self, u, address, object_id=0):
+        u.mem_write(STACK, struct.pack('<I', STOP))
+        u.reg_write(UC_X86_REG_ESP, STACK)
+        u.reg_write(UC_X86_REG_EAX, object_id)
+        u.reg_write(UC_X86_REG_EBX, 0x12345678)
+        u.reg_write(UC_X86_REG_ESI, 0x87654321)
+        u.emu_start(address, STOP, count=10000)
+        self.assertEqual(u.reg_read(UC_X86_REG_EIP), STOP)
+        self.assertEqual(u.reg_read(UC_X86_REG_ESP), STACK+4)
+        self.assertEqual(u.reg_read(UC_X86_REG_EBX), 0x12345678)
+        self.assertEqual(u.reg_read(UC_X86_REG_ESI), 0x87654321)
+
+    def test_projectile_deletion_keeps_muzzle_sound_without_stale_flight_audio(self):
+        for fixed in (False, True):
+            with self.subTest(fixed=fixed):
+                u, entries, events = self.machine(fixed)
+                self.call(u, f.QUEUE_DELETE, 267)
+                expected = bytearray(entries)
+                expected[2:4] = b'\0\0' if fixed else entries[2:4]
+                expected[4:6] = entries[4:6] if fixed else b'\0\0'
+                self.assertEqual(bytes(u.mem_read(0x397a50, 24)), expected)
+                # A later deletion callback for the same numeric ID must not
+                # cancel the muzzle sample after its association was cleared.
+                self.call(u, f.QUEUE_DELETE, 267)
+                self.assertEqual(bytes(u.mem_read(0x397a50, 24)), expected)
+                self.call(u, 0x29079c)
+                muzzle = [a for site, a, d in events if site == 0x247b60]
+                flights = [a for site, a, d in events if site == 0x249388]
+                self.assertEqual(muzzle, [0x828, 0x829] if fixed else [0x829])
+                self.assertEqual(flights, [268])
+                self.assertEqual(bytes(u.mem_read(0x397a54, 2)), b'\0\0')
+                self.call(u, f.QUEUE_DELETE, 267)
+                events.clear()
+                self.call(u, 0x29079c)
+                self.assertEqual(events, [])
+
+    def test_successful_dispatch_registers_surviving_shooter_handle(self):
+        u, entries, events = self.machine(True, host_success=True)
+        self.call(u, f.QUEUE_DELETE, 267)
+        self.call(u, 0x29079c)
+        registers = [(a, d) for site, a, d in events if site == 0x247e30]
+        slots = [0x3a5608 + slot*0x582 + 0x82 for slot in (1, 2)]
+        self.assertEqual(registers, [(42, address) for address in slots])
+        for address in slots:
+            self.assertEqual(struct.unpack('<I', u.mem_read(address, 4))[0], 42)
+        self.assertEqual([a for site, a, d in events if site == 0x249388], [268])
+
+    def test_shooter_and_unrelated_deletion_keep_original_behavior(self):
+        for oid in (19, 20, 123):
+            states = []
+            for fixed in (False, True):
+                u, entries, events = self.machine(fixed)
+                self.call(u, f.QUEUE_DELETE, oid)
+                states.append(bytes(u.mem_read(0x397a50, 24)))
+            self.assertEqual(*states, oid)
+
+    def test_sound_before_projectile_deletion_keeps_dispatch(self):
+        events_by_mode = []
+        for fixed in (False, True):
+            u, entries, events = self.machine(fixed)
+            self.call(u, 0x29079c)
+            self.call(u, f.QUEUE_DELETE, 267)
+            events_by_mode.append(events)
+        self.assertEqual(*events_by_mode)
 
 
 if __name__ == '__main__':

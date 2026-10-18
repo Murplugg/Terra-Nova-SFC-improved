@@ -24,6 +24,8 @@ named patches or source files. See the [source guide](docs/source-guide.md) for 
 
 ### Windows, audio and saves
 
+- **Fixed [legacy]:** a projectile hitting at very close range could cancel its queued firing sound before playback. Projectile deletion now removes only the flight-sound association; deleting the shooter still cancels its pending sound. [AUDIO; audio_safety.py]
+
 - Fixed an intermittent restart error when the Windows process list still included a game that had just exited. The launcher confirms termination before ignoring that entry. [SAVES; sessions.py]
 
 - Fixed snapshot capture in Arena and Random Scenario Builder sessions when retained campaign counters referred to reports outside the scenario. Existing scenario reports are preserved. [SAVES; state_core.py]
@@ -39,7 +41,9 @@ named patches or source files. See the [source guide](docs/source-guide.md) for 
 
 ### AI and squad behavior
 
-- **Fixed [legacy]:** enemy PBAs could reject a working Laser assigned through Customized Enemy Outfitting solely because of their faction. The selector now evaluates it with the normal readiness and scoring rules. [AI; ai_firing.py, 0x25124B]
+- **Fixed [legacy]:** enemy units could reject a working Laser assigned through Customized Enemy Outfitting solely because of their faction. The selector now evaluates it with the normal readiness and scoring rules. [AI; ai_firing.py, 0x25124B]
+
+- **Fixed [legacy]:** selecting an otherwise eligible Thermal Disruptor could depend on an uninitialized temporary value. The selector now takes its existing acceptance path while retaining the weapon's target and timing restrictions. [AI; ai_firing.py, 0x251170]
 
 ### Graphics and performance
 

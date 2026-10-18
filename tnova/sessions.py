@@ -97,7 +97,9 @@ def game_processes():
                                 )
                     finally:
                         k.CloseHandle(handle)
-                else:
+                elif ctypes.get_last_error() != 87:  # ERROR_INVALID_PARAMETER: PID no longer exists.
+                    # The fixed access flags are valid. A snapshotted nonzero PID
+                    # can disappear before OpenProcess; access failures still block.
                     raise OSError('Could not inspect a Terra Nova process; retry after it exits.')
             ok = k.Process32NextW(snapshot, ctypes.byref(entry))
         error = ctypes.get_last_error()

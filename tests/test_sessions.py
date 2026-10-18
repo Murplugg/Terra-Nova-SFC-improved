@@ -465,10 +465,10 @@ class ProcessScanTests(TestCase):
     failed status query must still block operations that require a closed game.
     """
 
-    def scan(self, exit_code, status_ok=True, image_ok=False):
+    def scan(self, exit_code, status_ok=True, image_ok=False, open_error=None):
         kernel = Mock()
         kernel.CreateToolhelp32Snapshot.return_value = 100
-        kernel.OpenProcess.return_value = 200
+        kernel.OpenProcess.return_value = 200 if open_error is None else None
 
         def first(snapshot, result):
             result._obj.pid = 42
@@ -491,12 +491,24 @@ class ProcessScanTests(TestCase):
         kernel.GetExitCodeProcess.side_effect = status
         try:
             with patch.object(s.ctypes, 'WinDLL', return_value=kernel), patch.object(
-                s.ctypes, 'get_last_error', return_value=18
+                s.ctypes, 'get_last_error', side_effect=([open_error, 18] if open_error else [18])
             ):
                 return s.game_processes(), kernel
         finally:
-            self.assertEqual(kernel.CloseHandle.call_args_list,
-                             [((200,), {}), ((100,), {})])
+            handles = [((200,), {}), ((100,), {})] if open_error is None else [((100,), {})]
+            self.assertEqual(kernel.CloseHandle.call_args_list, handles)
+
+    def test_pid_disappearing_before_open_is_ignored(self):
+        result, kernel = self.scan(0, open_error=87)
+        self.assertEqual(result, [])
+        kernel.QueryFullProcessImageNameW.assert_not_called()
+        kernel.GetExitCodeProcess.assert_not_called()
+
+    def test_access_or_other_open_failure_still_blocks(self):
+        for error in (5, 6, 8):
+            with self.subTest(error=error):
+                with self.assertRaisesRegex(OSError, 'Could not inspect'):
+                    self.scan(0, open_error=error)
 
     def test_confirmed_exited_process_is_ignored(self):
         result, kernel = self.scan(0)

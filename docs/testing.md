@@ -331,13 +331,20 @@ trajectory near a visible sprite boundary still needs human playtesting.
 
 ## Customized enemy weapons and scenario snapshots
 
-The enemy Laser tests run the original selector from the supplied retail
-executable against authored PBA and weapon records. They reproduce the faction
-rejection, then check other factions, weapons, cached/rescanned selection,
-weapon health, energy, cooldown and ammunition. A separate private captured
-Captain comparison tests the same branch with its real loadout. These checks
-establish selector behavior; a live fight is needed to verify controller timing
-and the resulting weapon use.
+The enemy weapon tests run the original selector from the supplied retail
+executable against authored PBA, vehicle, drone and structure records. They
+reproduce the Laser faction rejection and check other factions, all 26 offered
+weapons, cached/rescanned selection, health, energy, cooldown and ammunition.
+The original controller wrapper is also checked at its 500-ms rescan boundary.
+Thermal Disruptor cases reproduce an uninitialized acceptance flag and retain
+the original target exclusions and unsigned timestamp conditions, including
+wraparound. Smoke Grenade checks exercise its separate squad-state conditions.
+
+A private matrix uses all 21 menu unit types and 26 offered weapons. Separate
+checks execute actual unit construction and projectile-firing wrappers for all
+546 combinations. These establish construction and dispatch, with audio modeled;
+they do not simulate controller tactics, projectile flight or impact. Natural
+customized-unit combat and ammunition-driven switching still need playtesting.
 
 Scenario report tests use authored memory containing retained campaign counters
 and a fresh report archive, matching an observed Arena capture failure. The
@@ -351,8 +358,23 @@ That round trip does not establish every scenario's completion/save behavior.
 ## Game exit during process enumeration
 
 Session tests model an image-path query failing after a process-list snapshot was
-taken. Only a successful exit-status query showing termination permits the entry
-to be ignored; active processes and failed queries still block launch. A private
+taken. A successful exit-status query showing termination permits the entry
+to be ignored. An already-removed PID produces OpenProcess error 87 with the
+fixed valid access flags and is also skipped; access-denied and other failures
+still block launch. A private
 Windows test also holds an actual process-list snapshot across normal game exit:
 the previous scanner fails, the corrected scanner skips the exited entry, and
 restart succeeds. The owner's separate paused game remains visible to the scan.
+
+
+## Queued weapon sound lifetime
+
+Audio tests run the original two-entry firing queue and its drain with authored
+shooter/projectile IDs. The host audio dispatcher is modeled, so tests establish
+dispatch rather than audible mixing. Projectile deletion preserves the muzzle
+sample while clearing its flight association; shooter/unrelated deletion and
+sound-first ordering retain their behavior. Cases cover both queue entries,
+repeated deletion before draining, an empty second drain, and successful as well
+as failed host dispatch. A private close Tripulsar replay
+checks identical object/suit state alongside restored firing-sample dispatch.
+Natural close-range and ordinary-range audio remain playtest acceptance.

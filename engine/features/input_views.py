@@ -41,6 +41,78 @@ def outfit_verify(read):
     return _verify(outfit_bodies(), read)
 
 
+# The keyboard scanner collects two drone actions but converts only the first.
+# Convert the second as well so translation and turning can work together.
+# Translation is a speed/direction pair: keep it together, and retain the first
+# action when both request translation or both request turning. This preserves
+# the original binding priority, including opposing keys and arrow aliases.
+DRONE_CONTROLS_SITE = 0x2767ca
+DRONE_CONTROLS_ENTRY = 0x1e49b00
+DRONE_CONTROLS_LIMIT = 0x1e49d00
+
+
+def drone_controls_bodies():
+    body = code(DRONE_CONTROLS_ENTRY, '''
+        pushad
+        sub esp, 24
+        mov eax, [esp+52]
+        mov edx, [esp+44]
+        call 0x27cb58
+
+        cmp dword ptr [esp+28], 2
+        jne done
+        cmp dword ptr [esp+32], 0
+        je done
+        cmp word ptr [esp+88], 0
+        je done
+
+        mov eax, [esp+76]
+        mov edx, [0x35b3b4]
+        mov ebx, esp
+        call 0x27c8b8
+        mov eax, esp
+        lea edx, [esp+12]
+        call 0x27cb58
+
+        mov edx, [esp+44]
+        cmp word ptr [edx+4], 0
+        jne translation
+        mov ax, [esp+16]
+        mov [edx+4], ax
+    translation:
+        cmp dword ptr [edx], 0
+        jne done
+        cmp word ptr [edx+6], 0
+        jne done
+        mov eax, [esp+12]
+        mov [edx], eax
+        mov ax, [esp+18]
+        mov [edx+6], ax
+    done:
+        add esp, 24
+        popad
+        ret
+    ''')
+    # Scratch contains a 10-byte descriptor and an 8-byte output, on this call's
+    # stack only. Saved registers follow it; the caller's second control point
+    # is at +76, and its remaining-key mask is at +88. No persistent state is used.
+    zoom_end = max(a + len(b) for a, b in zoom_bodies())
+    if not zoom_end <= DRONE_CONTROLS_ENTRY < DRONE_CONTROLS_ENTRY + len(body) <= DRONE_CONTROLS_LIMIT <= ASPECT_VALUE:
+        raise ValueError('Drone controls exceed the input helper reservation')
+    return [(DRONE_CONTROLS_SITE, asm(DRONE_CONTROLS_SITE, f'call {DRONE_CONTROLS_ENTRY}')),
+            (DRONE_CONTROLS_ENTRY, body)]
+
+
+def drone_controls_install(write, read):
+    return _install(drone_controls_bodies(),
+                    {DRONE_CONTROLS_SITE: asm(DRONE_CONTROLS_SITE, 'call 0x27cb58')},
+                    write, read)
+
+
+def drone_controls_verify(read):
+    return _verify(drone_controls_bodies(), read)
+
+
 def api_slots(imports):
     result = []
     for name in ('GetModuleHandleA', 'GetProcAddress'):

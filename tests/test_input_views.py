@@ -1,6 +1,6 @@
 """Native coordinate, cursor and projection behavior at modeled OS boundaries."""
 from pathlib import Path
-import sys, types, unittest
+import struct, sys, types, unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'engine'))
@@ -38,6 +38,164 @@ def run(u, address, *, end=STOP, **registers):
 
 
 class InputViewTests(unittest.TestCase):
+
+    def drone_cpu(self, patched, drone_type=0):
+        # Run the original scanner, action table and converters. Only the
+        # unrelated AI-order cancellation call is modeled. Both drone types
+        # use this selected-object path; no keyboard hardware is simulated.
+        from original_inputs import original_ram
+        if not any(original_ram[0x2765f4:0x276813]):
+            self.skipTest('Supply the verified retail executable for keyboard checks')
+        u = Uc(UC_ARCH_X86, UC_MODE_32)
+        u.mem_map(0, 0x2000000)
+        for lo, hi in ((0x2765f4, 0x276813), (0x27c8b8, 0x27cc85),
+                       (0x35b338, 0x35b3bc), (0x35b618, 0x35b66e)):
+            u.mem_write(lo, bytes(original_ram[lo:hi]))
+        self.assertEqual(bytes(original_ram[f.DRONE_CONTROLS_SITE:f.DRONE_CONTROLS_SITE + 5]),
+                         asm(f.DRONE_CONTROLS_SITE, 'call 0x27cb58'))
+        u.mem_write(0x24bb1c, b'\xc3')
+        obj, record = 0x3c3240 + 10 * 37, 0x39e590 + 335
+        u.mem_write(obj, struct.pack('<BBBH', 1, 3, drone_type, 1))
+        word(u, record, 10)
+        word(u, 0x396868, 10)
+        put(u, 0x44c5d0, 0x1900000)
+        if patched:
+            for a, b in f.drone_controls_bodies():
+                u.mem_write(a, b)
+        return u
+
+    def drone_keys(self, u, keys, reset=True):
+        bitmap = bytearray(32)
+        for key in keys:
+            bitmap[key // 8] |= 1 << (key % 8)
+        u.mem_write(0x1900000, bytes(bitmap))
+        if reset:
+            word(u, 0x39025a, 0)
+            u.mem_write(0x39e590 + 335 + 0x132, bytes(8))
+        run(u, 0x2765f4, end=0x276813)
+        return struct.unpack('<ihh', u.mem_read(0x39e590 + 335 + 0x132, 8))
+
+    def test_drone_independent_translation_and_turning_combine(self):
+        # Assert actual single-key calibration, then require both components
+        # for independent axes. These are held bitmap inputs, not a claim about
+        # the owner's physical arrow-key report.
+        for drone_type in (0, 1):
+            old, new = self.drone_cpu(False, drone_type), self.drone_cpu(True, drone_type)
+            for ctrl in (29, 157):
+                for move in (17, 31, 45, 200, 208, 44, 46):
+                    for turn in (30, 32, 203, 205):
+                        with self.subTest(type=drone_type, ctrl=ctrl, move=move, turn=turn):
+                            movement = self.drone_keys(old, (ctrl, move))
+                            turning = self.drone_keys(old, (ctrl, turn))
+                            self.assertNotEqual(movement[0], 0)
+                            self.assertEqual(movement[1], 0)
+                            self.assertEqual(turning[0], 0)
+                            self.assertNotEqual(turning[1], 0)
+                            actual = self.drone_keys(new, (ctrl, move, turn))
+                            self.assertEqual(actual, (movement[0], turning[1], movement[2]))
+
+    def test_drone_single_keys_conflicts_aliases_and_ctrl_release_are_preserved(self):
+        actions = (17, 30, 31, 32, 44, 45, 46, 203, 205, 200, 208)
+        conflicts = ((17, 45), (17, 31), (30, 32), (203, 205), (200, 208),
+                     (17, 200), (30, 203), (32, 205), (45, 208), (44, 46),
+                     (17, 44), (17, 46), (45, 44))
+        for drone_type in (0, 1):
+            old, new = self.drone_cpu(False, drone_type), self.drone_cpu(True, drone_type)
+            for ctrl in ((), (29,), (157,)):
+                for alt in ((), (56,), (184,)):
+                    for keys in [(), *[(a,) for a in actions], *conflicts]:
+                        names = ctrl + alt + keys
+                        with self.subTest(type=drone_type, keys=names):
+                            if ctrl and alt and keys in ((30, 203), (32, 205)):
+                                # Alt changes the arrow to strafe, while A/D
+                                # remain turn bindings: these cease to be aliases.
+                                turning = self.drone_keys(old, ctrl + alt + keys[:1])
+                                movement = self.drone_keys(old, ctrl + alt + keys[1:])
+                                self.assertEqual(self.drone_keys(new, names),
+                                                 (movement[0], turning[1], movement[2]))
+                            else:
+                                self.assertEqual(self.drone_keys(new, names), self.drone_keys(old, names))
+            for keys in ((29, 17, 30), (157, 200, 205), (29, 44, 30), (29, 56, 17, 203)):
+                # Holding repeats the same command. Releasing either Ctrl or
+                # all keys clears the old manual command immediately.
+                first = self.drone_keys(new, keys)
+                self.assertEqual(self.drone_keys(new, keys, reset=False), first)
+                self.assertEqual(self.drone_keys(new, keys[1:], reset=False), (0, 0, 0))
+                self.drone_keys(new, keys)
+                self.assertEqual(self.drone_keys(new, (), reset=False), (0, 0, 0))
+
+    def test_drone_key_order_release_one_axis_and_selected_object_boundary(self):
+        for drone_type in (0, 1):
+            old, new = self.drone_cpu(False, drone_type), self.drone_cpu(True, drone_type)
+            for first, second in ((17, 30), (30, 17), (200, 205), (205, 200), (44, 32), (32, 44)):
+                expected_first = self.drone_keys(old, (29, first))
+                expected_second = self.drone_keys(old, (29, second))
+                self.assertEqual(self.drone_keys(new, (29, first)), expected_first)
+                combined = self.drone_keys(new, (29, first, second), reset=False)
+                self.assertNotEqual(combined[0], 0)
+                self.assertNotEqual(combined[1], 0)
+                self.assertEqual(self.drone_keys(new, (29, second), reset=False), expected_second)
+                self.assertEqual(self.drone_keys(new, (29,), reset=False), (0, 0, 0))
+            # The original missing-selected-drone branch must still bypass the
+            # converter, rather than letting a second action address slot zero.
+            word(new, 0x396868, 0)
+            record = 0x39e590 + 335 + 0x132
+            sentinel = struct.pack('<ihh', 123, 456, 789)
+            new.mem_write(record, sentinel)
+            self.drone_keys(new, (29, 17, 30), reset=False)
+            self.assertEqual(bytes(new.mem_read(record, 8)), sentinel)
+
+    def test_drone_combination_retains_action_limit_and_elapsed_turning(self):
+        from features import actor_timing as timing
+        for drone_type in (0, 1):
+            u = self.drone_cpu(True, drone_type)
+            combined = self.drone_keys(u, (29, 17, 30))
+            self.assertEqual(combined, (1023, -820, 0))
+            # The original collector's alias removal and two-action priority
+            # still decide which requests reach this consumer.
+            for keys in ((29, 17, 30, 32), (29, 17, 30, 200), (29, 17, 30, 203)):
+                self.assertEqual(self.drone_keys(u, keys), combined)
+            for a, b in timing.part_bodies('aircraft'):
+                u.mem_write(a, b)
+            obj, record = 0x3c3240 + 10 * 37, 0x39e590 + 335
+            word(u, obj + 0x1b, 0)
+            for dt in [16, 17, 17] * 20:
+                run(u, timing.AIRCRAFT_TURN_SITE,
+                    end=timing.AIRCRAFT_TURN_SITE + len(timing.AIRCRAFT_TURN_OLD),
+                    edi=record, esi=obj, ebp=dt)
+            self.assertEqual(get(u, obj + 0x1b) & 0xffff, (-820 * 40) & 0xffff)
+            self.assertEqual(get(u, record + 0x132), 1023)
+
+    def test_drone_combination_install_checks_hook_and_helper_without_state(self):
+        for fault in ('none', 'hook', 'helper', 'partial', 'short'):
+            with self.subTest(fault=fault):
+                ram = bytearray(0x2000000)
+                a = f.DRONE_CONTROLS_SITE
+                ram[a:a + 5] = asm(a, 'call 0x27cb58')
+                if fault == 'hook':
+                    ram[a] ^= 1
+                elif fault == 'helper':
+                    ram[f.DRONE_CONTROLS_ENTRY] = 1
+                elif fault == 'partial':
+                    ram[a:a + 5] = f.drone_controls_bodies()[0][1]
+                writes = []
+
+                def write(a, b):
+                    writes.append((a, b))
+                    ram[a:a + len(b)] = b
+
+                read = lambda a, n: ram[a:a + n - int(fault == 'short')]
+                if fault != 'none':
+                    with self.assertRaises(ValueError):
+                        f.drone_controls_install(write, read)
+                    self.assertFalse(writes)
+                else:
+                    f.drone_controls_install(write, read)
+                    self.assertTrue(f.drone_controls_verify(read))
+                    self.assertEqual(writes, f.drone_controls_bodies())
+                    writes.clear()
+                    self.assertTrue(f.drone_controls_install(write, read)['already_installed'])
+                    self.assertFalse(writes)
 
     def test_detail_setup_receives_current_zoom_and_preserves_other_arguments(self):
         # A live Options round trip exposed a mismatch between selected zoom

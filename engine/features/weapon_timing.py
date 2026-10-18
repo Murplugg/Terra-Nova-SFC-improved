@@ -56,11 +56,16 @@ STATE = 0x1dca000
 TABLE = 0x1dcc000
 COUNT = 1024
 STRIDE = 64
+# Scoped feedback from the final AI range/ally check. The controller saves,
+# clears and restores this word around one real firing call, so an earlier veto
+# cannot affect another attempt. Existing whole-row reset/reallocation clears it.
+LAUNCH_VETO = 40
 BASE = 0x1dc9a00
 BURST = 0x1dc9e00
 ALLOC = 0x1dc9f00
 # Row: weapon pointer, weapon id, target, last eligible frame, armed,
-# assigned deadline, last eligible clock, reserved, aim frame+1, aim target.
+# assigned deadline, last eligible clock, reserved, aim frame+1, aim target,
+# scoped launch veto; remaining bytes are reserved.
 HOOKS = {
     0x28f70f: bytes.fromhex('a1e86a440081e2ffff0000'),
     0x28f64e: bytes.fromhex('3b1de86a4400'),

@@ -13,14 +13,17 @@ RANGE = CODE
 PREFLIGHT = CODE + 0x180
 LAUNCH = CODE + 0x300
 CLEARANCE = CODE + 0x500
+LAUNCH_FEEDBACK = CODE + 0xf20
 SITES = {
     0x252ccf: bytes.fromhex('807f0d010f857b000000'),
     0x252e42: bytes.fromhex('83c40c5d5f5e'),
-    0x28f1ac: bytes.fromhex('8b55b08b5dbc')
+    0x28f1ac: bytes.fromhex('8b55b08b5dbc'),
+    0x251f09: asm(0x251f09, 'call 0x252758')
 }
 
 
 def bodies():
+    from features.weapon_timing import TABLE, COUNT, STRIDE, LAUNCH_VETO
     # EAX/EDX point pointers, ECX nominal range (six-metre world units).
     # Q8 deltas have <2.4 cm quantization; bound each axis before squaring.
     s = (
@@ -127,7 +130,10 @@ def bodies():
         f"mov edx,[ebp-80];"
         f"mov ebx,[ebp-68];"
         f"jmp 0x28f1b2;"
-        f"\n blocked:add esp,16;"
+        f"\n blocked:movzx eax,si;"
+        f"imul eax,eax,{STRIDE};"
+        f"mov dword ptr [eax+{TABLE+LAUNCH_VETO}],1;"
+        f"add esp,16;"
         f"popad;"
         f"popfd;"
         f"xor eax,eax;"
@@ -136,6 +142,54 @@ def bodies():
     out.extend(
         [(LAUNCH, asm(LAUNCH, launch)), (0x28f1ac, asm(0x28f1ac, f'jmp {LAUNCH}') + b'\x90')]
     )
+    # A late safety veto must reach the same movement decision as an obstructed
+    # preview. Status 6 also covers allocation and other failures, so inspect a
+    # reason recorded only by the final range/ally gate. The saved word makes
+    # nested calls safe and the pre-call clear excludes stale snapshot/object
+    # state. A launch outside this controller may leave a reason in the row;
+    # saving and clearing it prevents that reason from affecting this call.
+    feedback = asm(LAUNCH_FEEDBACK, f'''
+        lea esp,[esp-8];
+        pushfd;
+        pushad;
+        mov dword ptr [esp+36],0;
+        movzx ecx,word ptr [eax+11];
+        test ecx,ecx;
+        jz call_ready;
+        cmp ecx,{COUNT};
+        jae call_ready;
+        imul ecx,ecx,{STRIDE};
+        add ecx,{TABLE+LAUNCH_VETO};
+        mov [esp+36],ecx;
+        mov edx,[ecx];
+        mov [esp+40],edx;
+        mov dword ptr [ecx],0;
+    call_ready:
+        popad;
+        popfd;
+        call 0x252758;
+        pushfd;
+        pushad;
+        mov ecx,[esp+36];
+        test ecx,ecx;
+        jz finish;
+        cmp al,6;
+        jne restore_reason;
+        cmp dword ptr [ecx],1;
+        jne restore_reason;
+        mov byte ptr [esp+216],0;
+    restore_reason:
+        mov edx,[esp+40];
+        mov [ecx],edx;
+    finish:
+        popad;
+        popfd;
+        lea esp,[esp+8];
+        ret;
+    ''')
+    assert LAUNCH_FEEDBACK + len(feedback) <= END
+    out.extend([(LAUNCH_FEEDBACK, feedback),
+                (0x251f09, asm(0x251f09, f'call {LAUNCH_FEEDBACK}'))])
     # Capsule around the intended firing segment. 1.25 m PBA / 2.5 m vehicle
     # clearance. No RNG calls, persistent state, damage immunity or ally teleport.
     s = ("push ebp;"

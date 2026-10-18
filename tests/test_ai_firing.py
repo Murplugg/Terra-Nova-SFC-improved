@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'engine'))
 from features import ai_firing as f
+from features import weapon_timing as timing
 from patch_support import asm
 from tests.test_render_views import Fixture, put, get, STACK, STOP
 from tests.test_input_views import run
@@ -358,7 +359,7 @@ class AIFiringTests(unittest.TestCase):
         with patch.dict('sys.modules', {'build_inputs': None}), patch(
             'build_paths.source_path', side_effect=AssertionError('source parsing')
         ):
-            self.assertEqual(len(f.bodies()), 8)
+            self.assertEqual(len(f.bodies()), 10)
             self.assertEqual(len(f.choice_bodies()), 18)
             self.assertTrue(f.selected_weapon_body())
             self.assertTrue(f.preflight_source())
@@ -611,12 +612,15 @@ class AIFiringTests(unittest.TestCase):
             (0, 10, 1, 0), (1, 0, 1, 0), (1, 300, 1, 0)
         ):
             actor(u, 10, cls)
+            reason = timing.TABLE + owner * timing.STRIDE + timing.LAUNCH_VETO
+            put(u, reason, 0)
             u.mem_write(FRAME + 40, bytes([real]))
             stop = execute_until(
                 u, f.LAUNCH, {0x28f1b2, 0x28f7f1}, ebp=FRAME, esi=owner, edi=WEAPON
             )
             self.assertEqual(stop, 0x28f7f1 if blocked else 0x28f1b2)
             self.assertEqual(u.reg_read(UC_X86_REG_ESP), STACK)
+            self.assertEqual(get(u, reason), blocked)
 
     def test_final_launch_denies_same_faction_body_only_for_pba_shooters(self):
         for cls, team, blocked in ((1, 1, 1), (1, 2, 0), (2, 1, 0), (4, 1, 0)):
@@ -631,6 +635,115 @@ class AIFiringTests(unittest.TestCase):
             u.mem_write(FRAME + 40, b'\1')
             stop = execute_until(u, f.LAUNCH, {0x28f1b2, 0x28f7f1}, ebp=FRAME, esi=10, edi=WEAPON)
             self.assertEqual(stop, 0x28f7f1 if blocked else 0x28f1b2)
+            self.assertEqual(get(u, timing.TABLE + 10 * timing.STRIDE + timing.LAUNCH_VETO), blocked)
+
+
+class LaunchFeedbackTests(unittest.TestCase):
+    """Keep movement feedback specific to a veto during this firing attempt.
+
+    The original firing wrapper is a boundary here. It supplies authored return
+    statuses and register values; existing launch tests exercise the real reason
+    producer. Copied-controller tests separately establish the movement effect.
+    """
+
+    def test_original_call_preimage(self):
+        from original_inputs import original_ram
+        if not any(original_ram[0x251f09:0x251f0e]):
+            self.skipTest('Original executable was not supplied')
+        self.assertEqual(bytes(original_ram[0x251f09:0x251f0e]), f.SITES[0x251f09])
+
+    def scene(self):
+        u = machine()
+        _, ai = actor(u, 10)
+        row = timing.TABLE + 10 * timing.STRIDE
+        u.mem_write(STACK + 0xa8, b'\1')
+        return u, ai, row + timing.LAUNCH_VETO
+
+    def test_only_current_veto_with_failure_clears_permission(self):
+        for status in range(7):
+            for old in (0, 1, 0x12345678):
+                for veto in (0, 1):
+                    u, ai, reason = self.scene()
+                    put(u, reason, old)
+                    u.mem_write(0x252758, asm(0x252758, f'''
+                        mov ecx,[{reason}]; mov [{OUT}],ecx;
+                        mov dword ptr [{reason}],{veto};
+                        mov eax,{0xabc000+status};
+                        mov ebx,0x22222222; mov ecx,0x33333333;
+                        mov edx,0x44444444; mov esi,0x55555555;
+                        mov edi,0x66666666; mov ebp,0x77777777;
+                        push 0x647; popfd; ret;
+                    '''))
+                    execute_until(u, 0x251f09, {0x251f0e}, eax=ai)
+                    self.assertEqual(get(u, OUT), 0)
+                    self.assertEqual(get(u, reason), old)
+                    self.assertEqual(u.mem_read(STACK + 0xa8, 1)[0], int(not(status == 6 and veto)))
+                    for reg, value in ((UC_X86_REG_EAX, 0xabc000+status),
+                                       (UC_X86_REG_EBX, 0x22222222), (UC_X86_REG_ECX, 0x33333333),
+                                       (UC_X86_REG_EDX, 0x44444444), (UC_X86_REG_ESI, 0x55555555),
+                                       (UC_X86_REG_EDI, 0x66666666), (UC_X86_REG_EBP, 0x77777777)):
+                        self.assertEqual(u.reg_read(reg), value)
+                    self.assertEqual(u.reg_read(UC_X86_REG_ESP), STACK)
+                    self.assertEqual(u.reg_read(UC_X86_REG_EFLAGS), 0x647)
+
+    def test_skipped_call_does_not_consume_stale_result_or_reason(self):
+        u, _, reason = self.scene()
+        put(u, reason, 1)
+        u.mem_write(0x251f0e, asm(0x251f0e, 'mov bh,byte ptr [esp+0xa8]'))
+        execute_until(u, 0x251f0e, {0x251f15}, eax=6)
+        self.assertEqual(get(u, reason), 1)
+        self.assertEqual(u.mem_read(STACK + 0xa8, 1), b'\1')
+
+    def test_veto_outside_controller_does_not_affect_later_generic_failure(self):
+        u, ai, reason = self.scene()
+        put(u, 0x441350, 1)
+        u.mem_write(WEAPON, b'\5')
+        u.mem_write(0x39511e + 5*36, struct.pack('<H', 10))
+        u.mem_write(FRAME - 84, struct.pack('<3i', 11*65536, 0, 0))
+        u.mem_write(FRAME + 40, b'\1')
+        execute_until(u, f.LAUNCH, {0x28f7f1}, ebp=FRAME, esi=10, edi=WEAPON)
+        self.assertEqual(get(u, reason), 1)
+        u.mem_write(0x252758, asm(0x252758, 'mov eax,6; ret;'))
+        execute_until(u, 0x251f09, {0x251f0e}, eax=ai)
+        self.assertEqual(get(u, reason), 1)
+        self.assertEqual(u.mem_read(STACK + 0xa8, 1), b'\1')
+
+    def test_nested_attempt_restores_outer_reason(self):
+        for outer, inner in ((1, 0), (0, 1)):
+            u, ai, reason = self.scene()
+            put(u, reason, 0x12345678)
+            put(u, OUT, 0)
+            u.mem_write(0x252758, asm(0x252758, f'''
+                inc dword ptr [{OUT}]; cmp dword ptr [{OUT}],1;
+                jne inner;
+                mov dword ptr [{reason}],{outer};
+                mov eax,{ai}; call {f.LAUNCH_FEEDBACK};
+                mov eax,6; ret;
+            inner:
+                mov ecx,[{reason}]; mov [{OUT+4}],ecx;
+                mov dword ptr [{reason}],{inner};
+                mov eax,6; ret;
+            '''))
+            execute_until(u, 0x251f09, {0x251f0e}, eax=ai)
+            self.assertEqual(get(u, OUT), 2)
+            self.assertEqual(get(u, OUT+4), 0)
+            self.assertEqual(get(u, reason), 0x12345678)
+            self.assertEqual(u.mem_read(STACK + 0xa8, 1)[0], 1-outer)
+
+    def test_existing_row_reset_and_reallocation_clear_reason(self):
+        for entry in (timing.RESET, timing.ALLOC):
+            u, _, reason = self.scene()
+            for address, body in timing.bodies():
+                u.mem_write(address, body)
+            put(u, reason, 1)
+            # The original allocator is a boundary: return a reused object ID
+            # and let the actual row-reset helper establish fresh ownership.
+            if entry == timing.ALLOC:
+                u.mem_write(timing.ALLOC+0x80, asm(timing.ALLOC+0x80, 'mov eax,10; ret;'))
+                run(u, entry)
+            else:
+                execute_until(u, entry, {0x1dc0400}, eax=10)
+            self.assertEqual(get(u, reason), 0)
 
 
 class SceneryPreviewTests(unittest.TestCase):

@@ -139,8 +139,8 @@ class RenderArenaTests(unittest.TestCase):
         i = plan()
         r.validate(i, {n: 0x300000 + 4 * j for j, n in enumerate(NAMES)})
         self.assertEqual(r.BASE, state_core.ARENA)
-        self.assertEqual(r.SIZE, state_core.SIZES['render-arena.bin'])
-        self.assertEqual(len(i.guard_edges()), 28)
+        self.assertEqual(r.SIZE, 32 * 1024 * 1024)
+        self.assertEqual(len(i.guard_edges()), 54)
         self.assertEqual(r.MARKER, i.state + 124)
         self.assertEqual(
             (i.pixels, i.reflection, i.frame, i.screen, i.map),
@@ -156,7 +156,9 @@ class RenderArenaTests(unittest.TestCase):
         reset = ((0x9aa0ec, 4), (0x9af5e8, 4), (0x1e3c580, 4), (0x1e46140, 40))
         for a, n in reset:
             u.mem_write(a - 4, b'Z' * (n + 8))
+        u.mem_write(i.map_slots, b'Z' * 2048)
         x.call(r.SITE)
+        self.assertEqual(bytes(u.mem_read(i.map_slots, 2048)), bytes(2048))
         self.assertEqual(x.calls[0], ('alloc', (r.BASE, r.SIZE, 0x3000, 0x40)))
         for a, b in i.writes:
             self.assertEqual(bytes(u.mem_read(a, len(b))), b)

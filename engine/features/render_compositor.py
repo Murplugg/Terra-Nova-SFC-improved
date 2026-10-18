@@ -14,6 +14,7 @@ SLOT = CODE
 CAMERA = CODE + 0x800
 MAP = CODE + 0xc00
 COMPOSE = CODE + 0x1000
+MAP_PREPARE = CODE + 0x1800
 
 
 def slot_source(layout, hud):
@@ -167,6 +168,7 @@ def compose_source(layout, hud, maps):
         f"mov ecx,32000;"
         f"rep movsd;"
         f"call {hud.PREPARE};"
+        f"call {MAP_PREPARE};"
         f"call {hud.COVER};"
         f"\n         cmp dword ptr [{hud.READY}],0;"
         f"je hud;"
@@ -276,8 +278,9 @@ def bodies(layout, hud, maps):
     out = []
     for address, limit, source in (
         (SLOT, CAMERA, slot_source(layout, hud)), (CAMERA, MAP, views.camera_merge(hud, SLOT)),
-        (MAP, COMPOSE, views.map_merge(maps,
-                                       SLOT)), (COMPOSE, END, compose_source(layout, hud, maps))
+        (MAP, COMPOSE, views.map_merge(maps, SLOT, layout)),
+        (COMPOSE, MAP_PREPARE, compose_source(layout, hud, maps)),
+        (MAP_PREPARE, END, views.map_prepare(layout, hud))
     ):
         code = views.assemble(address, source)
         if address + len(code) > limit:
@@ -287,7 +290,7 @@ def bodies(layout, hud, maps):
     return [
         out[0], out[1], (hud.MERGE, asm(hud.MERGE, f'jmp {CAMERA}')), out[2],
         (maps.MERGE, asm(maps.MERGE, f'jmp {MAP}')), out[3],
-        (hud.COMPOSE, asm(hud.COMPOSE, f'jmp {COMPOSE}'))
+        (hud.COMPOSE, asm(hud.COMPOSE, f'jmp {COMPOSE}')), out[4]
     ]
 
 

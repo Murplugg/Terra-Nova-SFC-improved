@@ -13,7 +13,7 @@ CODE = 0x1f97500
 END = 0x1f9ff00
 SITE = 0x1d19a00
 BASE = 0x68000000
-SIZE = 0x1000000
+SIZE = 0x2000000
 MARKER = BASE + 0xb0007c
 MAGIC = 0x39305254
 GUARD_BYTES = 256
@@ -37,6 +37,12 @@ class Layout:
         self.clip2 = base + 0xb07000
         self.effect = base + 0xb09000
         self.skyrows = [base + 0xb0b000 + i * 0x2000 for i in range(6)]
+        # The original game owns four map contexts. Each needs independent
+        # terrain pixels and logical coverage while its widget remains visible.
+        self.map_slots = base + 0x1e00100
+        self.map_pixels = tuple(base + 0x1000000 + i * 0x200000 for i in range(4))
+        self.map_refs = tuple(base + 0x1800100 + i * 0x50000 for i in range(4))
+        self.map_masks = tuple(a + 0x20200 for a in self.map_refs)
         self.regions = [
             (name, a, CAP) for name, a in [
                 ('world',
@@ -51,6 +57,11 @@ class Layout:
             ('effect', self.effect, 1200 * 4)
         ]
         self.regions += [('sky' + str(i), a, 1200 * 4) for i, a in enumerate(self.skyrows)]
+        self.regions += [('map-cache-records', self.map_slots, 4 * 512)]
+        for i in range(4):
+            self.regions += [('map-pixels-' + str(i), self.map_pixels[i], CAP),
+                             ('map-ref-' + str(i), self.map_refs[i], 128000),
+                             ('map-mask-' + str(i), self.map_masks[i], 128000)]
 
     def guard_edges(self):
         return tuple(edge for _, a, n in self.regions for edge in (a - GUARD_BYTES, a + n))
@@ -154,6 +165,7 @@ def bodies(i, read, imports):
     # Do not trust persisted partial frames or viewport cache identity after
     # cold start or checkpoint upgrade. The next real frame re-establishes it.
     s += (
+        f"mov edi,{i.map_slots};xor eax,eax;mov ecx,512;rep stosd;"
         f"mov dword ptr [{i.state}],1;"
         f"mov dword ptr [{i.state+24}],0;"
         f"\n     mov dword ptr [0x9aa0ec],0;"

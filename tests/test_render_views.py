@@ -20,7 +20,7 @@ MERGER = CTOR + 32
 LOGICAL = 0x200000
 CANVAS = 0x120000
 OWNER = 0x130000
-CONTROL = 0x140000
+CONTROL = 0x390260
 
 
 def put(u, a, n):
@@ -89,8 +89,10 @@ class Fixture:
             # The wrapper must restore the saved high-view context afterward.
             put(u, r.h.CTX + 24, 0xabcdef)
         elif a == r.maps.TERRAIN:
+            slot = (r.maps.SLOT if get(u, r.maps.CTX + 22) == r.maps.PIXELS
+                    else u.reg_read(UC_X86_REG_EBP))
             self.render_state.append(
-                (get(u, r.maps.CTX + 22), get(u, r.maps.SLOT + 48), get(u, r.maps.SLOT + 52))
+                (get(u, r.maps.CTX + 22), get(u, slot + 48), get(u, slot + 52))
             )
         elif a == MERGER:
             self.render_state.append(u.reg_read(UC_X86_REG_EBP))
@@ -126,6 +128,8 @@ class Fixture:
         put(self.u, CONTROL, 17)
         put(self.u, CONTROL + 4, 19)
         put(self.u, CONTROL + 10, 0x10000)
+        put(self.u, CONTROL + 18, OWNER + 0x22)
+        word(self.u, CONTROL + 38, 2)
 
 
 class RenderViewTests(unittest.TestCase):
@@ -202,9 +206,9 @@ class RenderViewTests(unittest.TestCase):
         source = v.map_entry(x.layout, r.maps)
         x.run(source, eax=CONTROL)
         self.assertEqual(x.calls.count(r.maps.TERRAIN), 1)
-        self.assertEqual(x.render_state[-1], (x.layout.map, 148, 69))
-        self.assertEqual(get(u, r.maps.SLOT), 1)
-        self.assertEqual(get(u, r.maps.SLOT + 12), OWNER)
+        self.assertEqual(x.render_state[-1], (x.layout.map_pixels[0], 148, 69))
+        self.assertEqual(get(u, x.layout.map_slots), 1)
+        self.assertEqual(get(u, x.layout.map_slots + 12), OWNER)
         x.run(source, eax=CONTROL)
         self.assertEqual(x.calls.count(r.maps.TERRAIN), 1)
         put(u, CONTROL, 18)
@@ -223,7 +227,7 @@ class RenderViewTests(unittest.TestCase):
         u = x.u
         x.prepare_map()
         x.run(v.map_entry(x.layout, r.maps), eax=CONTROL)
-        source = v.map_merge(r.maps, MERGER)
+        source = v.map_merge(r.maps, MERGER, x.layout)
         x.calls.clear()
         x.run(source)
         self.assertEqual(x.calls, [MERGER])
@@ -231,7 +235,7 @@ class RenderViewTests(unittest.TestCase):
         # map can appear under a different actor or obsolete control state.
         for address, value in (
             (OWNER + 0x1c, 17), (OWNER + 0x18, 19), (0x359708, 21), (OWNER + 0x22 + 8, 0),
-            (0x389e0c, OWNER)
+            (0x389e0c, OWNER), (CONTROL + 38, 0), (CONTROL + 18, CANVAS), (0x35ade0, 1)
         ):
             with self.subTest(address=hex(address)):
                 old = bytes(u.mem_read(address, 4))
@@ -240,6 +244,97 @@ class RenderViewTests(unittest.TestCase):
                 x.run(source)
                 self.assertFalse(x.calls)
                 u.mem_write(address, old)
+
+    def test_independent_maps_keep_pixels_and_keys_when_other_maps_pan(self):
+        # The original pool has four contexts. Visor and small maps can share
+        # camera slot zero, so identify them by context and widget instead.
+        x = Fixture(); u = x.u
+        owners = [OWNER + i * 0x100 for i in range(4)]
+        put(u, 0x389de8, owners[-1])
+        def draw(index):
+            owner = owners[index]
+            x.canvas(owner + 0x22)
+            put(u, owner + 0x22, LOGICAL + (10 + index * 40) * 320)
+            put(u, 0x44b1a0, owner + 0x22)
+            put(u, CONTROL + 40 * index + 18, owner + 0x22)
+            word(u, CONTROL + 40 * index + 38, 2)
+            x.run(v.map_entry(x.layout, r.maps), eax=CONTROL + 40 * index)
+        for i in range(4):
+            put(u, CONTROL + 40 * i, 100 + i)
+            put(u, CONTROL + 40 * i + 10, 65536)
+            draw(i)
+        self.assertEqual(x.calls.count(r.maps.TERRAIN), 4)
+        for _ in range(3):
+            for i in range(4): draw(i)
+        self.assertEqual(x.calls.count(r.maps.TERRAIN), 4)
+        self.assertEqual([get(u, x.layout.map_slots + 512*i + 56) for i in range(4)],
+                         list(x.layout.map_pixels))
+        put(u, CONTROL + 40, 900)
+        for i in range(4): draw(i)
+        self.assertEqual(x.calls.count(r.maps.TERRAIN), 5)
+        x.render_state.clear()
+        x.run(v.map_merge(r.maps, MERGER, x.layout))
+        self.assertEqual(x.render_state, [x.layout.map_slots + 512*i for i in range(4)])
+        # The final compositor replaces Integration's hooks. Exercise that
+        # installed hook too, so a correct standalone merger cannot hide an
+        # older one-panel implementation selected by the finished build.
+        from features import render_compositor as compositor
+        bodies = dict(compositor.bodies(x.layout, r.h, r.maps))
+        for address, body in bodies.items(): u.mem_write(address, body)
+        u.mem_write(compositor.SLOT, b'\xc3')
+        merged = []
+        u.hook_add(UC_HOOK_CODE,
+                   lambda cpu, a, n, data: merged.append(cpu.reg_read(UC_X86_REG_EBP)),
+                   begin=compositor.SLOT, end=compositor.SLOT)
+        x.run(f'call {r.maps.MERGE};ret;')
+        self.assertEqual(merged, [x.layout.map_slots + 512*i for i in range(4)])
+        from capstone import Cs, CS_ARCH_X86, CS_MODE_32
+        calls = [int(ins.op_str, 16) for ins in
+                 Cs(CS_ARCH_X86, CS_MODE_32).disasm(bodies[compositor.COMPOSE], compositor.COMPOSE)
+                 if ins.mnemonic == 'call' and ins.op_str.startswith('0x')]
+        self.assertLess(calls.index(compositor.MAP_PREPARE), calls.index(r.h.COVER))
+        self.assertIn(compositor.MAP_PREPARE, bodies)
+
+    def test_map_context_bounds_and_owner_reuse(self):
+        x = Fixture(); u = x.u; x.prepare_map()
+        source = v.map_entry(x.layout, r.maps)
+        for bad in (CONTROL - 40, CONTROL + 1, CONTROL + 160):
+            x.run(source, eax=bad)
+        self.assertEqual(x.calls.count(r.maps.TERRAIN), 0)
+        x.run(source, eax=CONTROL)
+        put(u, OWNER + 0x18, 123)
+        x.run(source, eax=CONTROL)
+        self.assertEqual(x.calls.count(r.maps.TERRAIN), 2)
+
+    def test_map_coverage_keeps_old_exclusions_and_captures_new_ones(self):
+        x = Fixture(); u = x.u; x.prepare_map()
+        x.run(v.map_entry(x.layout, r.maps), eax=CONTROL)
+        start = get(u, x.layout.map_slots + 20)
+        u.mem_write(r.h.MASK, b'\xff' * 128000)
+        u.mem_write(r.h.MASK + start, b'\x00\xff')
+        source = v.map_prepare(x.layout, r.h)
+        x.run(source)
+        self.assertEqual(bytes(u.mem_read(x.layout.map_masks[0], 2)), b'\x00\xff')
+        u.mem_write(r.h.MASK + start, b'\xff\x00')
+        x.run(source)
+        self.assertEqual(bytes(u.mem_read(x.layout.map_masks[0], 2)), b'\x00\x00')
+        x.run(v.map_entry(x.layout, r.maps), eax=CONTROL)
+        x.run(source)
+        self.assertEqual(bytes(u.mem_read(x.layout.map_masks[0], 2)), b'\xff\x00')
+
+    def test_map_background_uses_the_selected_context_reference_buffer(self):
+        x = Fixture(); u = x.u; x.prepare_map()
+        # Original blit is modeled as a return, leaving known logical pixels.
+        put(u, 0x150000 + 0x238, MODE)
+        for index in (0, 1):
+            context = CONTROL + 40 * index
+            u.mem_write(context, bytes(u.mem_read(CONTROL, 40)))
+            x.run(v.map_entry(x.layout, r.maps), eax=context)
+            u.mem_write(get(u, OWNER + 0x22), bytes((30 + index,)) * 37)
+            u.reg_write(UC_X86_REG_ECX, 0x150000)
+            x.run(v.map_background(x.layout, r.maps))
+        self.assertEqual(bytes(u.mem_read(x.layout.map_refs[0], 37)), bytes((30,)) * 37)
+        self.assertEqual(bytes(u.mem_read(x.layout.map_refs[1], 37)), bytes((31,)) * 37)
 
     def test_camera_merge_checks_actor_identity_and_cockpit_visibility(self):
         x = Fixture()

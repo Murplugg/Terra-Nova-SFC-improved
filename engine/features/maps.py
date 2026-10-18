@@ -304,6 +304,129 @@ def background_source(maps):
     )
 
 
+def panel_entry_source(layout, maps):
+    """Cache each original map context independently in the native arena.
+
+    The game has four 40-byte map contexts, including the enlarged visor map.
+    Camera slot numbers are insufficient because two widgets can share one.
+    Records contain the compositor slot, a pending key and its last drawn key.
+    The shared CTX is only scratch space during this synchronous draw call.
+    """
+    return f"""
+        pushfd; pushad; cld;
+        mov dword ptr [{maps.CONTROL+12}],0;
+        mov esi,eax;
+        sub eax,0x390260;
+        cmp eax,160; jae original;
+        xor edx,edx; mov ecx,40; div ecx;
+        test edx,edx; jnz original;
+        mov ebx,eax; shl eax,9; lea ebp,[eax+{layout.map_slots}];
+        mov dword ptr [ebp],0;
+        test byte ptr [esi+38],2; jz original;
+        cmp dword ptr [0x446f80],0x01900140; jne original;
+        cmp byte ptr [0x1d0d449],0x6b; jne original;
+        mov ecx,[0x44b1a0];
+        cmp ecx,[esi+18]; jne original;
+        cmp word ptr [ecx+12],320; jne original;
+        mov [ebp+8],ecx;
+        lea eax,[ecx-0x22];
+        cmp eax,[0x389dec]; jb original;
+        cmp eax,[0x389de8]; ja original;
+        mov [ebp+12],eax;
+        mov edx,[eax+0x1c]; mov [ebp+68],edx;
+        mov edx,[eax+0x18]; mov [ebp+72],edx;
+        movzx edx,byte ptr [eax+0x21];
+        cmp edx,3; jae original;
+        mov [ebp+76],edx; shl edx,5;
+        movzx edx,byte ptr [edx+0x38fc12]; mov [ebp+80],edx;
+        movzx edx,byte ptr [eax+0x20]; and edx,0x40; mov [ebp+88],edx;
+        mov edx,[0x359708]; mov [ebp+96],edx;
+        mov [ebp+108],esi;
+        mov eax,ebx; shl eax,21; add eax,{layout.map_pixels[0]}; mov [ebp+56],eax;
+        imul eax,ebx,0x50000; add eax,{layout.map_refs[0]}; mov [ebp+60],eax;
+        add eax,0x20200; mov [ebp+64],eax;
+        mov edx,[0x446f78]; mov [ebp+16],edx;
+        mov eax,[ecx]; sub eax,edx;
+        cmp eax,128000; jae original;
+        mov [ebp+20],eax;
+        xor edx,edx; mov ecx,320; div ecx;
+        mov [ebp+24],edx; mov [ebp+28],eax;
+        mov ecx,[ebp+8];
+        movzx ebx,word ptr [ecx+8]; test ebx,ebx; jz original;
+        mov [ebp+32],ebx; add ebx,edx; cmp ebx,320; ja original;
+        movzx edi,word ptr [ecx+10]; test edi,edi; jz original;
+        mov [ebp+36],edi; add edi,eax; cmp edi,400; ja original;
+        shl edx,2; mov [ebp+40],edx;
+        shl ebx,2; sub ebx,edx; mov [ebp+48],ebx;
+        imul eax,eax,12; add eax,4; xor edx,edx; mov ecx,5; div ecx;
+        mov [ebp+44],eax;
+        imul eax,edi,12; add eax,4; xor edx,edx; div ecx;
+        sub eax,[ebp+44]; mov [ebp+52],eax;
+        mov eax,[esi]; mov [ebp+128],eax;
+        mov eax,[esi+4]; mov [ebp+132],eax;
+        mov eax,[esi+10]; mov [ebp+136],eax;
+        mov eax,[ebp+32]; mov [ebp+140],eax;
+        mov eax,[ebp+36]; mov [ebp+144],eax;
+        mov eax,[ebp+48]; mov [ebp+148],eax;
+        mov eax,[ebp+52]; mov [ebp+152],eax;
+        movzx eax,word ptr [esi+38]; mov [ebp+156],eax;
+        mov eax,[0x359708]; mov [ebp+160],eax;
+        movzx eax,byte ptr [0x35ade0]; mov [ebp+164],eax;
+        mov [ebp+168],esi;
+        mov eax,[ebp+12]; mov [ebp+172],eax;
+        mov eax,[ebp+68]; mov [ebp+176],eax;
+        mov eax,[ebp+72]; mov [ebp+180],eax;
+        cmp dword ptr [ebp+104],1; jne redraw;
+        push esi; lea esi,[ebp+128]; lea edi,[ebp+192];
+        mov ecx,14; repe cmpsd; pop esi; je cached;
+    redraw:
+        push esi; lea esi,[ebp+128]; lea edi,[ebp+192];
+        mov ecx,14; rep movsd; pop esi;
+        mov edi,{maps.CTX}; mov ecx,10; rep movsd;
+        mov eax,[ebp+136]; imul eax,[ebp+32]; xor edx,edx;
+        div dword ptr [ebp+48]; mov [{maps.CTX+10}],eax;
+        mov eax,[ebp+136]; shr eax,1; imul eax,[ebp+36]; xor edx,edx;
+        div dword ptr [ebp+52]; mov [{maps.CTX+64}],eax;
+        mov eax,[ebp+56]; mov [{maps.CTX+22}],eax;
+        mov eax,[ebp+48]; mov [{maps.CTX+30}],ax; mov [{maps.CTX+34}],ax;
+        mov eax,[ebp+52]; mov [{maps.CTX+32}],ax;
+        mov eax,{maps.CTX}; xor edx,edx; call {maps.TERRAIN};
+        inc dword ptr [{maps.CONTROL+4}];
+        cmp byte ptr [0x35ade0],0; je rendered;
+        mov esi,[ebp+56]; mov ecx,[ebp+48]; imul ecx,[ebp+52];
+    infrared:
+        movzx eax,byte ptr [esi]; mov al,[eax+0x417928]; mov [esi],al;
+        inc esi; loop infrared;
+    rendered:
+        mov dword ptr [ebp+104],1;
+    cached:
+        mov dword ptr [ebp],1; mov dword ptr [ebp+4],1;
+        mov eax,[0x35f400]; mov [ebp+92],eax;
+        mov [{maps.CONTROL+12}],ebp;
+    original:
+        popad; popfd; jmp {maps.ORIGINAL};
+    """
+
+
+def panel_background_source(layout, maps):
+    """Save this map's logical terrain before markers are drawn over it."""
+    return f"""
+        call dword ptr [ecx+0x238]; pushfd; pushad; cld;
+        mov ebp,[{maps.CONTROL+12}];
+        cmp ebp,{layout.map_slots}; jb done;
+        cmp ebp,{layout.map_slots+4*512}; jae done;
+        mov eax,ebp; sub eax,{layout.map_slots}; test eax,511; jnz done;
+        cmp dword ptr [ebp],1; jne done;
+        mov eax,[0x44b1a0]; cmp eax,[ebp+8]; jne done;
+        mov esi,[eax]; mov edi,[ebp+60]; mov edx,[ebp+36];
+    row:
+        mov ecx,[ebp+32]; rep movsb;
+        add esi,320; sub esi,[ebp+32]; dec edx; jnz row;
+    done:
+        popad; popfd; ret;
+    """
+
+
 def logical_merge_source(*, persistent=False):
     if persistent:
         identity = (

@@ -86,10 +86,11 @@ class Integration(Layout):
         self.emit('pick', pick.quad_source(pick.Profile.HD960), h.PICK)
         # Map has its own enlarged image. Camera source buffers remain unchanged.
         self.emit('map_entry', views.map_entry(self, maps), maps.ENTRY)
-        self.emit('map_background', views.map_background(maps), maps.BACKGROUND)
+        self.emit('map_background', views.map_background(self, maps), maps.BACKGROUND)
+        map_prepare = self.emit('map_prepare', views.map_prepare(self, h))
         slot = self.slot_merger()
         self.emit('camera_merge', views.camera_merge(h, slot), h.MERGE)
-        self.emit('map_merge', views.map_merge(maps, slot), maps.MERGE)
+        self.emit('map_merge', views.map_merge(maps, slot, self), maps.MERGE)
         s = (
             f"pushfd;"
             f"pushad;"
@@ -103,6 +104,7 @@ class Integration(Layout):
             f"mov ecx,32000;"
             f"rep movsd;"
             f"call {h.PREPARE};"
+            f"call {map_prepare};"
             f"call {h.COVER};"
             f"\n         cmp dword ptr [{h.READY}],0;"
             f"je hud;"
@@ -494,6 +496,7 @@ class Integration(Layout):
         l.p.write(h.READY, bytes(4))
         l.p.write(0x9af5e8, bytes(4))
         l.p.write(maps.SLOT, bytes(4))
+        l.p.write(self.map_slots, bytes(4 * 512))
         return self
 
     def guards(self, p):

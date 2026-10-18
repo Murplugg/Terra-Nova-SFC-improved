@@ -198,13 +198,11 @@ def world(layout, hud, constructor, mode_entry):
 
 
 def map_entry(layout, maps):
-    from features.maps import entry_source
-    return entry_source(maps, layout, persistent=True)
+    return maps.panel_entry_source(layout, maps)
 
 
-def map_background(maps):
-    from features.maps import background_source
-    return background_source(maps)
+def map_background(layout, maps):
+    return maps.panel_background_source(layout, maps)
 
 
 def camera_merge(hud, slot):
@@ -275,22 +273,9 @@ def camera_merge(hud, slot):
     )
 
 
-def map_merge(maps, slot):
+def map_merge(maps, slot, layout):
     """Keep the detailed map until identity, view state or map settings change."""
     return (
-        f"pushfd;"
-        f"cmp byte ptr [0x38fbfe],0;"
-        f"je visible;"
-        f"test byte ptr [0x35aef0],1;"
-        f"jz visible;"
-        f"push eax;"
-        f"mov eax,[{maps.SLOT+12}];"
-        f"cmp eax,[0x389df4];"
-        f"pop eax;"
-        f"je visible;"
-        f"popfd;"
-        f"ret;"
-        f"visible:popfd;"
         f"\n pushfd;"
         f" pushad;"
         f" cld;"
@@ -299,9 +284,15 @@ def map_merge(maps, slot):
         f"\n cmp dword ptr [0x446f80],0x01900140;"
         f" jne done;"
         f"\n xor ebx,ebx;"
-        f" mov ebp,{maps.SLOT};"
+        f" mov ebp,{layout.map_slots};"
         f"\n slot: cmp dword ptr [ebp],0;"
         f" je next;"
+        f"cmp byte ptr [0x38fbfe],0;je visible;"
+        f"test byte ptr [0x35aef0],1;jz visible;"
+        f"mov eax,[ebp+12];cmp eax,[0x389df4];jne next;"
+        f"visible:mov eax,[ebp+108];test byte ptr [eax+38],2;jz next;"
+        f"mov eax,[eax+18];cmp eax,[ebp+8];jne next;"
+        f"movzx eax,byte ptr [0x35ade0];cmp eax,[ebp+228];jne next;"
         f"\n mov eax,[ebp+12];"
         f"cmp eax,[0x389dec];"
         f"jb next;"
@@ -349,14 +340,42 @@ def map_merge(maps, slot):
         f"inc dword ptr [ebp+84];"
         f"pop ebx;"
         f" next: inc ebx;"
-        f" add ebp,128;"
-        f" cmp ebx,1;"
+        f" add ebp,512;"
+        f" cmp ebx,4;"
         f" jb slot;"
         f"\n done: popad;"
         f" popfd;"
         f" ret;"
         f"\n "
     )
+
+
+def map_prepare(layout, hud):
+    """Retain each map's coverage and apply overlays drawn since its last update.
+
+    Run before broad widget coverage hides those widgets from the world image.
+    New map draws replace their mask; intervening frames only add exclusions.
+    """
+    return f"""
+        pushfd;pushad;cld;mov ebp,{layout.map_slots};mov ebx,4;
+    slot:
+        cmp dword ptr [ebp],1;jne next;
+        mov eax,[0x446f78];cmp eax,[ebp+16];jne next;
+        mov esi,[ebp+20];add esi,{hud.MASK};mov edi,[ebp+64];
+        mov edx,[ebp+36];
+    row:
+        mov ecx,[ebp+32];
+        cmp dword ptr [ebp+4],0;je combine;
+        rep movsb;jmp row_done;
+    combine:
+        lodsb;and [edi],al;inc edi;loop combine;
+    row_done:
+        add esi,320;sub esi,[ebp+32];dec edx;jnz row;
+        mov dword ptr [ebp+4],0;
+    next:
+        add ebp,512;dec ebx;jnz slot;
+        popad;popfd;ret;
+    """
 
 
 def cursor(layout, hud):

@@ -52,7 +52,7 @@ class RenderInputTests(unittest.TestCase):
         a.build(ram)
         b.build(bindings=bound)
         self.assertEqual(a.writes, b.writes)
-        self.assertEqual(len(a.writes), 75)
+        self.assertEqual(len(a.writes), 76)
         with self.assertRaisesRegex(ValueError, 'either'):
             r.Integration(BASE).build(ram, bindings=bound)
 

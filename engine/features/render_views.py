@@ -291,7 +291,6 @@ def map_merge(maps, slot, layout):
         f"test byte ptr [0x35aef0],1;jz visible;"
         f"mov eax,[ebp+12];cmp eax,[0x389df4];jne next;"
         f"visible:mov eax,[ebp+108];test byte ptr [eax+38],2;jz next;"
-        f"mov eax,[eax+18];cmp eax,[ebp+8];jne next;"
         f"movzx eax,byte ptr [0x35ade0];cmp eax,[ebp+228];jne next;"
         f"\n mov eax,[ebp+12];"
         f"cmp eax,[0x389dec];"

@@ -235,7 +235,7 @@ class RenderViewTests(unittest.TestCase):
         # map can appear under a different actor or obsolete control state.
         for address, value in (
             (OWNER + 0x1c, 17), (OWNER + 0x18, 19), (0x359708, 21), (OWNER + 0x22 + 8, 0),
-            (0x389e0c, OWNER), (CONTROL + 38, 0), (CONTROL + 18, CANVAS), (0x35ade0, 1)
+            (0x389e0c, OWNER), (CONTROL + 38, 0), (0x35ade0, 1)
         ):
             with self.subTest(address=hex(address)):
                 old = bytes(u.mem_read(address, 4))
@@ -305,6 +305,30 @@ class RenderViewTests(unittest.TestCase):
         put(u, OWNER + 0x18, 123)
         x.run(source, eax=CONTROL)
         self.assertEqual(x.calls.count(r.maps.TERRAIN), 2)
+
+    def test_map_context_can_move_to_a_new_hud_widget_without_recreation(self):
+        # G/TAB keeps the original map context and its creation-time canvas,
+        # but the panel draw callback selects a new active widget/canvas.
+        x = Fixture(); u = x.u; x.prepare_map()
+        entry = v.map_entry(x.layout, r.maps)
+        merge = v.map_merge(r.maps, MERGER, x.layout)
+        x.run(entry, eax=CONTROL)
+        moved_owner = OWNER + 0x100
+        x.canvas(moved_owner + 0x22)
+        put(u, 0x389dec, moved_owner); put(u, 0x389de8, moved_owner)
+        put(u, 0x44b1a0, moved_owner + 0x22)
+        x.calls.clear()
+        x.run(merge)
+        self.assertFalse(x.calls)  # Previous HUD owner is no longer active.
+        x.run(entry, eax=CONTROL)
+        self.assertEqual(get(u, CONTROL + 18), OWNER + 0x22)
+        self.assertEqual(get(u, x.layout.map_slots + 12), moved_owner)
+        self.assertEqual(x.calls.count(r.maps.TERRAIN), 1)
+        x.run(entry, eax=CONTROL)
+        self.assertEqual(x.calls.count(r.maps.TERRAIN), 1)
+        x.calls.clear()
+        x.run(merge)
+        self.assertEqual(x.calls, [MERGER])
 
     def test_map_coverage_keeps_old_exclusions_and_captures_new_ones(self):
         x = Fixture(); u = x.u; x.prepare_map()

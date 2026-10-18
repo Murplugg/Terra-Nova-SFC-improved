@@ -309,6 +309,8 @@ def panel_entry_source(layout, maps):
 
     The game has four 40-byte map contexts, including the enlarged visor map.
     Camera slot numbers are insufficient because two widgets can share one.
+    HUD layout changes can move a map to another active canvas while its
+    context retains the creation-time canvas; follow the draw callback's canvas.
     Records contain the compositor slot, a pending key and its last drawn key.
     The shared CTX is only scratch space during this synchronous draw call.
     """
@@ -326,7 +328,6 @@ def panel_entry_source(layout, maps):
         cmp dword ptr [0x446f80],0x01900140; jne original;
         cmp byte ptr [0x1d0d449],0x6b; jne original;
         mov ecx,[0x44b1a0];
-        cmp ecx,[esi+18]; jne original;
         cmp word ptr [ecx+12],320; jne original;
         mov [ebp+8],ecx;
         lea eax,[ecx-0x22];

@@ -6,27 +6,27 @@
   },
   "map_entry": {
     "address": 1757415936,
-    "sha256": "a03da1ae3da4232b48292400a7d09d295fdfd5b86d22e606b4a579c5430a36fe",
-    "size": 776
+    "sha256": "f281f0bf95688e2e43a7c1a91547ada2cb4d45a056dcaff061a03dcd2fb8769b",
+    "size": 767
   },
   "map_background": {
-    "address": 1757416960,
+    "address": 1757416704,
     "sha256": "8eb5793cae91c8da8dab55495e8450c9aab6d1cfa3e83b9ab8eb950a6891fa6f",
     "size": 89
   },
   "camera_merge": {
-    "address": 1757417984,
+    "address": 1757417728,
     "sha256": "2ad571a8879a2dca43a30387f14bb3e61c25d14e8d836299e129e13171f4da31",
     "size": 198
   },
   "map_merge": {
-    "address": 1757418240,
-    "sha256": "ba112a954c3eac3770ad3eee43a9d98e22f5a151c59369671ecc31bd3f8ec470",
-    "size": 293
+    "address": 1757417984,
+    "sha256": "e9cd9fe6a746c91637498e8feeea21f6f0f21a11aebeedbcd4ed7d314d49f3f2",
+    "size": 281
   },
   "cursor": {
-    "address": 1757419264,
-    "sha256": "9ef33a8df36d9c1ed78ac358b4692c1f24afbb0a123b917451b09f9d43dc6945",
+    "address": 1757419008,
+    "sha256": "7f86042eee1d8fe2435391767e0e6562b97d6b24c93e86514a44a24e1fde1e0c",
     "size": 613
   },
   "mode": {
@@ -35,7 +35,7 @@
     "size": 70
   },
   "map_prepare": {
-    "address": 1757417216,
+    "address": 1757416960,
     "sha256": "bfbed1f2f24d22cb8f48f4f50c0adbea52de10a4b3555b27c6effc82f1137eb2",
     "size": 94
   }

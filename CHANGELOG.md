@@ -24,6 +24,8 @@ named patches or source files. See the [source guide](docs/source-guide.md) for 
 
 ### Windows, audio and saves
 
+- Fixed an intermittent restart error when the Windows process list still included a game that had just exited. The launcher confirms termination before ignoring that entry. [SAVES; sessions.py]
+
 - Fixed snapshot capture in Arena and Random Scenario Builder sessions when retained campaign counters referred to reports outside the scenario. Existing scenario reports are preserved. [SAVES; state_core.py]
 
 - **Fixed [legacy]:** damaging a drone's weapon could crash the game when another energy weapon was checked without an energy-pool record. The check now handles that missing record while retaining the original weapon-damage rules. [WEAPONS; weapon_timing.py]

@@ -458,6 +458,63 @@ class LockTests(TestCase):
             temp.cleanup()
 
 
+class ProcessScanTests(TestCase):
+    """Model a Windows image-query race observed immediately after game exit.
+
+    Only an exited process may disappear from the result. An active process or
+    failed status query must still block operations that require a closed game.
+    """
+
+    def scan(self, exit_code, status_ok=True, image_ok=False):
+        kernel = Mock()
+        kernel.CreateToolhelp32Snapshot.return_value = 100
+        kernel.OpenProcess.return_value = 200
+
+        def first(snapshot, result):
+            result._obj.pid = 42
+            result._obj.name = 'native-checkpoint.exe'
+            return True
+
+        def image(handle, flags, text, size):
+            if image_ok:
+                text.value = str(Path('native-checkpoint.exe').resolve())
+            return image_ok
+
+        def status(handle, result):
+            self.assertEqual(handle, 200)
+            result._obj.value = exit_code
+            return status_ok
+
+        kernel.Process32FirstW.side_effect = first
+        kernel.Process32NextW.return_value = False
+        kernel.QueryFullProcessImageNameW.side_effect = image
+        kernel.GetExitCodeProcess.side_effect = status
+        try:
+            with patch.object(s.ctypes, 'WinDLL', return_value=kernel), patch.object(
+                s.ctypes, 'get_last_error', return_value=18
+            ):
+                return s.game_processes(), kernel
+        finally:
+            self.assertEqual(kernel.CloseHandle.call_args_list,
+                             [((200,), {}), ((100,), {})])
+
+    def test_confirmed_exited_process_is_ignored(self):
+        result, kernel = self.scan(0)
+        self.assertEqual(result, [])
+        kernel.GetExitCodeProcess.assert_called_once()
+
+    def test_live_or_unconfirmed_process_still_blocks(self):
+        for code, ok in ((259, True), (0, False)):
+            with self.subTest(code=code, status_ok=ok):
+                with self.assertRaisesRegex(OSError, 'Could not identify'):
+                    self.scan(code, ok)
+
+    def test_successful_image_query_keeps_original_behavior(self):
+        result, kernel = self.scan(259, image_ok=True)
+        self.assertEqual(result, [s.GameProcess(42, Path('native-checkpoint.exe').resolve())])
+        kernel.GetExitCodeProcess.assert_not_called()
+
+
 class CloseTests(TestCase):
 
     def test_exit_wait_keeps_verified_handle_without_reenumerating_image(self):

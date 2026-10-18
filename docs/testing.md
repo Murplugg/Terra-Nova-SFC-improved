@@ -346,3 +346,13 @@ three IDs, neighboring campaign IDs, existing report preservation and missing
 files. Campaign report validation remains strict. A private Arena was captured,
 restored and captured again with the same paused clock, objects and suit records.
 That round trip does not establish every scenario's completion/save behavior.
+
+
+## Game exit during process enumeration
+
+Session tests model an image-path query failing after a process-list snapshot was
+taken. Only a successful exit-status query showing termination permits the entry
+to be ignored; active processes and failed queries still block launch. A private
+Windows test also holds an actual process-list snapshot across normal game exit:
+the previous scanner fails, the corrected scanner skips the exited entry, and
+restart succeeds. The owner's separate paused game remains visible to the scan.

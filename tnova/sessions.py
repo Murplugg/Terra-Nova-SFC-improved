@@ -64,6 +64,8 @@ def game_processes():
         ctypes.POINTER(wintypes.DWORD)
     ]
     k.QueryFullProcessImageNameW.restype = wintypes.BOOL
+    k.GetExitCodeProcess.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)]
+    k.GetExitCodeProcess.restype = wintypes.BOOL
     k.CloseHandle.argtypes = [wintypes.HANDLE]
     k.CloseHandle.restype = wintypes.BOOL
     snapshot = k.CreateToolhelp32Snapshot(2, 0)
@@ -84,9 +86,15 @@ def game_processes():
                         if k.QueryFullProcessImageNameW(handle, 0, text, ctypes.byref(size)):
                             result.append(GameProcess(entry.pid, Path(text.value).resolve()))
                         else:
-                            raise OSError(
-                                'Could not identify a Terra Nova process; retry after it exits.'
-                            )
+                            # A Toolhelp snapshot can retain a process that exits
+                            # before its image path is queried. Ignore it only when
+                            # this same open handle confirms termination.
+                            code = wintypes.DWORD()
+                            known_exit = k.GetExitCodeProcess(handle, ctypes.byref(code))
+                            if not known_exit or code.value == 259:
+                                raise OSError(
+                                    'Could not identify a Terra Nova process; retry after it exits.'
+                                )
                     finally:
                         k.CloseHandle(handle)
                 else:

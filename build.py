@@ -11,6 +11,23 @@ sys.path.insert(0, str(PROJECT / 'engine'))
 from feature_plan import REVISION
 
 
+def validate_snapshot_layout(generated, accepted, revision):
+    """Check the generated renderer against its matching launcher declaration."""
+    from types import SimpleNamespace
+    from tnova.state_core import CONTRACTS, renderer_layout
+    install = SimpleNamespace(profile=CONTRACTS[str(revision)])
+    expected = renderer_layout(install, accepted)
+    actual = dict(generated)
+    expected['revision'] = revision
+    # Flat older generators omitted the implicit 16 MiB size and had no
+    # additional cache-reset declarations. Keep only those legacy defaults.
+    actual.setdefault('arena_size', 0x1000000)
+    actual.setdefault('restore_zero', [])
+    expected.setdefault('restore_zero', [])
+    if actual != expected:
+        raise ValueError('Generated snapshot declarations differ from the launcher contract')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--original-root', type=Path, required=True)
@@ -47,10 +64,7 @@ def main():
     subprocess.run(command, check=True)
     generated = output / 'engine/snapshot-layout.json'
     accepted = PROJECT / 'tnova/state-layout.json'
-    expected = json.loads(accepted.read_text())
-    expected['revision'] = REVISION
-    if json.loads(generated.read_text()) != expected:
-        raise ValueError('Generated snapshot declarations differ from the launcher contract')
+    validate_snapshot_layout(json.loads(generated.read_text()), json.loads(accepted.read_text()), REVISION)
     report = dict(
         game_revision=REVISION,
         setup_milestone=REVISION,

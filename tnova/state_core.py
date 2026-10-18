@@ -60,8 +60,13 @@ def render_restore_values():
     return ((0x9aa0ec, 1), (ARENA + 0xb00000, 1), (0x9af5e8, 0))
 
 
-def render_restore_source():
-    return ''.join(f'mov dword ptr [{a}],{value};' for a, value in render_restore_values())
+def render_restore_source(install=None):
+    code = ''.join(f'mov dword ptr [{a}],{value};' for a, value in render_restore_values())
+    if install is not None:
+        for row in renderer_layout(install).get('restore_zero', []):
+            code += (f"pushfd;pushad;cld;xor eax,eax;mov edi,{row['address']};"
+                     f"mov ecx,{row['size']};rep stosb;popad;popfd;")
+    return code
 
 
 def require(ok, message):
@@ -312,17 +317,68 @@ def reports(r, install, campaign):
     return archive({})
 
 
-def validate_buffers(read):
-    layout = json.loads((ROOT / 'state-layout.json').read_text(encoding='utf-8'))
+def renderer_layout(install=None, document=None):
+    """Select renderer validation from the trusted matching-install profile.
+
+    Old launchers shipped one flat 16 MiB layout. A registry preserves that
+    layout alongside later builds; snapshots never choose their own size or
+    guards. The no-install form remains a legacy-only diagnostic convenience.
+    """
+    if document is None:
+        document = json.loads((ROOT / 'state-layout.json').read_text(encoding='utf-8'))
+    key = install.profile.get('render_layout', 'legacy-16m') if install is not None else 'legacy-16m'
+    sizes = {'legacy-16m': 0x1000000, 'map-cache-32m': 0x2000000}
+    require(key in sizes, 'Unsupported renderer layout')
+    if 'layouts' in document:
+        require(key in document['layouts'], 'Missing renderer layout: ' + key)
+        layout = dict(document['layouts'][key])
+    else:
+        require(key == 'legacy-16m', 'New renderer requires its explicit layout')
+        layout = dict(document)
+    size = layout.setdefault('arena_size', 0x1000000)
+    require(type(size) is int and size == sizes[key], 'Unsupported render arena size')
+    for address in layout['guards']:
+        # Older HUD/camera/map buffers remain in the executable's 32 MiB
+        # image. The external renderer allocation supplies the other guards.
+        # Neither declaration may address the unmapped gap between them.
+        require(type(address) is int and
+                (0x11000 <= address <= SIZES['memory.bin'] - 256
+                 or ARENA <= address <= ARENA + size - 256),
+                'Render guard outside image and arena')
+    for row in layout['external'] + layout.get('restore_zero', []):
+        address, length = row['address'], row['size']
+        require(type(address) is int and type(length) is int and length > 0
+                and ARENA <= address <= ARENA + size - length,
+                'Render region outside arena')
+    return layout
+
+
+def snapshot_sizes(install):
+    return dict(SIZES, **{'render-arena.bin': renderer_layout(install)['arena_size']})
+
+
+def capture_render_buffers(install, read):
+    """Read the whole matching renderer allocation, including off-screen caches."""
+    return {'framebuffer.bin': read(0xe0000000, SIZES['framebuffer.bin']),
+            'render-arena.bin': read(ARENA, snapshot_sizes(install)['render-arena.bin'])}
+
+
+def validate_buffers(read, install=None):
+    layout = renderer_layout(install)
     require(u(read(ARENA + 0xb0007c, 4)) == 0x39305254, 'Render arena marker mismatch')
     for address in layout['guards']:
         require(read(address, 256) == b'\xa5' * 256, 'Damaged render guard: ' + hex(address))
     for item in layout['external']:
-        require(
-            digest(read(item['address'], item['size'])) == item['sha256'],
-            'Render code/table mismatch: ' + hex(item['address'])
-        )
+        require(digest(read(item['address'], item['size'])) == item['sha256'],
+                'Render code/table mismatch: ' + hex(item['address']))
     return len(layout['guards'])
+
+
+def validate_audio_base(base, arena_size):
+    require(type(base) is int and 0x2000000 <= base < 0x7ff00000
+            and base % 0x10000 == 0
+            and not (ARENA - 0x100000 < base < ARENA + arena_size),
+            'Invalid audio base')
 
 
 def validate_ui_state(install, read):
@@ -363,6 +419,7 @@ def validate_snapshot(install, folder, campaign):
     meta = json.loads((folder / 'snapshot.json').read_text(encoding='utf-8'))
     validate_build(install, meta)
     require(meta['campaign'] == campaign, 'Snapshot belongs to the other campaign')
+    sizes = snapshot_sizes(install)
     require(
         set(meta['payloads']) == set(SIZES) | {'mission-reports.res'},
         'Incomplete snapshot payload set'
@@ -372,7 +429,7 @@ def validate_snapshot(install, folder, campaign):
         path = inside(folder, name)
         size = path.stat().st_size
         require(
-            size == SIZES.get(name, size)
+            size == sizes.get(name, size)
             and (name != 'mission-reports.res' or 134 <= size < 0x1000000),
             'Invalid snapshot payload size: ' + name
         )
@@ -391,10 +448,7 @@ def validate_snapshot(install, folder, campaign):
     )
     stack, base = meta['saved_stack'], meta['audio_base']
     require(type(stack) is int and 0x11000 < stack < 0x1800000 - 36, 'Invalid saved stack')
-    require(
-        type(base) is int and 0x2000000 <= base < 0x7ff00000 and base % 0x10000 == 0
-        and not (ARENA - 0x100000 < base < ARENA + 0x1000000), 'Invalid audio base'
-    )
+    validate_audio_base(base, sizes['render-arena.bin'])
     require(r[stack:stack + 36] == blobs['cpu.bin'], 'Saved CPU stack mismatch')
     require(r[PARK:PARK + 0x1000] == bytes(0x1000), 'Snapshot gate was not removed')
     require(r[0x1800000:0x1830000] == bytes(0x30000), 'Snapshot restore scratch was not removed')
@@ -438,7 +492,7 @@ def validate_snapshot(install, folder, campaign):
         require(0 <= a and a + n <= len(r), 'Invalid validation address')
         return r[a:a + n]
 
-    validate_buffers(read)
+    validate_buffers(read, install)
     return meta, blobs
 
 
@@ -612,12 +666,10 @@ def capture(install, pid, destination, executable='native-startup.exe'):
         require(n.u(0x1d04014) <= 0x1800000, 'Game heap overlaps checkpoint scratch')
         if not restored:
             require(n.read(0x1800000, 0x30000) == bytes(0x30000), 'Restore scratch is occupied')
-        validate_buffers(n.read)
+        validate_buffers(n.read, install)
         validate_ui_state(install, n.read)
         base = n.u(SLOTS) - dll.exports['TN_Pump']
-        require(
-            0x2000000 <= base < 0x7ff00000 and base % 0x10000 == 0, 'Unsupported bridge address'
-        )
+        validate_audio_base(base, snapshot_sizes(install)['render-arena.bin'])
         stats = n.u(0x1d2b000)
         require(
             n.u(stats + 40) == base + 0x37568 and n.u(stats + 48) == base + 0x37168,
@@ -738,8 +790,7 @@ def capture(install, pid, destination, executable='native-startup.exe'):
             'cpu.bin': n.read(stack, 36),
             'fpu.bin': n.read(FX, 512),
             'audio.bin': n.read(base + 0x37168, 0x11800),
-            'framebuffer.bin': n.read(0xe0000000, 0x800000),
-            'render-arena.bin': n.read(ARENA, 0x1000000),
+            **capture_render_buffers(install, n.read),
             'mission-reports.res': reports(r, install, campaign)
         }
         meta = dict(
@@ -816,6 +867,37 @@ def fixed_audio(raw, base):
     flags = struct.unpack_from('<H', result, dll.opt + 70)[0]
     struct.pack_into('<H', result, dll.opt + 70, flags & ~0x60)
     return bytes(result), count
+
+
+def restore_read_file_source(path, address, size, api, string):
+    return (
+        f"push 0;"
+        f"push 0x80;"
+        f"push 3;"
+        f"push 0;"
+        f"push 1;"
+        f"push 0x80000000;"
+        f"push {string(path)};"
+        f"{api('CreateFileA')}\n          cmp eax,-1;"
+        f"je failed;"
+        f"mov ebx,eax;"
+        f"push 0;"
+        f"push 0x181f000;"
+        f"push {size};"
+        f"push {address};"
+        f"push ebx;"
+        f"{api('ReadFile')}\n          test eax,eax;"
+        f"jz failed;"
+        f"cmp dword ptr [0x181f000],{size};"
+        f"jne failed;"
+        f"push ebx;"
+        f"{api('CloseHandle')}"
+    )
+
+
+def render_payload_restore_source(install, path, api, string):
+    return (restore_read_file_source(path, ARENA, snapshot_sizes(install)['render-arena.bin'], api, string)
+            + render_restore_source(install))
 
 
 def build_restore(install, source, destination, campaign):
@@ -943,29 +1025,7 @@ def build_restore(install, source, destination, campaign):
         )
 
     def read_file(path, address, size):
-        return (
-            f"push 0;"
-            f"push 0x80;"
-            f"push 3;"
-            f"push 0;"
-            f"push 1;"
-            f"push 0x80000000;"
-            f"push {string(path)};"
-            f"{api('CreateFileA')}\n          cmp eax,-1;"
-            f"je failed;"
-            f"mov ebx,eax;"
-            f"push 0;"
-            f"push 0x181f000;"
-            f"push {size};"
-            f"push {address};"
-            f"push ebx;"
-            f"{api('ReadFile')}\n          test eax,eax;"
-            f"jz failed;"
-            f"cmp dword ptr [0x181f000],{size};"
-            f"jne failed;"
-            f"push ebx;"
-            f"{api('CloseHandle')}"
-        )
+        return restore_read_file_source(path, address, size, api, string)
 
     code += (
         f"""push 4;"""
@@ -977,8 +1037,7 @@ def build_restore(install, source, destination, campaign):
     )
     code += read_file(source / 'framebuffer.bin', 0xe0000000, 0x800000)
     code += 'call 0x1d19a00;'
-    code += read_file(source / 'render-arena.bin', ARENA, 0x1000000)
-    code += render_restore_source()
+    code += render_payload_restore_source(install, source / 'render-arena.bin', api, string)
     code += (
         f"\n      push 0x1d0f120;"
         f"{api('QueryPerformanceFrequency')}test eax,eax;"

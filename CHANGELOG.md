@@ -24,6 +24,8 @@ named patches or source files. See the [source guide](docs/source-guide.md) for 
 
 ### Windows, audio and saves
 
+- Fixed snapshot capture in Arena and Random Scenario Builder sessions when retained campaign counters referred to reports outside the scenario. Existing scenario reports are preserved. [SAVES; state_core.py]
+
 - **Fixed [legacy]:** damaging a drone's weapon could crash the game when another energy weapon was checked without an energy-pool record. The check now handles that missing record while retaining the original weapon-damage rules. [WEAPONS; weapon_timing.py]
 - Setup now shares unchanged assets through hard links and reuses extracted CD data, reducing storage for repeated installations. Saves, settings and generated resources remain separate; `--data-mode copy` creates independent copies. [SETUP; install_portable.py]
 
@@ -32,6 +34,10 @@ named patches or source files. See the [source guide](docs/source-guide.md) for 
 - Fixed a combat crash when a new clone could not be created because all object slots were occupied. If a detached beam trail holds a slot, the game now removes one such trail to make room. [WEAPONS; effect_timing.py, weapon_timing.py]
 - Fixed mission-start crashes introduced by the smoke changes. The smoke code now sits outside the memory cleared for scenery at mission start. [SMOKE; smoke.py]
 - **Fixed [legacy]:** a failed QSound channel allocation could overwrite memory and crash the game during combat. If a sound pair cannot be allocated, the game releases any partially reserved channels. [AUDIO; audio_safety.py]
+
+### AI and squad behavior
+
+- **Fixed [legacy]:** enemy PBAs could reject a working Laser assigned through Customized Enemy Outfitting solely because of their faction. The selector now evaluates it with the normal readiness and scoring rules. [AI; ai_firing.py, 0x25124B]
 
 ### Graphics and performance
 

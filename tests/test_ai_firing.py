@@ -58,6 +58,70 @@ def execute_until(u, address, stops, **registers):
     return seen[0]
 
 
+class EnemyLaserSelectionTests(unittest.TestCase):
+    """Exercise the original selector with an authored custom enemy loadout.
+
+    The observed Captain had an empty Railgun and a healthy Laser. These cases
+    isolate the faction exclusion and retain real readiness/scoring code from
+    the user's original executable. Catalog fields are explicit test data;
+    this does not simulate controller movement or a complete firefight.
+    """
+
+    def select(self, *, fixed=True, faction=2, weapon=4, health=300,
+               charge=1000, ammo=1, deadline=0, force=1):
+        from original_inputs import original_ram
+        from unicorn import Uc, UC_ARCH_X86, UC_MODE_32
+        if not any(original_ram[0x250e58:0x25129b]):
+            self.skipTest('Requires the original retail executable')
+        u = Uc(UC_ARCH_X86, UC_MODE_32)
+        u.mem_map(0, 0x2000000)
+        u.mem_write(0, bytes(original_ram))
+        if fixed:
+            self.assertEqual(bytes(u.mem_read(0x25124b, 2)), f.CHOICE_SITES[0x25124b])
+            u.mem_write(0x25124b, dict(f.choice_bodies())[0x25124b])
+        actor(u, 10, slot=1, team=faction)
+        ai = 0x3832f0 + 334
+        suit = 0x3a5608 + 0x582
+        u.mem_write(ai + 13, b'\x01')
+        u.mem_write(suit + 0x81, b'\x01')
+        u.mem_write(suit + 0xce, b'\x00')
+        u.mem_write(suit + 0x45, struct.pack('<BBHHIIB', weapon, 2, health, ammo, 0, deadline, 0))
+        put(u, suit + 0x86, charge << 16)
+        put(u, 0x446ae8, 1000)
+        # Direct-fire catalog: damage, charge/ammo/health, range and cooldown.
+        cat = 0x395110 + weapon*36
+        u.mem_write(cat, bytes(36))
+        u.mem_write(cat+5, struct.pack('<H', 10))
+        u.mem_write(cat+8, struct.pack('<3H', 20 if weapon == 4 else 0,
+                                      0 if weapon == 4 else 100, 300))
+        u.mem_write(cat+14, struct.pack('<H', 100))
+        u.mem_write(cat+22, struct.pack('<H', 100))
+        for a in (0x3598dc, 0x3598e0, 0x3598e4):
+            put(u, a, 1)
+        run(u, 0x250e58, eax=ai, edx=force)
+        return u.reg_read(UC_X86_REG_EAX) & 65535
+
+    def test_original_enemy_scan_rejects_usable_laser(self):
+        self.assertEqual(self.select(fixed=False), 0)
+        self.assertEqual(self.select(), 100)
+
+    def test_other_factions_and_weapons_keep_their_selection(self):
+        for faction in (0, 1, 2, 3):
+            for weapon in (4, 5, 6, 7):
+                for force in (0, 1):
+                    if faction == 2 and weapon == 4 and force:
+                        continue
+                    with self.subTest(faction=faction, weapon=weapon, force=force):
+                        args = dict(faction=faction, weapon=weapon, force=force)
+                        self.assertEqual(self.select(fixed=False, **args), self.select(**args))
+
+    def test_unusable_weapons_remain_unavailable(self):
+        for args in (dict(health=0), dict(charge=0), dict(deadline=1001),
+                     dict(weapon=7, ammo=0)):
+            with self.subTest(**args):
+                self.assertEqual(self.select(**args), 0)
+
+
 class AIFiringTests(unittest.TestCase):
 
     def test_history_free_generators_and_atomic_installation_contracts(self):
@@ -65,7 +129,7 @@ class AIFiringTests(unittest.TestCase):
             'build_paths.source_path', side_effect=AssertionError('source parsing')
         ):
             self.assertEqual(len(f.bodies()), 8)
-            self.assertEqual(len(f.choice_bodies()), 10)
+            self.assertEqual(len(f.choice_bodies()), 11)
             self.assertTrue(f.selected_weapon_body())
             self.assertTrue(f.preflight_source())
         for choice in (False, True):

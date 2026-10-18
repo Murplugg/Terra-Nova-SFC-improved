@@ -269,9 +269,21 @@ def archive(rows):
     return bytes(b)
 
 
+def standalone_scenario(r):
+    """The original scenario launcher selects map IDs 42, 43 or 44.
+
+    These sessions have a fresh report archive but retain campaign progress
+    counters. Those counters cannot establish which reports the archive needs.
+    See the original launch branch at 0x2d02d8 and archive creation at 0x2c6888.
+    """
+    return u(r, 0x359708) in (42, 43, 44)
+
+
 def required_reports(r):
     profile, count = u(r, 0x359710), u(r, 0x35d0ec)
     require(profile < 64 and count <= 80, 'Invalid campaign report counters')
+    if standalone_scenario(r):
+        return []
     first = r[0x4412ce + profile]
     first = 1 if first <= 2 or first >= 128 else first - 2
     return list(range(0x659 + first, 0x659 + max(first, count - 2)))
@@ -292,7 +304,7 @@ def reports(r, install, campaign):
         path = inside(root, leaf)
         if path.is_file():
             rows = resource_entries(path.read_bytes())
-            if need is None:
+            if need is None or standalone_scenario(r):
                 return archive(rows)
             require(all(k in rows for k in need), 'Completed mission reports are missing')
             return archive({k: rows[k] for k in need})

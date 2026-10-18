@@ -388,7 +388,8 @@ CHOICE_SITES = {
     0x250f15: bytes.fromhex('31d28a138d04d500000000'),
     0x251034: bytes.fromhex('0fb6336bf624'),
     0x250f38: b'\x30',
-    0x25128e: bytes.fromhex('8b44241c83c430')
+    0x25128e: bytes.fromhex('8b44241c83c430'),
+    0x25124b: bytes.fromhex('750e')
 }
 
 
@@ -517,7 +518,11 @@ def choice_bodies():
         (CHOICE_FINISH, finish), (0x250e58, asm(0x250e58, f'jmp {CHOICE_INIT}') + b'\x90' * 3),
         (0x250f38, b'\x34'), (0x25128e, asm(0x25128e, f'jmp {CHOICE_FINISH}') + b'\x90' * 2),
         (0x250f15, asm(0x250f15, f'jmp {CHOICE_FAST}') + b'\x90' * 6),
-        (0x251034, asm(0x251034, f'jmp {CHOICE_SCAN}') + b'\x90')
+        (0x251034, asm(0x251034, f'jmp {CHOICE_SCAN}') + b'\x90'),
+        # Customized Enemy Outfitting offers the Laser, but the original scan
+        # rejects it solely for faction 2. Let it pass this final faction check;
+        # readiness, weapon scoring, range and firing safety still apply.
+        (0x25124b, asm(0x25124b, 'jmp 0x25125b'))
     ]
 
 

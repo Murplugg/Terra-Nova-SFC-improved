@@ -6,8 +6,55 @@ from unittest import TestCase, main
 from unittest.mock import patch, Mock
 import json
 import os
+import struct
 
 from tnova import sessions as s
+
+
+class ScenarioReportTests(TestCase):
+    """Arena snapshots must not invent reports from retained campaign counters.
+
+    The captured failure had current map 42, profile 37 and progress counter 40.
+    Small authored resource archives exercise preservation and the strict retail
+    failure path. Native capture/restore remains a separate integration check.
+    """
+
+    def memory(self, mission):
+        from tnova import state_core as c
+        r = bytearray(0x450000)
+        for a, value in ((0x359708, mission), (0x359710, 37), (0x35d0ec, 40)):
+            struct.pack_into('<I', r, a, value)
+        r[0x4412ce+37] = 3
+        r[0x440934:0x440934+19] = b'C:\\TNOVA\\mstat.res\0'
+        return r
+
+    def test_only_known_scenario_maps_skip_campaign_report_sequence(self):
+        from tnova import state_core as c
+        for mission in (1, 10, 37, 39, 40, 41, 42, 43, 44, 45, 46, 47):
+            need = c.required_reports(self.memory(mission))
+            self.assertEqual(need == [], mission in (42, 43, 44), mission)
+
+    def test_scenario_capture_preserves_existing_reports(self):
+        from tnova import state_core as c
+        with TemporaryDirectory(prefix='tnova-reports-') as folder:
+            home = Path(folder).resolve()
+            (home/'retail').mkdir()
+            rows = {0x659: (struct.pack('<H', 0x659)+bytes(4)+b'\x03\0\0\0', b'abc')}
+            (home/'retail/mstat.res').write_bytes(c.archive(rows))
+            install = Mock(home=home)
+            for mission in (42, 43, 44):
+                result = c.reports(self.memory(mission), install, 'retail')
+                self.assertEqual(c.resource_entries(result), rows)
+            with self.assertRaisesRegex(ValueError, 'Completed mission reports are missing'):
+                c.reports(self.memory(37), install, 'retail')
+
+    def test_scenario_without_report_file_can_start_with_empty_archive(self):
+        from tnova import state_core as c
+        with TemporaryDirectory(prefix='tnova-reports-') as folder:
+            install = Mock(home=Path(folder).resolve())
+            self.assertEqual(c.resource_entries(c.reports(self.memory(42), install, 'retail')), {})
+            with self.assertRaisesRegex(ValueError, 'Missing closed mission report'):
+                c.reports(self.memory(37), install, 'retail')
 
 
 class SessionsTests(TestCase):

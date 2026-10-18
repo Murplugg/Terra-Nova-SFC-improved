@@ -327,3 +327,22 @@ and assist-on, terrain/miss results, range limits and processor state are checke
 A private captured encounter adds real firing and projectile updates with both
 wrists and helmet origins. These fixtures verify the calculation; the apparent
 trajectory near a visible sprite boundary still needs human playtesting.
+
+
+## Customized enemy weapons and scenario snapshots
+
+The enemy Laser tests run the original selector from the supplied retail
+executable against authored PBA and weapon records. They reproduce the faction
+rejection, then check other factions, weapons, cached/rescanned selection,
+weapon health, energy, cooldown and ammunition. A separate private captured
+Captain comparison tests the same branch with its real loadout. These checks
+establish selector behavior; a live fight is needed to verify controller timing
+and the resulting weapon use.
+
+Scenario report tests use authored memory containing retained campaign counters
+and a fresh report archive, matching an observed Arena capture failure. The
+original scenario-launch branch selects map IDs 42, 43 and 44. Tests check all
+three IDs, neighboring campaign IDs, existing report preservation and missing
+files. Campaign report validation remains strict. A private Arena was captured,
+restored and captured again with the same paused clock, objects and suit records.
+That round trip does not establish every scenario's completion/save behavior.

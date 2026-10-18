@@ -435,3 +435,13 @@ accounting for drone and ground targets. Modeled aim readiness isolates weapon
 admission; these tests do not establish natural aiming, projectile interception,
 full ballistic clearance or protection from every explosion. Squad combat and
 weapon switching still require gameplay acceptance.
+
+Late-refusal tests distinguish the final range/ally safety veto from the firing
+wrapper's general failure status. The latter also covers missing equipment and
+projectile allocation failure, which do not necessarily call for movement.
+A per-call marker in an existing object timing row records only the final safety
+veto; the controller saves, clears and restores it around its actual firing call.
+Tests cover stale values, nesting, skipped calls and other status codes. Copied
+controller execution with an ally moved through the original physics/spatial
+routines verifies the connection to the existing reposition request. Reaching
+that request does not establish that a usable path or eventual movement exists.

@@ -43,6 +43,8 @@ named patches or source files. See the [source guide](docs/source-guide.md) for 
 
 ### AI and squad behavior
 
+- Fixed squadmates retaining firing permission after the final range or ally-clearance check refused their shot. The controller now receives that refusal so its existing repositioning rules can run. Normal weapon cooldown and resource checks retain their behavior. [AI; ai_firing.py]
+
 - **Fixed [legacy]:** AI weapon selection could favor the last eligible weapon in the loadout instead of the one with the highest calculated score. The selector now retains its best eligible score, using the original scoring weights. [AI; ai_firing.py, 0x2510B5]
 
 - **Fixed [legacy]:** AI units could keep firing a previously selected weapon after it became unsuitable for the target, including explosive weapons against drones. Reusing a weapon now applies the original eligibility checks, and the firing controller withholds fire when no weapon qualifies. [AI; ai_firing.py]

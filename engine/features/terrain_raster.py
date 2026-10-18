@@ -5,6 +5,88 @@ import struct
 import hashlib
 from features import frame_clock
 
+# The optional water/haze prototype below adapts SHIPPED_BODY from Terra Nova
+# Plus tools/view_fix.py, commit 51c56c0604ef514532bff3ad2987fcb8909775ca.
+# Copyright (c) 2026 skw-1337
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+
+def haze_column_candidate(address):
+    """Trial replacement for 0x2B2785; not installed by the feature plan.
+
+    Ordinary pixels need no reflection-source or remap-row calculation. Defer
+    those calculations until a pixel needs them, and keep the table address in
+    stack storage instead of writing an instruction operand on every call.
+    Inputs, palette rules and final registers follow the original routine.
+    Like its original caller, this routine requires a positive column length.
+    """
+    return asm(address, '''
+        push ebp
+        mov eax, [ebx+4]
+        mov ebp, [ebx+8]
+        mov ebx, [ebx]
+        add esi, edx
+        sub esp, 12
+        mov [esp], eax
+        lea eax, [esi+edi]
+        sub eax, edx
+        mov [esp+4], eax
+        lea eax, [ebx+ecx*4]
+        mov [esp+8], eax
+    haze_pixel:
+        movzx eax, byte ptr [edi]
+        cmp byte ptr [eax+ebp], 0
+        jne haze_remap
+    haze_next:
+        add edi, edx
+        dec ecx
+        jnz haze_pixel
+        mov ebx, [esp+8]
+        mov esi, [esp+4]
+        sub esi, edi
+        add esi, edx
+        lea esp, [esp+12]
+        pop ebp
+        lea ebx, [ebx-4]
+        add ebx, 4
+        mov ecx, 1
+        dec ecx
+        ret
+    haze_remap:
+        shl eax, 2
+        add eax, [esp]
+        mov eax, [eax]
+        add eax, [esp+4]
+        sub eax, edi
+        movzx eax, byte ptr [eax]
+        mov ebx, ecx
+        shl ebx, 2
+        neg ebx
+        add ebx, [esp+8]
+        add eax, [ebx]
+        mov al, [eax]
+        mov [edi], al
+        xor eax, eax
+        jmp haze_next
+    ''')
+
 # Pixel-identical terrain columns without writing the next loop instruction.
 COLUMN_CODE = 0x1e4c000
 

@@ -250,5 +250,110 @@ class ObjectRowHandoffTests(unittest.TestCase):
             self.assertEqual(u.reg_read(UC_X86_REG_ESP), stack + 4)
 
 
+class HazeColumnTrialTests(unittest.TestCase):
+    """Compare the isolated trial with locally extracted original machine code.
+
+    Synthetic columns exercise dry, mixed and entirely remapped surfaces at
+    main-view and smaller-view strides. They are not a whole-frame benchmark.
+    The independent pixel equation checks both implementations against the
+    intended source offset and per-row palette table.
+    """
+
+    def test_original_pixels_registers_flags_and_bounded_writes(self):
+        from tests import with_original_code
+        return with_original_code(self._compare_columns)()
+
+    def test_reflection_source_can_overlap_destination(self):
+        from tests import with_original_code
+        return with_original_code(lambda: self._compare_columns(alias=True))()
+
+    def _compare_columns(self, alias=False):
+        import random
+        from original_inputs import original_ram
+        from features.terrain_raster import haze_column_candidate
+        from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE, UC_HOOK_MEM_WRITE
+        from unicorn.x86_const import (
+            UC_X86_REG_EAX, UC_X86_REG_EBX, UC_X86_REG_ECX, UC_X86_REG_EDX,
+            UC_X86_REG_ESI, UC_X86_REG_EDI, UC_X86_REG_EBP, UC_X86_REG_ESP,
+            UC_X86_REG_EFLAGS, UC_X86_REG_EIP,
+        )
+        rng = random.Random(20261018)
+        original, candidate, stop, stack = 0x2b2785, 0x1800000, 0x1801000, 0x1700000
+        dest, source, palette, rows, offsets, flags, block = (
+            0x800000, 0x1000000, 0x1400000, 0x1410000, 0x1420000,
+            0x1430000, 0x1440000,
+        )
+        registers = (UC_X86_REG_EAX, UC_X86_REG_EBX, UC_X86_REG_ECX,
+                     UC_X86_REG_EDX, UC_X86_REG_ESI, UC_X86_REG_EDI,
+                     UC_X86_REG_EBP, UC_X86_REG_ESP, UC_X86_REG_EFLAGS)
+        texture = rng.randbytes(0x300000)
+        palettes = rng.randbytes(65536)
+        source_offsets = [0 if alias else rng.randrange(65536) for _ in range(256)]
+        palette_rows = [rng.randrange(256) * 256 for _ in range(1200)]
+        machines = []
+        for entry in (original, candidate):
+            u = Uc(UC_ARCH_X86, UC_MODE_32)
+            u.mem_map(0, 0x2000000)
+            u.mem_write(original, bytes(original_ram[original:0x2b27da]))
+            u.mem_write(candidate, haze_column_candidate(candidate))
+            u.mem_write(source, texture)
+            u.mem_write(palette, palettes)
+            u.mem_write(rows, struct.pack('<1200I', *(palette + r for r in palette_rows)))
+            u.mem_write(offsets, struct.pack('<256I', *source_offsets))
+            u.mem_write(block, struct.pack('<3I', rows, offsets, flags))
+            writes, steps = [], [0]
+            u.hook_add(UC_HOOK_MEM_WRITE,
+                       lambda cpu, access, a, n, value, out: out.append((a, n)), writes)
+            u.hook_add(UC_HOOK_CODE,
+                       lambda cpu, a, n, counter: counter.__setitem__(0, counter[0] + 1), steps)
+            machines.append((u, entry, writes, steps))
+        samples = []
+        for stride in (160, 320, 800, 1280, 1600, -320):
+            for count in (1, 2, 3, 4, 15, 255, 576, 960):
+                for density in (0, 64, 256):
+                    with self.subTest(stride=stride, count=count, density=density):
+                        n = (count + 2) * abs(stride) + 32
+                        background = rng.randbytes(n)
+                        first = dest + 8 + (0 if stride > 0 else count * -stride)
+                        source_phase = (dest + 8 + ((count - 1) * stride if stride > 0 else -stride)
+                                        if alias else source + 0x180000)
+                        remap = bytes(1 if i < density else 0 for i in range(256))
+                        initial = (rng.getrandbits(32), block, count, stride & 0xffffffff,
+                                   source_phase, first, rng.getrandbits(32), stack, 0x202)
+                        expected = bytearray(background)
+                        allowed = set()
+                        for y in range(count):
+                            at = first - dest + y * stride
+                            colour = background[at]
+                            if remap[colour]:
+                                texel = (expected[source_phase - dest - y * stride] if alias else
+                                         texture[source_offsets[colour] + 0x180000 - y * stride])
+                                expected[at] = palettes[palette_rows[y] + texel]
+                                allowed.add((dest + at, 1))
+                        outcomes, costs = [], []
+                        for u, entry, writes, steps in machines:
+                            u.mem_write(dest, background)
+                            u.mem_write(flags, remap)
+                            u.mem_write(stack, struct.pack('<I', stop))
+                            for reg, val in zip(registers, initial):
+                                u.reg_write(reg, val)
+                            writes.clear()
+                            steps[0] = 0
+                            u.emu_start(entry, stop, count=50000)
+                            self.assertEqual(u.reg_read(UC_X86_REG_EIP), stop)
+                            self.assertEqual(bytes(u.mem_read(dest, n)), expected)
+                            self.assertEqual({(a, size) for a, size in writes
+                                              if not stack - 32 <= a < stack
+                                              and a != 0x2b27bb}, allowed)
+                            outcomes.append(tuple(u.reg_read(reg) for reg in registers))
+                            costs.append(steps[0])
+                        self.assertEqual(outcomes[0], outcomes[1])
+                        samples.append((stride, count, density, *costs))
+        self.assertEqual(len(samples), 144)
+        # A dry long column is the intended gain. Dense remapping is explicitly
+        # measured too, rather than treating a dry-column win as universal.
+        self.cost_samples = samples
+
+
 if __name__ == '__main__':
     unittest.main()

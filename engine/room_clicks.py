@@ -12,8 +12,8 @@ import struct
 from resource_codec import entries, parts, compound, archive, replace
 from resource_transforms import Script
 
-SOURCE_SHA = '2c5e20c6d65e46e6d9eda31ad2b06de575a1055265e6c70574081ea171ff6ea8'
-RESULT_SHA = '5a8918e2fd7ca96bc6c1a364a6c7a6ef076f28c7c05a4601bb6e704f9524ae94'
+SOURCE_SHA = '5dec945626e60c31989c9527dd1b4a072d99ee0f9121a4430e4d3054c072eca7'
+RESULT_SHA = 'e4a0395a6a06c3f0327e67c1c39a7804225b01947967be49751426fe4e2da814'
 # Original click marker, part, and hotspot -> next-room action.
 ROOMS = ((6, 0x613, 931, (0, 12, 15, 3, 9, 20, 666)), (7, 0x89e, 1035, (0, 1, 16, 20)))
 CACHED_CALLS = ((7, 0x8a1), (8, 0xabc), (8, 0xcb7))

@@ -553,3 +553,13 @@ visibility is stubbed off in that test to force the fallback; separate marker
 tests cover visible markers and depth ties. These tests do not model real sight
 or projection. In-game acceptance should compare empty-space clicks near units,
 drones and buildings, direct clicks, overlapping targets and both option modes.
+
+## Main-menu keyboard order
+
+Check Down and Space through the whole retail menu, then Up in reverse. Prequel
+belongs after New Game (Skip Instruction), before Random Scenario Builder. Exit
+wraps to New Game. With no saves, Load Game remains skipped. Left/Right connects
+the existing three button pairs and the bottom Prequel/Exit pair; Left on Prequel
+keeps it selected. Enter on Prequel should open its menu, and mouse selection
+should still match the button artwork. Repeat after returning from another screen
+and after returning from Prequel, because those reuse the menu script.

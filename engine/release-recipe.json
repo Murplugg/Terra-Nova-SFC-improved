@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "game_revision": 179,
+  "game_revision": 180,
   "iso": {
     "path": "_ISO/TNF108.ISO",
     "size": 626792448,
@@ -1785,32 +1785,32 @@
     }
   },
   "compiler_sha256": "d408dd38eed3e5204af841bcebf70502a4dbbb8399a3a3262be55059370bc018",
-  "executable_sha256": "70ba5461dfb3d4aaf97b9fc805d546827bf1ebca619c44244f679d3fdb1b5da8",
-  "template_sha256": "5fe616256f03fe97e511a68253ac4bdee532d51efd80ed2add3dd2c85fee5fc0",
+  "executable_sha256": "e98ecc5a88bb016672e4c27af4c67d8353b6892c64775c9b93cdc56b3cba3c5a",
+  "template_sha256": "d598a2258917cfaacebfeceb158cec3c1d2c8887f40f23e557a4c3e42fceadcc",
   "relocations": [
     {
       "offset": 30360064,
       "capacity": 130,
       "value": "{ROOT}\\services.bin",
-      "before_sha256": "59572a36738400936677e172d1e5dbbe0bb8413832118e7cbb8d7e3c2f78c6cd"
+      "before_sha256": "1bb5336ea4d422053fcba1a267f7f41c6f682255effd40a36353a73fe6f8cf16"
     },
     {
       "offset": 30361088,
       "capacity": 136,
       "value": "{ROOT}\\stopped-memory.bin",
-      "before_sha256": "f8b1c721122a524c42c1c9548b63cd40e13f12ec4d8632c552b64f51a6d86013"
+      "before_sha256": "c8821e99fcbcaaef2ddf042d68e88c63c40cfcc25de4f78ec64493d2980db6b8"
     },
     {
       "offset": 30361344,
       "capacity": 133,
       "value": "{ROOT}\\framebuffer.bin",
-      "before_sha256": "9bca56f753192ea5bd07dd6ef8d82b5b1370719651767be772d2053110f30f41"
+      "before_sha256": "edbb80ed03018b94a79569b49b211f5588b0ea059575bd8c827b11aea40108a0"
     },
     {
       "offset": 30361600,
       "capacity": 128,
       "value": "{ROOT}\\stdout.txt",
-      "before_sha256": "11d771a65c721c306724dde90b38d0c15c2fe0f19b924ede53733d5bb336a33c"
+      "before_sha256": "864846638e102eee29bae44e6596b2dd95ecbd6da89a65d34901f280c5a4fcad"
     },
     {
       "offset": 30362112,
@@ -7600,15 +7600,15 @@
       "path": "menu-retail.res",
       "kind": "delta",
       "input": "TNOVA/DATA/RESBABL2.RES",
-      "size": 123258,
-      "sha256": "5a8918e2fd7ca96bc6c1a364a6c7a6ef076f28c7c05a4601bb6e704f9524ae94"
+      "size": 123434,
+      "sha256": "e4a0395a6a06c3f0327e67c1c39a7804225b01947967be49751426fe4e2da814"
     },
     {
       "path": "native-template.bin",
       "kind": "delta",
       "input": "TNOVA/__FF.EXE",
       "size": 33485312,
-      "sha256": "5fe616256f03fe97e511a68253ac4bdee532d51efd80ed2add3dd2c85fee5fc0",
+      "sha256": "d598a2258917cfaacebfeceb158cec3c1d2c8887f40f23e557a4c3e42fceadcc",
       "transform": "native-le"
     },
     {
@@ -7645,6 +7645,6 @@
     "asset_mapping_source_sha256": "a98afe33b0ffcf7f6c42af2230b344ddcedf077a94ed0d9c6e6d4aee02529187",
     "relocation_source_sha256": "ebbbffe3403dde558802716efbff86de09f0b0e7ad0afbacff387ef8c995aafa"
   },
-  "setup_milestone": 179,
+  "setup_milestone": 180,
   "runtime_paths": "executable-directory-v1"
 }

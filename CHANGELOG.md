@@ -16,6 +16,8 @@ named patches or source files. See the [source guide](docs/source-guide.md) for 
 
 ### Controls and interface
 
+- Keyboard navigation now reaches Prequel below New Game (Skip Instruction), with matching reverse navigation and Left/Right movement between Prequel and Exit. [CAMPAIGN; resource_transforms.py]
+
 - Reduced the extra click margin around targets by 40% with Improved Target Selection enabled, making nearby empty space less likely to engage Target Lock. [TARGETING; target_picking.py]
 
 - Restored automatic pointer placement over OK on the New Technology screens shown after briefings. [INPUT; input_views.py]

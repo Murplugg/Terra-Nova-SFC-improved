@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "original_sha256": "b762c54509f1716282c4d357a72013b8d84ba25f17b0483b733678ff81e63dd1",
-  "native_sha256": "70ba5461dfb3d4aaf97b9fc805d546827bf1ebca619c44244f679d3fdb1b5da8",
+  "native_sha256": "e98ecc5a88bb016672e4c27af4c67d8353b6892c64775c9b93cdc56b3cba3c5a",
   "guest_profile": "English retail v1.09 / Terra Nova Plus reference code and data bases",
   "native_image_base": "0x10000",
   "native_sections": [
@@ -34,7 +34,7 @@
   ],
   "rows": 1068,
   "complete_final_writes_checked": 918,
-  "audit_sha256": "435ed93f82631cacfaf6cec3b5c67a423e9a48ae23a05549a8c4a0c50824c6dc",
+  "audit_sha256": "a195f7be090146384182494f5f847ff4d4f7977e5f1382e2455e3b909f7eff2b",
   "foundation_sha256": "cba24f2633cb2e09682ceb463214311ad9cb19c4dac31cc387e100b27d625fb7",
   "limitations": [
     "Retail only; demo code and other editions need separate profiles.",

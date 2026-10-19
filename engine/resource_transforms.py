@@ -266,6 +266,29 @@ def build_overlays(home, retail, demo):
         s.branch(0x2d, 0x2800)
 
     hook(42, 0x27be, hover)
+
+    # Prequel keeps ID 8 for drawing, clicks and campaign dispatch. Keyboard
+    # traversal follows its position below Skip Instruction in the left column.
+    # Original handling still skips Load Game when there are no saved games.
+    def navigation(s, transitions, resume, redraw):
+        for current, target in transitions:
+            s.local(8)
+            s.val(current)
+            s.raw('19')
+            s.branch(0x24, f'next{current}')
+            s.set(8, target)
+            s.branch(0x2d, redraw)
+            s.label(f'next{current}')
+        s.branch(0x2d, resume)
+
+    for site, transitions, redraw in (
+        (0x25f7, ((7, 8), (8, 8)), 0x263e),                     # Left: Exit -> Prequel
+        (0x2663, ((8, 7),), 0x267c),                     # Right: Prequel -> Exit
+        (0x26a8, ((3, 8), (8, 4), (7, 1)), 0x26f7),     # Down
+        (0x271c, ((1, 7), (4, 8), (8, 3)), 0x276b),     # Up
+    ):
+        hook(42, site, lambda s, t=transitions, r=site+3, d=redraw:
+             navigation(s, t, r, d))
     b = bytearray(ps[42])
     for old, new in [
         ('06080001071924df26', '06080001081924df26'), ('0a08000107232d6b27', '0a08000108232d6b27'),

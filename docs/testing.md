@@ -25,6 +25,16 @@ checks report skips. Synthetic textures, pixels and expected results remain
 invented test data. The [build guide](building.md)
 lists the dependencies and the additional checks performed by a complete build.
 
+## New Technology pointer placement
+
+The original reveal screen calculates the OK button's center and requests a
+pointer move. Native's general menu cursor-preservation code suppressed that
+request. `test_input_views` replays the original calculation and placement code,
+then checks the scoped replacement against different rectangles, client sizes
+and focus states. The Windows API boundaries are modeled: these tests establish
+the requested coordinates and foreground policy, while an actual equipment
+reveal is still needed to verify the complete video-to-menu transition.
+
 ## Squad explosive safety
 
 `test_ballistic_safety` checks the preallocation guard for squad Missile Launcher

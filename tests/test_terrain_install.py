@@ -3,6 +3,7 @@ import struct
 import unittest
 from features import terrain_distance as d
 from patch_support import asm
+from tests import with_original_code
 
 
 def fixture(kind):
@@ -415,6 +416,154 @@ class HazeColumnTrialTests(unittest.TestCase):
         # A dry long column is the intended gain. Dense remapping is explicitly
         # measured too, rather than treating a dry-column win as universal.
         self.cost_samples = samples
+
+
+class ObjectFogTests(unittest.TestCase):
+    """Foggy foliage exposed the original object palette's level-6 ceiling.
+
+    Retained-code cases verify palette composition and the actual selector,
+    refresh and restoration paths. Synthetic colors distinguish every haze row;
+    these tests do not establish the appearance or cost of a full rendered scene.
+    """
+
+    def _machine(self):
+        from original_inputs import original_ram
+        from unicorn import Uc, UC_ARCH_X86, UC_MODE_32
+        u = Uc(UC_ARCH_X86, UC_MODE_32)
+        u.mem_map(0, 0x2000000)
+        u.mem_map(0x68b20000, 0x20000)
+        for a, end in ((0x299c34, 0x299cc1), (0x2a24e2, 0x2a24ff),
+                       (0x29e6f8, 0x29e6fe), (0x29bfb4, 0x29bfdf)):
+            u.mem_write(a, bytes(original_ram[a:end]))
+        for a, body in d.fog_code_bodies() + d.fog_hooks():
+            u.mem_write(a, body)
+        return u
+
+    @staticmethod
+    def _put(u, address, value):
+        u.mem_write(address, struct.pack('<I', value & 0xffffffff))
+
+    @staticmethod
+    def _get(u, address):
+        return int.from_bytes(u.mem_read(address, 4), 'little')
+
+    @with_original_code
+    def test_original_rows_refresh_and_bounded_expansion(self):
+        import random
+        from unicorn.x86_const import (UC_X86_REG_EAX, UC_X86_REG_EBX,
+            UC_X86_REG_ECX, UC_X86_REG_EDX, UC_X86_REG_ESI, UC_X86_REG_EDI,
+            UC_X86_REG_EBP, UC_X86_REG_ESP, UC_X86_REG_EIP, UC_X86_REG_EFLAGS)
+        u = self._machine()
+        stack, stop = 0x1000000, 0x1001000
+        regs = (UC_X86_REG_EAX, UC_X86_REG_EBX, UC_X86_REG_ECX, UC_X86_REG_EDX,
+                UC_X86_REG_ESI, UC_X86_REG_EDI, UC_X86_REG_EBP, UC_X86_REG_ESP,
+                UC_X86_REG_EFLAGS)
+        initial = (101, 202, 303, 404, 505, 606, 707, stack, 0x202)
+        rng = random.Random(20261019)
+        for phase in range(2):
+            # The second load changes both the table pointer and all its colors.
+            fog_address = 0x1100000 + phase * 0x1000
+            lighting, fog = rng.randbytes(0x1800), rng.randbytes(0x1000)
+            self._put(u, 0x41dd4c, fog_address)
+            u.mem_write(0x41c228, lighting)
+            u.mem_write(fog_address, fog)
+            u.mem_write(d.FOG_TABLE - 16, b'Q' * 16)
+            u.mem_write(d.FOG_TABLE + d.FOG_TABLE_SIZE, b'Z' * 16)
+            outcomes = []
+            for entry in (0x299c34, d.FOG_REFRESH):
+                self._put(u, stack, stop)
+                for reg, value in zip(regs, initial):
+                    u.reg_write(reg, value)
+                u.emu_start(entry, stop, count=4000000)
+                self.assertEqual(u.reg_read(UC_X86_REG_EIP), stop)
+                outcomes.append(tuple(u.reg_read(reg) for reg in regs))
+            self.assertEqual(outcomes[0], outcomes[1])
+            original = bytes(u.mem_read(0x417a28, 0x4800))
+            expanded = bytes(u.mem_read(d.FOG_TABLE, d.FOG_TABLE_SIZE))
+            for level in range(1, 16):
+                row = expanded[(level - 1) * 0x1800:level * 0x1800]
+                self.assertEqual(row, bytes(fog[level * 256 + c] for c in lighting))
+            for slot, level in enumerate((2, 4, 6)):
+                self.assertEqual(expanded[(level - 1) * 0x1800:level * 0x1800],
+                                 original[slot * 0x1800:(slot + 1) * 0x1800])
+            self.assertEqual(bytes(u.mem_read(0x41c228, 0x1800)), lighting)
+            self.assertEqual(bytes(u.mem_read(fog_address, 0x1000)), fog)
+            self.assertEqual(bytes(u.mem_read(d.FOG_TABLE - 16, 16)), b'Q' * 16)
+            self.assertEqual(bytes(u.mem_read(d.FOG_TABLE + d.FOG_TABLE_SIZE, 16)), b'Z' * 16)
+
+    @with_original_code
+    def test_selection_restoration_and_canvas_override(self):
+        from unicorn.x86_const import UC_X86_REG_ESP, UC_X86_REG_EIP, UC_X86_REG_EDX
+        u = self._machine()
+        stack, canvas = 0x1000000, 0x1002000
+        for context in (0x1003000, 0x1004000):
+            self._put(u, 0x35f8bc, context)
+            for level in (*range(16), 9999, 0xffffffff):
+                self._put(u, stack + 0x24, level)
+                self._put(u, context + 0x20, 0x41c228)
+                self._put(u, 0x362436, 0x41c228)
+                u.reg_write(UC_X86_REG_ESP, stack)
+                u.emu_start(d.FOG_SELECT_SITE, 0x2a2424, count=1000)
+                self.assertEqual(u.reg_read(UC_X86_REG_EIP), 0x2a2424)
+                expected = d.FOG_TABLE + (level - 1) * 0x1800 if 2 <= level <= 15 else 0x41c228
+                self.assertEqual(self._get(u, context + 0x20), expected)
+                self.assertEqual(self._get(u, 0x362436), expected)
+                self._put(u, 0x44b1a0, canvas)
+                self._put(u, canvas + 0x24, 0x1005000)
+                self._put(u, stack + 0x18, 7)
+                for override in (0, 1):
+                    self._put(u, canvas + 0x20, override)
+                    u.emu_start(0x29bfb4, 0x29bfdf, count=1000)
+                    self.assertEqual(u.reg_read(UC_X86_REG_EDX),
+                                     0x1005000 if override else expected + 8 * 256)
+                u.emu_start(0x2a24e2, 0x2a24ff, count=1000)
+                self.assertEqual(self._get(u, context + 0x20), 0x41c228)
+                self.assertEqual(self._get(u, 0x362436), 0x41c228)
+
+    @with_original_code
+    def test_atomic_install_and_idempotence(self):
+        from original_inputs import original_ram
+        pieces = d.fog_code_bodies() + d.fog_hooks()
+        self.assertLessEqual(max(a + len(body) for a, body in d.fog_code_bodies()), d.FOG_END)
+        for conflict in (None, d.FOG_SELECT_SITE, 0x299c34, 0x2a24e2,
+                         d.FOG_BUILD, d.FOG_END - 1):
+            ram = bytearray(original_ram)
+            for a, body in d.fog_providers().items():
+                ram[a:a + len(body)] = body
+            if conflict is not None:
+                ram[conflict] ^= 1
+            writes = []
+            def read(a, n):
+                return ram[a:a + n]
+            def write(a, body):
+                writes.append((a, body))
+                ram[a:a + len(body)] = body
+            if conflict is not None:
+                before = bytes(ram)
+                with self.assertRaises(ValueError):
+                    d.fog_install(write, read)
+                self.assertEqual(writes, [])
+                self.assertEqual(bytes(ram), before)
+            else:
+                result = d.fog_install(write, read)
+                self.assertEqual(writes, pieces)
+                self.assertEqual(result['ranges'], [(a, a + len(b)) for a, b in pieces])
+                self.assertTrue(d.fog_verify(read))
+                self.assertTrue(d.fog_install(self.fail, read)['already_installed'])
+                # A half-installed hook group must not be completed silently.
+                a, before = next(iter(d.fog_providers().items()))
+                ram[a:a + len(before)] = before
+                with self.assertRaises(ValueError):
+                    d.fog_install(self.fail, read)
+
+    @with_original_code
+    def test_local_recipe_rejects_different_original_code(self):
+        from original_inputs import original_ram, edited_assembly
+        low, high = d.FOG_RECIPE[:2]
+        data = bytearray(original_ram[low:high])
+        data[-1] ^= 1
+        with self.assertRaisesRegex(ValueError, 'verified original'):
+            edited_assembly(d.FOG_RECIPE, lambda a, n: data)
 
 
 if __name__ == '__main__':

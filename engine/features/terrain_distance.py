@@ -1247,3 +1247,114 @@ def instance_install(write, read):
 def instance_verify(read):
     from features.input_views import _verify
     return _verify(instance_bodies(), read)  # Runtime tables change each frame.
+
+
+# Original object palettes stop at haze level 6 while terrain reaches level 15.
+# Compose the remaining levels when mission palettes load, so distant foliage
+# and other ordinary shaded objects can fade into the same fog as the ground.
+# Palette bytes live in the guarded renderer arena and are captured in snapshots.
+FOG_TABLE = 0x68b20100
+FOG_TABLE_SIZE = 15 * 0x1800
+FOG_BUILD = 0x1e4cf00
+FOG_REFRESH = 0x1e4cf90
+FOG_SELECT = 0x1e4cfb0
+FOG_END = 0x1e4d000
+FOG_REFRESH_SITE = 0x299c1a
+FOG_SELECT_SITE = 0x2a23eb
+FOG_RECIPE = (
+    0x299c34, 0x299cc1,
+    '88a9f0f7470674adf292ee99bdb78e93be8c7b322be23da31da52a2afd3f1202',
+    {
+        0x299c3f: (0x299c44, 'mov ecx,0x100;'),
+        0x299c4c: (0x299c51, f'mov eax,{FOG_TABLE};'),
+        0x299ca6: (0x299cac, 'add ecx,0x100;'),
+        0x299caf: (0x299cb5, 'cmp ecx,0x1000;'),
+    },
+    {},
+)
+
+
+def fog_code_bodies():
+    """Expand the original composition loop using locally supplied game code.
+
+    Each 6144-byte result contains 24 lighting rows under one haze level. The
+    refresh wrapper retains the original three palettes and its return state.
+    Haze 0/1 keeps the original behavior, including the postdraw restore test.
+    Special per-canvas palettes continue through the original sprite dispatcher.
+    """
+    from original_inputs import edited_assembly
+    builder = asm(FOG_BUILD, edited_assembly(FOG_RECIPE))
+    refresh = asm(FOG_REFRESH, f'''
+        call 0x299c34
+        pushfd
+        pushad
+        call {FOG_BUILD}
+        popad
+        popfd
+        ret
+    ''')
+    select = asm(FOG_SELECT, f'''
+        mov edi, [esp+0x24]
+        cmp edi, 1
+        jle 0x2a2424
+        cmp edi, 15
+        ja 0x2a2424
+        lea eax, [edi-1]
+        imul edi, eax, 0x1800
+        lea eax, [edi+{FOG_TABLE}]
+        mov edx, [0x35f8bc]
+        mov [edx+0x20], eax
+        call 0x29e6f8
+        jmp 0x2a2424
+    ''')
+    pieces = [(FOG_BUILD, builder), (FOG_REFRESH, refresh), (FOG_SELECT, select)]
+    for (address, body), limit in zip(pieces, (FOG_REFRESH, FOG_SELECT, FOG_END)):
+        if not body or address + len(body) > limit:
+            raise ValueError('Object fog helper exceeds its terrain reservation')
+    return pieces
+
+
+def fog_providers():
+    return {
+        FOG_REFRESH_SITE: asm(FOG_REFRESH_SITE, 'call 0x299c34'),
+        FOG_SELECT_SITE: asm(FOG_SELECT_SITE, 'mov edi,[esp+0x24];cmp edi,1;'),
+    }
+
+
+def fog_hooks():
+    return [
+        (FOG_REFRESH_SITE, asm(FOG_REFRESH_SITE, f'call {FOG_REFRESH}')),
+        (FOG_SELECT_SITE, asm(FOG_SELECT_SITE, f'jmp {FOG_SELECT}') + b'\x90\x90'),
+    ]
+
+
+def _fog_contract(read):
+    """The retained builder and original palette restoration must stay intact."""
+    import hashlib
+    for start, end, digest in (
+        FOG_RECIPE[:3],
+        (0x2a24e2, 0x2a24ff,
+         '452393f9d154ef5af4d3b690aef2cc810d1624b8bd929b2a5ac73b6c67f4d5d7'),
+    ):
+        if hashlib.sha256(bytes(read(start, end - start))).hexdigest() != digest:
+            raise ValueError('Object fog palette provider differs at ' + hex(start))
+
+
+def fog_install(write, read):
+    """Install after terrain columns; renderer startup owns palette allocation.
+
+    This offline installer admits all original hooks and helper providers before
+    writing any code. Runtime palette loading must occur after arena allocation;
+    the palette region is initialized by that load, never by this cold installer.
+    """
+    from features.input_views import _install
+    pieces = fog_code_bodies() + fog_hooks()
+    _fog_contract(read)
+    return _install(pieces, fog_providers(), write, read,
+                    cold_state=((FOG_BUILD, FOG_END - FOG_BUILD),))
+
+
+def fog_verify(read):
+    from features.input_views import _verify
+    _fog_contract(read)
+    return _verify(fog_code_bodies() + fog_hooks(), read)

@@ -5,8 +5,9 @@ import struct
 import hashlib
 from features import frame_clock
 
-# The water/haze column routine below adapts SHIPPED_BODY from Terra Nova
-# Plus tools/view_fix.py, commit 51c56c0604ef514532bff3ad2987fcb8909775ca.
+# The water/haze and vertical-lighting routines adapt Terra Nova Plus
+# tools/view_fix.py and tools/speed_fix.py at commit
+# 51c56c0604ef514532bff3ad2987fcb8909775ca.
 # Copyright (c) 2026 skw-1337
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -1087,3 +1088,490 @@ def sky_verify(read):
     if bytes(read(SKY_ROW_SITE, SKY_ROW_END - SKY_ROW_SITE)) != sky_row_body():
         raise ValueError('Sky row calculation differs')
     return True
+
+
+# Vertical column lighting adapts Terra Nova Plus tools/speed_fix.py,
+# commit 51c56c0604ef514532bff3ad2987fcb8909775ca, by skw-1337.
+# The MIT notice above also applies to this implementation.
+# The original renderer interpolates shade across columns. Prior-ring history
+# lets this renderer also interpolate down each column, softening slope bands
+# without changing the clip buffer, terrain geometry or pixel coverage.
+SHAD_CODE = COLUMN_CODE + 0xa00
+SHAD_END = COLUMN_CODE + 0xf00
+SHAD_STATE = 0x68b39000  # ring, current tag, previous tag, comparison enable flag
+SHAD_STATE_SIZE = 16
+SHAD_HISTORY = 0x1400   # four bytes per column, limited to 1280 columns
+SHAD_ORIGINAL = {
+    0x2b29b0: bytes.fromhex('558b432c0bc0'),
+    0x2ab65e: asm(0x2ab65e, 'shl eax,2;call 0x2c4f40'),
+    0x2b5826: asm(0x2b5826, 'call 0x2ac33c'),
+}
+
+# Each history word holds top row (12 bits), ring tag (8 bits) and shade (8.8).
+# Hidden slabs update it too. Only a matching preceding ring can interpolate.
+# Fog palettes and view stride are cached in the named operand fields below;
+# installers validate their cold values, while live guards omit those operands.
+_SHAD_SOURCE = r"""
+
+vs_entry:
+    push ebp
+    mov ebp, dword ptr [ebx+0x18]
+    mov eax, ebp
+    sub eax, {SB}
+    cmp eax, 0x1000
+    jae vs_special
+    push dword ptr [{PTAG}]
+    push {SB}
+    add eax, dword ptr [ebx+0x28]
+    or eax, 0x80
+    mov ebp, eax
+    jmp vs_frame
+vs_special:
+    push 0xfffff000
+    push ebp
+    mov ebp, 0x80
+vs_frame:
+    push dword ptr [{STR}]
+    push dword ptr [{ROWT}]
+    push dword ptr [ebx]
+    push dword ptr [ebx+0x2c]
+    push dword ptr [ebx+0x14]
+    mov eax, dword ptr [ebx+0xc]
+    add eax, ecx
+    sub eax, dword ptr [ebx+0x24]
+    push eax
+    mov eax, dword ptr [ebx+8]
+    lea eax, [eax+ecx*4]
+    push eax
+    mov eax, dword ptr [ebx+0x1c]
+    cmp eax, dword ptr [{FP0}]
+    je vs_pok
+    mov dword ptr [{FP0}], eax
+    mov dword ptr [{FP1}], eax
+    mov dword ptr [{FP2}], eax
+    mov dword ptr [{FP3}], eax
+    mov dword ptr [{FP4}], eax
+    mov dword ptr [{FP5}], eax
+    mov dword ptr [{FP6}], eax
+    mov dword ptr [{FP7}], eax
+    mov dword ptr [{FP8}], eax
+    mov dword ptr [{FP9}], eax
+
+vs_pok:
+    mov eax, dword ptr [esp+24]
+    cmp eax, dword ptr [{FS0}]
+    je vs_sok
+    mov dword ptr [{FS0}], eax
+    mov dword ptr [{FS5}], eax
+    add eax, eax
+    mov dword ptr [{FS1}], eax
+    add eax, dword ptr [esp+24]
+    mov dword ptr [{FS2}], eax
+    add eax, dword ptr [esp+24]
+    mov dword ptr [{FS3}], eax
+    mov dword ptr [{FS4}], eax
+vs_sok:
+    mov edx, dword ptr [ebx+4]
+    mov esi, dword ptr [ebx+0x10]
+    mov edi, dword ptr [esp]
+    neg ecx
+vs_col:
+    mov eax, esi
+    sar eax, 16
+    mov ebx, dword ptr [edi+ecx*4]
+    cmp eax, ebx
+    jl vs_draw
+vs_hide:
+    shl eax, 20
+    mov ebx, ebp
+    and ebx, 0xfff
+    or eax, ebx
+    or eax, dword ptr [{RTAG}]
+    mov dword ptr [edi+ecx*4+{EOFF}], eax
+    add esi, dword ptr [esp+8]
+    add ebp, dword ptr [esp+12]
+    inc ecx
+    jne vs_col
+vs_exit:
+    cmp dword ptr [esp+28], {SB}
+    jne vs_x2
+    mov eax, ebp
+    add eax, {SB}
+    sub eax, dword ptr [{BLK18}]
+    mov dword ptr [{BLK28}], eax
+vs_x2:
+    add esp, 36
+    pop ebp
+    ret
+
+vs_draw:
+    mov dword ptr [edi+ecx*4], eax
+    sub ebx, eax
+    push ecx
+    push esi
+    mov esi, ebp
+    and esi, 0xfff
+    or esi, dword ptr [{RTAG}]
+    push ebp
+    mov ebp, eax
+    shl ebp, 20
+    or ebp, esi
+    mov esi, dword ptr [edi+ecx*4+{EOFF}]
+    mov dword ptr [edi+ecx*4+{EOFF}], ebp
+    mov ebp, dword ptr [esp]
+    mov edi, dword ptr [esp+32]
+    mov edi, dword ptr [edi+eax*4]
+    cmp ebp, 0xfff
+    ja vs_fl0
+    add edi, dword ptr [esp+16]
+    add edi, ecx
+    mov ecx, esi
+    xor ecx, dword ptr [esp+44]
+    test ecx, 0xff000
+    jnz vs_flat
+    mov ecx, esi
+    xor ecx, ebp
+    test ecx, 0xf00
+    jz vs_flat
+    mov ecx, esi
+    shr ecx, 20
+    sub ecx, eax
+    cmp ecx, ebx
+    jl vs_flat
+    dec ecx
+    cmp ecx, 255
+    ja vs_slow
+    and esi, 0xfff
+    sub esi, ebp
+    imul esi, dword ptr [ecx*4+{RECIP4}]
+    sar esi, 8
+vs_step:
+    mov ecx, ebp
+    shl ecx, 8
+    sub ecx, esi
+    mov eax, ecx
+    shl eax, 16
+    or ebx, eax
+    sar ecx, 8
+    and ecx, 0xffffff00
+    add ecx, dword ptr [esp+40]
+    mov ebp, esi
+    shl ebp, 16
+    sar esi, 16
+    mov eax, esi
+    mov dh, al
+    movzx eax, al
+    shl eax, 8
+    mov esi, dword ptr [esp+28]
+    sub esi, eax
+    xor eax, eax
+    sub bx, 4
+    jl g_rem
+g_4:
+    mov al, byte ptr [esi+edx]
+    inc dl
+    add ebx, ebp
+    adc ch, dh
+    mov al, byte ptr [eax+ecx]
+    .byte 0x8a, 0x80
+    .long {P5}
+    .byte 0x88, 0x87
+    .long {S0}
+    mov al, byte ptr [esi+edx]
+    inc dl
+    add ebx, ebp
+    adc ch, dh
+    mov al, byte ptr [eax+ecx]
+    .byte 0x8a, 0x80
+    .long {P6}
+    .byte 0x88, 0x87
+    .long {S1}
+    mov al, byte ptr [esi+edx]
+    inc dl
+    add ebx, ebp
+    adc ch, dh
+    mov al, byte ptr [eax+ecx]
+    .byte 0x8a, 0x80
+    .long {P7}
+    .byte 0x88, 0x87
+    .long {S2}
+    mov al, byte ptr [esi+edx]
+    inc dl
+    add ebx, ebp
+    adc ch, dh
+    mov al, byte ptr [eax+ecx]
+    .byte 0x8a, 0x80
+    .long {P8}
+    .byte 0x88, 0x87
+    .long {S3}
+    .byte 0x8d, 0xbf
+    .long {S4}
+    sub bx, 4
+    jge g_4
+g_rem:
+    add bx, 4
+    jz g_done
+g_1:
+    mov al, byte ptr [esi+edx]
+    inc dl
+    add ebx, ebp
+    adc ch, dh
+    mov al, byte ptr [eax+ecx]
+    .byte 0x8a, 0x80
+    .long {P9}
+    .byte 0x8d, 0xbf
+    .long {S5}
+    mov byte ptr [edi], al
+    dec bx
+    jnz g_1
+g_done:
+    and edx, 0xff
+    jmp vs_after
+
+vs_slow:
+    inc ecx
+    jle vs_flat
+    and esi, 0xfff
+    sub esi, ebp
+    shl esi, 8
+    mov eax, esi
+    push edx
+    cdq
+    idiv ecx
+    pop edx
+    mov esi, eax
+    jmp vs_step
+
+vs_fl0:
+    add edi, dword ptr [esp+16]
+    add edi, ecx
+vs_flat:
+    mov ecx, ebp
+    and ecx, 0xff00
+    add ecx, dword ptr [esp+40]
+    mov esi, dword ptr [esp+28]
+    mov ebp, dword ptr [esp+36]
+    xor eax, eax
+    sub ebx, 4
+    jl f_rem
+f_4:
+    mov al, byte ptr [esi+edx]
+    inc dl
+    mov al, byte ptr [eax+ecx]
+    .byte 0x8a, 0x80
+    .long {P0}
+    mov byte ptr [edi+ebp], al
+    mov al, byte ptr [esi+edx]
+    inc dl
+    mov al, byte ptr [eax+ecx]
+    .byte 0x8a, 0x80
+    .long {P1}
+    mov byte ptr [edi+ebp*2], al
+    lea edi, [edi+ebp*2]
+    mov al, byte ptr [esi+edx]
+    inc dl
+    mov al, byte ptr [eax+ecx]
+    .byte 0x8a, 0x80
+    .long {P2}
+    mov byte ptr [edi+ebp], al
+    mov al, byte ptr [esi+edx]
+    inc dl
+    mov al, byte ptr [eax+ecx]
+    .byte 0x8a, 0x80
+    .long {P3}
+    mov byte ptr [edi+ebp*2], al
+    lea edi, [edi+ebp*2]
+    sub ebx, 4
+    jge f_4
+f_rem:
+    add ebx, 4
+    jz vs_after
+f_1:
+    mov al, byte ptr [esi+edx]
+    inc dl
+    mov al, byte ptr [eax+ecx]
+    .byte 0x8a, 0x80
+    .long {P4}
+    add edi, ebp
+    mov byte ptr [edi], al
+    dec ebx
+    jnz f_1
+vs_after:
+    pop ebp
+    pop esi
+    pop ecx
+    mov edi, dword ptr [esp]
+    add esi, dword ptr [esp+8]
+    add ebp, dword ptr [esp+12]
+    inc ecx
+    je vs_exit
+    mov eax, esi
+    sar eax, 16
+    mov ebx, dword ptr [edi+ecx*4]
+    cmp eax, ebx
+    jl vs_draw
+    jmp vs_hide
+
+
+"""
+
+
+def shad_layout():
+    """Return code, hooks and mutable operand addresses for column lighting.
+
+    The complete renderer replaces 0x2B29B0. Original-entry fallbacks still run
+    the existing native pixel-loop optimization. History is appended to the
+    view's original clip allocation and released by its original free path.
+    """
+    keys = dict(SB=0x41c228, STR=0x2b2aa0, ROWT=0x2b2a6a,
+                BLK18=0x427e28, BLK28=0x427e38, RECIP4=0x427f58,
+                RING=SHAD_STATE, RTAG=SHAD_STATE+4, PTAG=SHAD_STATE+8,
+                EOFF=SHAD_HISTORY)
+    names = [f'P{k}' for k in range(10)] + [f'S{k}' for k in range(6)]
+    def encode(values):
+        return asm(SHAD_CODE, _SHAD_SOURCE.format(**values))
+    markers = dict(keys)
+    markers.update({name: 0x7e570000+k for k,name in enumerate(names)})
+    markers.update({'F'+name: 0x7e560000+4*k for k,name in enumerate(names)})
+    first = encode(markers)
+    fields = {}
+    for k,name in enumerate(names):
+        marker = struct.pack('<I',0x7e570000+k)
+        assert first.count(marker) == 1
+        fields[name] = SHAD_CODE + first.index(marker)
+        assert fields[name] & 0xfff <= 0xffc
+    keys.update({name: 0 for name in names})
+    keys.update({'F'+name: fields[name] for name in names})
+    column = encode(keys)
+    assert len(column) == len(first)
+    ring_at = (SHAD_CODE+len(column)+15)&~15
+    ring = asm(ring_at, f"""
+        push eax
+        mov eax,[{SHAD_STATE}]
+        test eax,eax
+        jz ring_off
+        inc eax
+        cmp eax,255
+        jb ring_ok
+        xor eax,eax
+    ring_ok:
+        mov [{SHAD_STATE}],eax
+    ring_off:
+        shl eax,12
+        mov [{SHAD_STATE+4}],eax
+        sub eax,0x1000
+        mov [{SHAD_STATE+8}],eax
+        pop eax
+        jmp 0x2ac33c
+    """)
+    alloc_at = (ring_at+len(ring)+15)&~15
+    alloc = asm(alloc_at, f"""
+        mov dword ptr [{SHAD_STATE}],0
+        mov dword ptr [{SHAD_STATE+4}],0
+        mov dword ptr [{SHAD_STATE+8}],0xfffff000
+        cmp dword ptr [{SHAD_STATE+12}],1
+        jne plain_alloc
+        test eax,eax
+        jle plain_alloc
+        cmp eax,1280
+        ja plain_alloc
+        push edx
+        mov edx,[0x44b1a0]
+        mov edx,[edx+8]
+        sar edx,16
+        cmp edx,4095
+        pop edx
+        ja plain_alloc
+        shl eax,2
+        add eax,{SHAD_HISTORY}
+        call 0x2c4f40
+        push edi
+        push ecx
+        push eax
+        lea edi,[eax+{SHAD_HISTORY}]
+        mov ecx,[0x44b1a0]
+        mov ecx,[ecx+6]
+        sar ecx,16
+        xor eax,eax
+        rep stosd dword ptr es:[edi],eax
+        mov dword ptr [{SHAD_STATE}],1
+        mov dword ptr [{SHAD_STATE+4}],0x1000
+        mov dword ptr [{SHAD_STATE+8}],0
+        pop eax
+        pop ecx
+        pop edi
+        jmp 0x2ab666
+    plain_alloc:
+        shl eax,2
+        call 0x2c4f40
+        jmp 0x2ab666
+    """)
+    gate_at = alloc_at+len(alloc)
+    gate = asm(gate_at, f"""
+        cmp dword ptr [{SHAD_STATE}],0
+        je original_entry
+        push eax
+        push edx
+        mov eax,[ebx+0x18]
+        sub eax,0x41c228
+        cmp eax,0x1000
+        jae fallback
+        cmp dword ptr [ebx+0x2c],0
+        jne stepped
+        cmp dword ptr [ebx+0x28],0
+        jne fallback
+        jmp supported
+    stepped:
+        test eax,eax
+        jnz fallback
+        mov eax,[ebx+0x28]
+        cmp al,0x80
+        jne fallback
+        cmp eax,4095
+        ja fallback
+        mov edx,ecx
+        dec edx
+        imul edx,[ebx+0x2c]
+        jo fallback
+        add edx,eax
+        jo fallback
+        cmp edx,4095
+        ja fallback
+    supported:
+        pop edx
+        pop eax
+        jmp {SHAD_CODE}
+    fallback:
+        mov dword ptr [{SHAD_STATE}],0
+        mov dword ptr [{SHAD_STATE+4}],0
+        mov dword ptr [{SHAD_STATE+8}],0xfffff000
+        pop edx
+        pop eax
+    original_entry:
+        push ebp
+        mov eax,[ebx+0x2c]
+        or eax,eax
+        jmp 0x2b29b6
+    """)
+    assert gate_at+len(gate) <= SHAD_END, hex(gate_at+len(gate))
+    code = [(SHAD_CODE,column),(ring_at,ring),(alloc_at,alloc),(gate_at,gate)]
+    hooks = [(0x2b29b0,asm(0x2b29b0,f'jmp {gate_at}')+b'\x90'),
+             (0x2ab65e,asm(0x2ab65e,f'jmp {alloc_at}')+b'\x90'*3),
+             (0x2b5826,asm(0x2b5826,f'call {ring_at}'))]
+    return code, hooks, fields
+
+
+def shad_bodies():
+    code,hooks,_ = shad_layout()
+    return code+[(SHAD_STATE,struct.pack('<4I',0,0,0xfffff000,1))]+hooks
+
+
+def shad_mutable_fields():
+    return tuple((address,4) for address in shad_layout()[2].values())
+
+
+def shad_install(write, read):
+    from features.input_views import _install
+    return _install(shad_bodies(),SHAD_ORIGINAL,write,read,
+                    cold_state=((SHAD_CODE,SHAD_END-SHAD_CODE),
+                                (SHAD_STATE,SHAD_STATE_SIZE)))

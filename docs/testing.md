@@ -471,3 +471,21 @@ Tests cover stale values, nesting, skipped calls and other status codes. Copied
 controller execution with an ally moved through the original physics/spatial
 routines verifies the connection to the existing reposition request. Reaching
 that request does not establish that a usable path or eventual movement exists.
+
+
+## Terrain projection at steep viewing angles
+
+An airborne coastline view exposed signed overflow in the original viewport
+multiplications at `0x2B4287` and `0x2B42A8`. Coordinates below the screen could
+wrap above it, causing terrain columns to cover the sky. The replacement keeps
+ordinary arithmetic and uses the segment clipper's existing off-screen bound
+when multiplication or the vertical row offset overflows.
+
+The projection test executes the original instructions and replacement against
+Python's unbounded arithmetic. It covers both signs, eight viewport half-extents,
+the two observed inputs, multiplication boundaries and row-offset boundaries;
+it also checks registers, stack balance and defined flags for ordinary results.
+A private paused-scene replay compares whole-world pixels in normal and IR views
+at six pitches. The failing angle is corrected; the other ten view combinations
+remain pixel-identical. Buffer guards pass throughout. Moving airborne views and
+other terrain still require playtesting.

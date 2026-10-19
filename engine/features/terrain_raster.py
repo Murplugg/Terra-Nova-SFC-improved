@@ -95,6 +95,60 @@ HAZE_CODE = COLUMN_CODE + 0x800
 HAZE_SITE = 0x2b2785
 HAZE_ORIGINAL = asm(HAZE_SITE, 'push ebp; mov ebp,0x2b279c')
 
+# A terrain point close to the view plane can project thousands of pixels off
+# screen. The original 16.16 viewport multiply can then wrap to the opposite
+# side, making terrain below the player cover the sky. Preserve ordinary
+# arithmetic and saturate overflow before the column clipper sees it.
+PROJECTION_CODE = COLUMN_CODE + 0x900
+PROJECTION_Y = PROJECTION_CODE + 0x40
+PROJECTION_ORIGINAL = {
+    0x2b4287: asm(0x2b4287, 'imul eax,edx;mov ebx,ecx;'),
+    0x2b42a8: asm(0x2b42a8, 'imul eax,ebx;mov edx,[esp+8];add eax,0x10000;'),
+}
+
+
+def projection_bodies():
+    """Keep overflowed terrain coordinates on their mathematical screen side.
+
+    Viewport half-extents are positive. The existing segment clipper uses
+    +/-0x3f000000 as its off-screen bound; reuse it on multiplication or row
+    offset overflow. Representable coordinates retain the original registers,
+    stack and defined arithmetic flags. No terrain or camera limits change.
+    """
+    x = asm(PROJECTION_CODE, '''
+        push edx
+        imul eax, edx
+        jno done
+        test dword ptr [esp], 0x80000000
+        mov eax, 0x3f000000
+        jz done
+        neg eax
+    done:
+        pop edx
+        mov ebx, ecx
+        jmp 0x2b428c
+    ''')
+    y = asm(PROJECTION_Y, '''
+        mov edx, eax
+        imul eax, ebx
+        jo saturate
+        add eax, 0x10000
+        jno done
+    saturate:
+        test edx, edx
+        mov eax, 0x3f000000
+        jns done
+        neg eax
+    done:
+        mov edx, [esp+8]
+        jmp 0x2b42b4
+    ''')
+    assert len(x) <= PROJECTION_Y - PROJECTION_CODE
+    assert len(y) <= COLUMN_END - PROJECTION_Y
+    return [(PROJECTION_CODE, x), (PROJECTION_Y, y),
+            (0x2b4287, asm(0x2b4287, f'jmp {PROJECTION_CODE}')),
+            (0x2b42a8, asm(0x2b42a8, f'jmp {PROJECTION_Y}').ljust(12, b'\x90'))]
+
 COLUMN_SITE = 0x2b2a85
 
 COLUMN_ORIGINAL = bytes.fromhex('892d9a2a2b00')
@@ -426,10 +480,11 @@ def column_bodies():
     b = column_candidate()
     haze = haze_column_candidate(HAZE_CODE)
     assert len(b) <= HAZE_CODE - COLUMN_CODE
-    assert len(haze) <= COLUMN_END - HAZE_CODE
+    assert len(haze) <= PROJECTION_CODE - HAZE_CODE
     return [(COLUMN_CODE, b), (COLUMN_SITE, asm(COLUMN_SITE, f'jmp {COLUMN_CODE}') + b'\x90'),
             *infrared_bodies(), (HAZE_CODE, haze),
-            (HAZE_SITE, asm(HAZE_SITE, f'jmp {HAZE_CODE}') + b'\x90')]
+            (HAZE_SITE, asm(HAZE_SITE, f'jmp {HAZE_CODE}') + b'\x90'),
+            *projection_bodies()]
 
 
 # Pixel-identical reflective terrain rows without per-row executable writes.
@@ -899,7 +954,8 @@ def column_install(write, read):
     """Validate original hooks and the complete cold reservation before writing."""
     from features.input_views import _install
     return _install(
-        column_bodies(), {COLUMN_SITE: COLUMN_ORIGINAL, HAZE_SITE: HAZE_ORIGINAL, **IR_ORIGINAL},
+        column_bodies(), {COLUMN_SITE: COLUMN_ORIGINAL, HAZE_SITE: HAZE_ORIGINAL,
+                          **IR_ORIGINAL, **PROJECTION_ORIGINAL},
         write,
         read,
         cold_state=((COLUMN_CODE, COLUMN_END - COLUMN_CODE), )

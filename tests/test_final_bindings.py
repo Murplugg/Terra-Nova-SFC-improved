@@ -201,7 +201,8 @@ class FinalBindingTests(unittest.TestCase):
             (projectiles, 'deploy', projectiles.DEPLOY_ORIGINAL, projectiles.DEPLOY_END - 1),
             (raster, 'column', {
                 raster.COLUMN_SITE: raster.COLUMN_ORIGINAL,
-                raster.HAZE_SITE: raster.HAZE_ORIGINAL, **raster.IR_ORIGINAL
+                raster.HAZE_SITE: raster.HAZE_ORIGINAL, **raster.IR_ORIGINAL,
+                **raster.PROJECTION_ORIGINAL
             }, raster.COLUMN_END - 1),
             (
                 campaign_switch, 'safety', campaign_switch.SAFETY_SITES,

@@ -59,6 +59,8 @@ named patches or source files. See the [source guide](docs/source-guide.md) for 
 
 ### Graphics and performance
 
+- Fixed terrain covering the sky when looking steeply upward above the ground. Very distant projected coordinates now keep their correct direction instead of overflowing at native viewport sizes. [RENDER; terrain_raster.py]
+
 - Optimized water and haze column drawing while preserving its original pixel results. Adapted from Terra Nova Plus. [RENDER; terrain_raster.py]
 
 - Fixed map detail flickering and repeated terrain drawing when several maps were open. Each map now retains its own terrain cache, including maps sharing the same camera slot. [RENDER; maps.py, render_views.py, render_compositor.py]

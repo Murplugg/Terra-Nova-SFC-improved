@@ -188,6 +188,68 @@ class SkyRowTests(unittest.TestCase):
         self.assertEqual(result['ranges'], [(f.SKY_ROW_SITE, f.SKY_ROW_END)])
 
 
+class TerrainProjectionTests(unittest.TestCase):
+    """A steep airborne view exposed signed overflow in viewport projection.
+
+    Execute the original multiply and the guarded replacement against Python's
+    unbounded arithmetic. Include the two observed vertical inputs, both signs,
+    the final row offset, and overflow boundaries at several viewport sizes.
+    Captured-scene rendering separately checks the resulting terrain coverage.
+    """
+
+    def test_projection_preserves_normal_results_and_offscreen_direction(self):
+        from features import terrain_raster as f
+        from unicorn import Uc, UC_ARCH_X86, UC_MODE_32
+        from unicorn.x86_const import (
+            UC_X86_REG_EAX, UC_X86_REG_EBX, UC_X86_REG_ECX, UC_X86_REG_EDX,
+            UC_X86_REG_ESI, UC_X86_REG_EDI, UC_X86_REG_EBP, UC_X86_REG_ESP,
+            UC_X86_REG_EFLAGS,
+        )
+        u = Uc(UC_ARCH_X86, UC_MODE_32)
+        u.mem_map(0, 0x2000000)
+        stack = 0x1800000
+        regs = (UC_X86_REG_EAX, UC_X86_REG_EBX, UC_X86_REG_ECX, UC_X86_REG_EDX,
+                UC_X86_REG_ESI, UC_X86_REG_EDI, UC_X86_REG_EBP, UC_X86_REG_ESP)
+        for address, body in f.projection_bodies():
+            if address >= f.PROJECTION_CODE:
+                u.mem_write(address, body)
+        u.mem_write(stack+8, struct.pack('<I', 0x123456))
+        for vertical, site, entry in ((False, 0x2b4287, f.PROJECTION_CODE),
+                                      (True, 0x2b42a8, f.PROJECTION_Y)):
+            original = f.PROJECTION_ORIGINAL[site]
+            u.mem_write(site, original)
+            for half_extent in (100, 160, 200, 468, 480, 600, 640, 800):
+                edge = (2**31-1)//half_extent
+                offset_edge = (2**31-1-65536)//half_extent
+                values = (-7107198, -5043407, -65536, -1, 0, 1, 65536,
+                          5043407, 7107198, edge-1, edge, edge+1,
+                          -edge-1, -edge, offset_edge, offset_edge+1)
+                for value in values:
+                    inputs = (value if vertical else half_extent,
+                              half_extent if vertical else 0xabc,
+                              0x1234, 0x5678 if vertical else value,
+                              0x1111, 0x2222, 0x3333, stack)
+                    results = []
+                    for start in (site, entry):
+                        for reg, initial in zip(regs, inputs):
+                            u.reg_write(reg, initial & 0xffffffff)
+                        u.reg_write(UC_X86_REG_EFLAGS, 0x202)
+                        u.emu_start(start, site+len(original), count=40)
+                        results.append(([u.reg_read(reg) for reg in regs],
+                                        u.reg_read(UC_X86_REG_EFLAGS)))
+                    product = value*half_extent
+                    expected = product + (65536 if vertical else 0)
+                    overflow = not (-2**31 <= product < 2**31 and -2**31 <= expected < 2**31)
+                    if overflow:
+                        expected = -0x3f000000 if value < 0 else 0x3f000000
+                    actual, flags = results[1]
+                    self.assertEqual(actual[0], expected & 0xffffffff)
+                    self.assertEqual(actual[1:], results[0][0][1:])
+                    if not overflow:
+                        mask = 0x8d5 if vertical else 0x801  # ADD flags / defined IMUL flags
+                        self.assertEqual(flags & mask, results[0][1] & mask)
+
+
 class ObjectRowHandoffTests(unittest.TestCase):
     """Keep actor collection timely without shortening distant scenery.
 

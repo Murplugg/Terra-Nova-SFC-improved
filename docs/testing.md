@@ -520,3 +520,23 @@ A private paused-scene replay compares whole-world pixels in normal and IR views
 at six pitches. The failing angle is corrected; the other ten view combinations
 remain pixel-identical. Buffer guards pass throughout. Moving airborne views and
 other terrain still require playtesting.
+
+## Window resizing
+
+`tests/display_harness.c` includes the actual display bridge with recorded GDI
+calls. It checks proportional downscaling, integer enlargement, letterbox bounds,
+VGA's 4:3 display correction, paint lifecycle and forwarding of other messages.
+Painting must not advance the normal presentation counter. These checks need no
+game data and do not open a window. From the repository root, use Zig 0.15.2:
+
+```powershell
+zig cc -target x86-windows-gnu -O2 tests/display_harness.c -luser32 -lgdi32 -o "$env:TEMP/tnova-display-test.exe"
+& "$env:TEMP/tnova-display-test.exe"
+```
+
+Also test an actual window while holding and dragging its border, including a
+client smaller than the native frame. Check menu pointer alignment, letterboxes,
+maximize/restore, and return to the game. Windows owns the resize loop: the last
+prepared image remains visible while simulation is suspended. This does not aim
+to keep the game running during a resize. Existing snapshots restore their
+captured support DLL; use a fresh launch to test an updated display bridge.

@@ -3,7 +3,7 @@ from pathlib import Path
 import argparse, hashlib, json, subprocess, struct
 
 FILES = ['audio.c', 'audio_abi.S', 'display.c']
-EXPECTED_NORMALIZED = '1a378236ae663f99342dc770177875c7be4d3765df77807f38520e57a4d5028c'
+EXPECTED_NORMALIZED = '304ca16f5e1fa9471703d93a7321588aa221f0a3ddb53ac29fedad84c71c08da'
 
 
 def normalized(data):

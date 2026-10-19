@@ -61,6 +61,8 @@ named patches or source files. See the [source guide](docs/source-guide.md) for 
 
 ### Graphics and performance
 
+- Fixed the black screen while dragging a window border. Smaller windows now fit the whole game view proportionally instead of cropping it; larger windows retain integer scaling. [HOST-02; bridge/display.c]
+
 - **Fixed [legacy]:** distant foliage and other shaded objects stopped fading at a lower fog level than the terrain. Their palettes now cover the full terrain fog range while preserving each mission's fog distance. [RENDER; terrain_distance.py]
 
 - Added vertical terrain shading adapted from Terra Nova Plus, softening lighting bands on slopes without changing their geometry or draw distance. Infrared views retain their existing renderer. [RENDER; terrain_raster.py]

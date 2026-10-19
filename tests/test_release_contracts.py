@@ -31,7 +31,7 @@ class Contracts(unittest.TestCase):
             revision=revision,
             template=p['template'],
             contract=p['contract'],
-            bridge=c.BRIDGE
+            bridge=p.get('bridge', c.BRIDGE)
         )
 
     def test_matching_builds(self):

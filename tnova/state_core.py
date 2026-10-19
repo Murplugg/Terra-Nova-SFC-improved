@@ -208,7 +208,8 @@ class Installation:
             'Portable revision/template mismatch'
         )
         require(digest(self.template) == self.profile['template'], 'Unsupported native template')
-        require(sha(self.home / 'tn-audio.dll') == BRIDGE, 'Unsupported audio/display bridge')
+        require(sha(self.home / 'tn-audio.dll') == self.profile.get('bridge', BRIDGE),
+                'Unsupported audio/display bridge')
         self.fresh = bytearray(self.template)
         for entry in self.meta['relocations']:
             value = entry['value'].replace('{ROOT}', str(self.home)).encode('ascii')
@@ -409,7 +410,7 @@ def validate_build(install, meta):
         'The snapshot has not been changed.'
     )
     require(
-        meta['template'] == install.profile['template'] and meta['bridge'] == BRIDGE
+        meta['template'] == install.profile['template'] and meta['bridge'] == install.profile.get('bridge', BRIDGE)
         and meta['contract'] == install.profile['contract'], 'Snapshot build mismatch'
     )
 
@@ -673,7 +674,8 @@ def capture(install, pid, destination, executable='native-startup.exe'):
         validate_audio_base(base, snapshot_sizes(install)['render-arena.bin'])
         stats = n.u(0x1d2b000)
         require(
-            n.u(stats + 40) == base + 0x37568 and n.u(stats + 48) == base + 0x37168,
+            n.u(stats + 40) == base + install.profile.get('audio_state_rva', 0x37168) + 0x400
+            and n.u(stats + 48) == base + install.profile.get('audio_state_rva', 0x37168),
             'Mixer identity mismatch'
         )
         sleep = n.u(base + dll.imports['Sleep'] - dll.base)
@@ -790,7 +792,7 @@ def capture(install, pid, destination, executable='native-startup.exe'):
             'memory.bin': bytes(r),
             'cpu.bin': n.read(stack, 36),
             'fpu.bin': n.read(FX, 512),
-            'audio.bin': n.read(base + 0x37168, 0x11800),
+            'audio.bin': n.read(base + install.profile.get('audio_state_rva', 0x37168), 0x11800),
             **capture_render_buffers(install, n.read),
             'mission-reports.res': reports(r, install, campaign)
         }
@@ -798,7 +800,7 @@ def capture(install, pid, destination, executable='native-startup.exe'):
             format='tn-portable-state-126',
             revision=install.revision,
             template=install.profile['template'],
-            bridge=BRIDGE,
+            bridge=install.profile.get('bridge', BRIDGE),
             contract=install.profile['contract'],
             campaign=campaign,
             audio_base=base,
@@ -996,10 +998,10 @@ def build_restore(install, source, destination, campaign):
         f"push 0;"
         f"call dword ptr [{SLOTS+4}];"
         f"add esp,8;"
-        f"\n      cmp eax,{base+0x37168};"
+        f"\n      cmp eax,{base+install.profile.get('audio_state_rva', 0x37168)};"
         f"jne failed;"
         f"mov esi,0x1800000;"
-        f"mov edi,{base+0x37168};"
+        f"mov edi,{base+install.profile.get('audio_state_rva', 0x37168)};"
         f"mov ecx,0x11800;"
         f"rep movsb;"
     )

@@ -142,6 +142,7 @@
     "source-export.json",
     "test.py",
     "tests/__init__.py",
+    "tests/display_harness.c",
     "tests/render-view-fingerprints.json",
     "tests/test_actor_timing.py",
     "tests/test_address_map.py",

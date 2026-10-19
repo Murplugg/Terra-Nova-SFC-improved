@@ -1100,6 +1100,7 @@ SHAD_CODE = COLUMN_CODE + 0xa00
 SHAD_END = COLUMN_CODE + 0xf00
 SHAD_STATE = 0x68b39000  # ring, current tag, previous tag, comparison enable flag
 SHAD_STATE_SIZE = 16
+SHAD_INITIAL = struct.pack('<4I', 0, 0, 0xfffff000, 1)
 SHAD_HISTORY = 0x1400   # four bytes per column, limited to 1280 columns
 SHAD_ORIGINAL = {
     0x2b29b0: bytes.fromhex('558b432c0bc0'),
@@ -1485,6 +1486,13 @@ def shad_layout():
         shl eax,2
         add eax,{SHAD_HISTORY}
         call 0x2c4f40
+        test eax,eax
+        jnz clear_history
+        mov eax,[0x44b1a0]
+        mov eax,[eax+6]
+        sar eax,16
+        jmp plain_alloc
+    clear_history:
         push edi
         push ecx
         push eax
@@ -1493,7 +1501,10 @@ def shad_layout():
         mov ecx,[ecx+6]
         sar ecx,16
         xor eax,eax
+        pushfd
+        cld
         rep stosd dword ptr es:[edi],eax
+        popfd
         mov dword ptr [{SHAD_STATE}],1
         mov dword ptr [{SHAD_STATE+4}],0x1000
         mov dword ptr [{SHAD_STATE+8}],0
@@ -1563,7 +1574,7 @@ def shad_layout():
 
 def shad_bodies():
     code,hooks,_ = shad_layout()
-    return code+[(SHAD_STATE,struct.pack('<4I',0,0,0xfffff000,1))]+hooks
+    return code+hooks
 
 
 def shad_mutable_fields():
@@ -1573,5 +1584,22 @@ def shad_mutable_fields():
 def shad_install(write, read):
     from features.input_views import _install
     return _install(shad_bodies(),SHAD_ORIGINAL,write,read,
-                    cold_state=((SHAD_CODE,SHAD_END-SHAD_CODE),
-                                (SHAD_STATE,SHAD_STATE_SIZE)))
+                    cold_state=((SHAD_CODE,SHAD_END-SHAD_CODE),))
+
+
+def shad_verify(read):
+    """Verify code/hooks while allowing the sixteen cached view operands.
+
+    Arena startup initializes SHAD_STATE with SHAD_INITIAL. Its mutable state
+    is owned by the render arena and snapshots, not the executable installer.
+    """
+    code,hooks,fields = shad_layout()
+    for address,expected in code+hooks:
+        actual = bytearray(read(address,len(expected)))
+        for mutable in fields.values():
+            if address <= mutable < address+len(expected):
+                offset = mutable-address
+                actual[offset:offset+4] = expected[offset:offset+4]
+        if bytes(actual) != expected:
+            raise ValueError(f'Terrain shading code changed at {address:#x}')
+    return True

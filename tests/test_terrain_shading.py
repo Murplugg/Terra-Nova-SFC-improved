@@ -40,6 +40,7 @@ def machine(shading=True, width=1280):
     u.mem_write(0x2b2000,bytes(original_ram[0x2b2000:0x2b3000]))
     if shading:
         for a,b in f.shad_bodies():u.mem_write(a,b)
+        u.mem_write(f.SHAD_STATE,f.SHAD_INITIAL)
     u.mem_write(TEX,bytes(i%16 for i in range(65536)))
     u.mem_write(SB,bytes(row*16+colour%16 for row in range(16) for colour in range(256)))
     u.mem_write(SB+0x1000,bytes(range(256)))
@@ -127,10 +128,11 @@ class TerrainShadingTests(unittest.TestCase):
                 requested=[]
                 u.hook_add(UC_HOOK_CODE,lambda cpu,a,n,_:requested.append(cpu.reg_read(UC_X86_REG_EAX)),
                            begin=0x2c4f40,end=0x2c4f40)
-                for _ in range(2):
+                for direction_flag in (0,0x400):
                     u.mem_write(YBUF,b'\xaa'*(width*4+f.SHAD_HISTORY+16))
                     put(u,f.SHAD_STATE,90,90<<12,89<<12)
-                    call(u,0x2ab65e,EAX=width,ECX=0x1234,EDI=0x5678,EDX=0x4321)
+                    call(u,0x2ab65e,EAX=width,ECX=0x1234,EDI=0x5678,EDX=0x4321,
+                         EFLAGS=0x202|direction_flag)
                     supported=enabled and width<=1280 and height<=4095
                     self.assertEqual(requested[-1],4*width+(f.SHAD_HISTORY if supported else 0))
                     expected=(1,0x1000,0) if supported else (0,0,0xfffff000)
@@ -139,6 +141,24 @@ class TerrainShadingTests(unittest.TestCase):
                         self.assertEqual(bytes(u.mem_read(YBUF+f.SHAD_HISTORY,width*4)),bytes(width*4))
                     self.assertEqual(bytes(u.mem_read(YBUF+width*4+f.SHAD_HISTORY,16)),b'\xaa'*16)
                     self.assertEqual(u.reg_read(UC_X86_REG_EDX),0x4321)
+                    self.assertEqual(u.reg_read(UC_X86_REG_EFLAGS)&0x400,direction_flag)
+
+    def test_failed_history_allocation_retries_original_size(self):
+        for fallback_pointer in (YBUF,0):
+            u=machine(width=320)
+            u.mem_write(0x2c4f40,b'\xc3')
+            u.mem_write(0x2ab666,b'\xc3')
+            u.mem_write(YBUF,b'\xaa'*0x2000)
+            requested=[]
+            def allocate(cpu,a,n,_):
+                requested.append(cpu.reg_read(UC_X86_REG_EAX))
+                cpu.reg_write(UC_X86_REG_EAX,0 if len(requested)==1 else fallback_pointer)
+            u.hook_add(UC_HOOK_CODE,allocate,begin=0x2c4f40,end=0x2c4f40)
+            call(u,0x2ab65e,EAX=320)
+            self.assertEqual(requested,[320*4+f.SHAD_HISTORY,320*4])
+            self.assertEqual(u.reg_read(UC_X86_REG_EAX),fallback_pointer)
+            self.assertEqual(bytes(u.mem_read(f.SHAD_STATE,12)),struct.pack('<3I',0,0,0xfffff000))
+            self.assertEqual(bytes(u.mem_read(YBUF,0x2000)),b'\xaa'*0x2000)
 
     def test_ring_limit_stays_disabled_until_next_view(self):
         u=machine()
@@ -180,3 +200,20 @@ class TerrainShadingTests(unittest.TestCase):
         writes=[]
         with self.assertRaises(ValueError):f.shad_install(lambda a,b:writes.append((a,b)),read)
         self.assertFalse(writes)
+
+    def test_install_and_verify_do_not_access_external_arena(self):
+        ram=bytearray(0x2000000)
+        for a,b in f.SHAD_ORIGINAL.items():ram[a:a+len(b)]=b
+        def read(a,n):
+            self.assertTrue(0<=a<a+n<=len(ram))
+            return bytes(ram[a:a+n])
+        def write(a,b):
+            self.assertTrue(0<=a<a+len(b)<=len(ram))
+            ram[a:a+len(b)]=b
+        f.shad_install(write,read)
+        self.assertTrue(f.shad_verify(read))
+        for address,size in f.shad_mutable_fields():
+            ram[address:address+size]=b'\x12'*size
+        self.assertTrue(f.shad_verify(read))
+        ram[f.SHAD_CODE]^=1
+        with self.assertRaises(ValueError):f.shad_verify(read)

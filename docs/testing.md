@@ -540,3 +540,16 @@ maximize/restore, and return to the game. Windows owns the resize loop: the last
 prepared image remains visible while simulation is suspended. This does not aim
 to keep the game running during a resize. Existing snapshots restore their
 captured support DLL; use a fresh launch to test an updated display bridge.
+
+## Target selection click margins
+
+`test_target_profiles` executes the assembled armor picker at and around its
+30/48-pixel boundaries in each renderer profile, including diagonal rounding.
+`test_target_picking` also runs the full improved fallback chain using the
+verified retail instructions when `test.py --retail-exe` is supplied. Synthetic
+rectangles cover static objects, PBAs and vehicle/drone classes, all four outside
+edges, interior clicks and the unchanged Original Targeting option. Sensor
+visibility is stubbed off in that test to force the fallback; separate marker
+tests cover visible markers and depth ties. These tests do not model real sight
+or projection. In-game acceptance should compare empty-space clicks near units,
+drones and buildings, direct clicks, overlapping targets and both option modes.

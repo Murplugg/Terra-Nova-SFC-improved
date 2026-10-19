@@ -16,6 +16,8 @@ named patches or source files. See the [source guide](docs/source-guide.md) for 
 
 ### Controls and interface
 
+- Reduced the extra click margin around targets by 40% with Improved Target Selection enabled, making nearby empty space less likely to engage Target Lock. [TARGETING; target_picking.py]
+
 - Restored automatic pointer placement over OK on the New Technology screens shown after briefings. [INPUT; input_views.py]
 
 - **Fixed [legacy]:** manual drone control could discard the second movement key. Independent movement and turning now work together; conflicting controls keep their existing priority. [INPUT; input_views.py]

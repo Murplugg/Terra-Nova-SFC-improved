@@ -51,9 +51,11 @@ class Profile(Enum):
     signed floor or nonnegative ceiling according to the profile. Rectangle edges
     round down even for negative coordinates beyond the screen.
     """
-    HUD200 = (320, 200, 800, 600, 2501)
-    HUD400 = (320, 400, 800, 600, 2501)
-    HD960 = (320, 400, 1280, 960, 6401)
+    # Keep a modest halo outside projected armor: 30 pixels at 800x600 and
+    # 48 at 1280x960. Scores are squared distances with one unit of tolerance.
+    HUD200 = (320, 200, 800, 600, 901)
+    HUD400 = (320, 400, 800, 600, 901)
+    HD960 = (320, 400, 1280, 960, 2305)
 
 
 def require_profile(profile):
@@ -727,8 +729,21 @@ def bodies(asm=default_asm):
     return [(RECT_ENTRY, rectangle_code(asm)), (MARKER_ENTRY, marker_code(asm)), *quad_bodies(asm)]
 
 
+# The improved chain can reach the original rectangle picker after missing all
+# quads, markers and rectangle interiors. Reduce its outside margin too, so it
+# cannot restore the wider click area. Original Targeting uses LEGACY_PICK's
+# independent twenty-pixel policy. Sensor-marker interiors remain clickable.
+FALLBACK_MARGINS = (
+    (0x269fba, 'sub ebp,20', 'sub ebp,12'),
+    (0x269fcc, 'add edx,20', 'add edx,12'),
+    (0x269fe2, 'sub edx,20', 'sub edx,12'),
+    (0x269fed, 'add ecx,20', 'add ecx,12'),
+)
+
+
 def hooks(asm=default_asm):
     return [
+        *[(a, asm(a, new), asm(a, old)) for a, old, new in FALLBACK_MARGINS],
         (SITE, asm(SITE, f'jmp {ENTRY}') + b'\x90', ORIGINAL),
         (
             RENDER_SITE, asm(RENDER_SITE,

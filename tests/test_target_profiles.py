@@ -88,11 +88,12 @@ class TargetProfileTests(unittest.TestCase):
                 put(u, f.COUNT, 2)
                 self.assertEqual(run_pick(u, ENTRY, x, y), (CHOSEN, 1), (profile, x, y))
 
-    def test_scaled_distance_limit_preserves_historical_plus_one(self):
+    def test_reduced_distance_limit_preserves_plus_one_tolerance(self):
         for profile in f.Profile:
             lw, lh, ww, wh, limit = profile.value
-            radius = 80 if profile is f.Profile.HD960 else 50
-            for dx, dy, chosen in ((radius, 1, True), (radius, 2, False)):
+            radius = 48 if profile is f.Profile.HD960 else 30
+            for dx, dy, chosen in ((radius - 1, 0, True), (radius, 1, True),
+                                   (radius, 2, False), (radius + 1, 0, False)):
                 u = profiled(profile)
                 obj(u, 1, (100000, 0, 0))
                 queue(u, [(0, 0, 319, lh - 1, 1)])

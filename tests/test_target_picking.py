@@ -239,5 +239,64 @@ class PickingTests(unittest.TestCase):
             self.assertEqual((get(u, f.VALID), get(u, f.ACTIVE)), (1, 0))
 
 
+class RetainedPickingTests(unittest.TestCase):
+    """Exercise the complete fallback using instructions from a verified retail EXE.
+
+    Sensor visibility is stubbed off to force the rectangle/final-margin paths.
+    This catches a broad legacy fallback undoing the narrower quad selection.
+    No original executable bytes are distributed with the tests.
+    """
+
+    def test_improved_fallback_margin_and_original_option(self):
+        import original_inputs
+        from features import options_row, option_contracts as c
+        if original_inputs._original is None:
+            self.skipTest('Pass --retail-exe to test the retained fallback')
+        u = machine()
+        start, end = 0x269f53, CHOSEN
+        u.mem_write(start, bytes(original_inputs.original_ram[start:end]))
+        for address, old, new in f.FALLBACK_MARGINS:
+            before = f.default_asm(address, old)
+            self.assertEqual(bytes(u.mem_read(address, len(before))), before)
+            u.mem_write(address, f.default_asm(address, new))
+        for address, body in f.preference_bodies(options_row.strings()[0]):
+            u.mem_write(address, body)
+        u.mem_write(f.IMPROVED_DISPATCH, f.default_asm(f.IMPROVED_DISPATCH, f'jmp {f.ENTRY}'))
+        # An invisible sensor marker must not rescue a rejected distant click.
+        u.mem_write(0x27d458, f.default_asm(0x27d458, 'xor eax,eax;ret'))
+        put(u, c.PICK.state, 1)
+        put(u, f.VALID, 0)
+        put(u, 0x446f80, 0x1900140)
+        u.mem_write(0x3960c4, b'\x01')  # targetable static object subtype 0
+        hits = []
+        def stop(u, address, size, data):
+            if address == CHOSEN:
+                hits.append(address)
+                u.emu_stop()
+        u.hook_add(UC_HOOK_CODE, stop)
+        for kind in (0, 1, 2, 3, 4):
+            obj(u, 1, (100000, 0, 0), kind=kind)
+            queue(u, [(95, 195, 105, 205, 1)])
+            for improved in (0, 1):
+                put(u, c.PICK.state+4, improved)
+                # Interiors remain selectable. At 12 and 19 logical pixels
+                # outside, improved rejects while original mode still accepts.
+                for x, y, near in ((100,200,True), (105,205,True),
+                                   (116,200,True), (84,200,True),
+                                   (100,216,True), (100,184,True),
+                                   (117,200,False), (83,200,False),
+                                   (124,200,False), (100,217,False),
+                                   (100,183,False)):
+                    hits.clear()
+                    u.reg_write(UC_X86_REG_ESP, STACK)
+                    u.mem_write(STACK+12, struct.pack('<hhH', x,y,0x7777))
+                    u.emu_start(f.PREFERENCE_GATE, STOP, count=200000)
+                    self.assertEqual(hits, [CHOSEN])
+                    selected=struct.unpack('<H',u.mem_read(STACK+16,2))[0]
+                    self.assertEqual(selected, int(near or not improved),
+                                     (kind, improved, x, y))
+                    self.assertEqual(u.reg_read(UC_X86_REG_ESP), STACK)
+
+
 if __name__ == '__main__':
     unittest.main()

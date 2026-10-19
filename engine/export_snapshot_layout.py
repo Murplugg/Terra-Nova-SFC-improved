@@ -4,7 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 
-EXPECTED = '3dcef497054bc10f9225d8ba2adcaa927530ddaa154427e002a83d49f2bdd2c6'
+EXPECTED = 'b92c2cda927a0304bbb76f3db3716129d9705d76be21258d6c266ad3a1b93db7'
 
 
 @dataclass(frozen=True)

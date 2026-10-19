@@ -284,9 +284,8 @@ class InputViewTests(unittest.TestCase):
                     f.CURSOR_PROC: f.CURSOR_PREFIX
                 }, f.CURSOR_SLOT, lambda w, r: f.cursor_install(w, r, IMPORTS)
             ), (
-                f.room_bodies(IMPORTS), {
-                    f.ROOM_SITE: f.ROOM_ORIGINAL
-                }, f.ROOM_CACHE, lambda w, r: f.room_install(w, r, IMPORTS)
+                f.room_bodies(IMPORTS), f.room_providers(),
+                f.ROOM_CACHE, lambda w, r: f.room_install(w, r, IMPORTS)
             )
         )
         for pieces, providers, state, install in profiles:
@@ -498,6 +497,106 @@ class InputViewTests(unittest.TestCase):
             else:
                 self.assertFalse(moves)
                 self.assertEqual((get(u, f.STATE + 20), get(u, f.STATE + 24)), (11, 12))
+
+    def test_equipment_reveal_retains_original_button_center_and_syncs_only_in_foreground(self):
+        from original_inputs import original_ram
+        from foundation_overlays import movie_io
+        if not any(original_ram[0x2c1fa6:0x2c2008]):
+            self.skipTest('Supply the verified retail executable for equipment pointer checks')
+        self.assertEqual(bytes(original_ram[f.GEAR_POINTER_SITE:f.GEAR_POINTER_SITE + 5]),
+                         asm(f.GEAR_POINTER_SITE, 'call 0x2e4a68'))
+        # The original reveal's shared tail computes the center from its OK
+        # rectangle. Model only mouse-driver and Windows calls, not that math.
+        # Both RESBASE 0xDB/0xDD variants use this rectangle; the second checks
+        # that the correction still follows layout data rather than an offset.
+        for rectangle in ((257, 416, 373, 444), (123, 74, 287, 110)):
+            point = ((rectangle[0] + rectangle[2]) // 2,
+                     (rectangle[1] + rectangle[3]) // 2)
+            for extent in ((640, 480), (1280, 960), (1440, 1080)):
+                for mode in ('original', 'before', 'fixed', 'unfocused', 'world'):
+                    with self.subTest(rectangle=rectangle, extent=extent, mode=mode):
+                        x, moves, requests = Fixture(), [], []
+                        u = x.u
+                        u.mem_write(0x2c1fa6, bytes(original_ram[0x2c1fa6:0x2c2008]))
+                        u.mem_write(0x2e4a68, bytes(original_ram[0x2e4a68:0x2e4b1a]))
+                        if mode != 'original':
+                            for a, b in movie_io():
+                                u.mem_write(a, b)
+                        if mode not in ('original', 'before'):
+                            for a, b in f.room_bodies(IMPORTS):
+                                u.mem_write(a, b)
+                        u.mem_write(CONTEXT, struct.pack('<4h', *rectangle))
+                        put(u, STACK + 0x204, CONTEXT)
+                        put(u, 0x446f80, 640 | (480 << 16))
+                        put(u, 0x44d0ca, 21 | (35 << 16))
+                        # Foundation precursor uses the BIOS byte; the host
+                        # relocates it to 0x1D0D449. Give both the same mode.
+                        for a in (0x449, 0x1d0d449):
+                            u.mem_write(a, bytes([0x6b if mode == 'world' else 0x69]))
+                        word(u, 0x4470d2, 2)
+                        u.mem_write(0x447118, b'\0')
+                        u.mem_write(0x2fbae0, b'\xc3')
+
+                        def mouse(cpu, address, size, _):
+                            px, py = cpu.reg_read(UC_X86_REG_EAX), cpu.reg_read(UC_X86_REG_EDX)
+                            requests.append((px, py))
+                            put(cpu, f.MOUSE, px)
+                            put(cpu, f.MOUSE + 4, py)
+                            put(cpu, 0x44d0ca, px | (py << 16))
+
+                        u.hook_add(UC_HOOK_CODE, mouse, begin=0x2fbae0, end=0x2fbae0)
+                        for i, address in enumerate((0x160000, 0x160010, 0x160020)):
+                            put(u, f.ROOM_CACHE + 4 * i, address)
+                            u.mem_write(address, b'\xc3' if i == 0 else b'\xc2\x08\0')
+
+                        def foreground(cpu, address, size, _):
+                            cpu.reg_write(UC_X86_REG_EAX, 0 if mode == 'unfocused' else 0xabc)
+
+                        def client(cpu, address, size, _):
+                            ptr = get(cpu, cpu.reg_read(UC_X86_REG_ESP) + 8)
+                            put(cpu, ptr, get(cpu, ptr) + 100)
+                            put(cpu, ptr + 4, get(cpu, ptr + 4) + 200)
+                            cpu.reg_write(UC_X86_REG_EAX, 1)
+
+                        def move(cpu, address, size, _):
+                            ptr = cpu.reg_read(UC_X86_REG_ESP)
+                            moves.append((get(cpu, ptr + 4), get(cpu, ptr + 8)))
+
+                        for a, callback in ((0x160000, foreground), (0x160010, client), (0x160020, move)):
+                            u.hook_add(UC_HOOK_CODE, callback, begin=a, end=a)
+                        for a, value in ((0x1d1d000, 0xabc), (f.MOUSE + 12, 0),
+                                         (f.MOUSE + 16, 639), (f.MOUSE + 20, 0),
+                                         (f.MOUSE + 24, 479), (0x1d1d090, 20),
+                                         (0x1d1d094, 30), (0x1d1d098, extent[0]),
+                                         (0x1d1d09c, extent[1]), (f.STATE + 20, 11),
+                                         (f.STATE + 24, 12)):
+                            put(u, a, value)
+                        run(u, 0x2c1fa6, end=0x2c2008)
+                        expected = (21, 35) if mode == 'before' else point
+                        self.assertEqual(requests, [expected])
+                        self.assertEqual(get(u, 0x447060), expected[0] | (expected[1] << 16))
+                        self.assertEqual(u.reg_read(UC_X86_REG_ESP), STACK)
+                        if mode == 'fixed':
+                            self.assertEqual(moves, [(120 + (point[0] * (extent[0] - 1) + 319) // 639,
+                                                      230 + (point[1] * (extent[1] - 1) + 239) // 479)])
+                            self.assertEqual((get(u, f.STATE + 20), get(u, f.STATE + 24)), (0, 0))
+                        else:
+                            self.assertFalse(moves)
+                            self.assertEqual((get(u, f.STATE + 20), get(u, f.STATE + 24)), (11, 12))
+
+    def test_equipment_hook_does_not_enable_other_mouse_warps(self):
+        sites = {a for a, _ in f.room_bodies(IMPORTS) if a < 0x354000}
+        self.assertEqual(sites, {f.ROOM_SITE, f.GEAR_POINTER_SITE})
+        # A changed second caller must reject the whole installation before
+        # writing the otherwise valid helper or room-navigation hook.
+        ram = bytearray(0x2000000)
+        for a, b in f.room_providers().items():
+            ram[a:a + len(b)] = b
+        ram[f.GEAR_POINTER_SITE] ^= 1
+        writes = []
+        with self.assertRaises(ValueError):
+            f.room_install(lambda a, b: writes.append((a, b)), lambda a, n: ram[a:a + n], IMPORTS)
+        self.assertFalse(writes)
 
     def test_windows_cursor_hides_only_client_cursor_and_handles_api_failure(self):
         x = Fixture()

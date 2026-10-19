@@ -217,7 +217,7 @@ def cursor_verify(read, imports):
 
 def room_install(write, read, imports):
     return _install(
-        room_bodies(imports), {ROOM_SITE: ROOM_ORIGINAL},
+        room_bodies(imports), room_providers(),
         write,
         read,
         cold_state=((ROOM_CACHE, 12), )
@@ -388,6 +388,11 @@ ROOM_DLL = ROOM_CODE + 0x840
 ROOM_NAMES = [ROOM_CODE + 0x860, ROOM_CODE + 0x880, ROOM_CODE + 0x8a0]
 ROOM_SITE = 0x2b670d
 ROOM_ORIGINAL = asm(ROOM_SITE, 'call 0x2e4a68')
+GEAR_POINTER_SITE = 0x2c2003
+
+
+def room_providers():
+    return {site: asm(site, 'call 0x2e4a68') for site in (ROOM_SITE, GEAR_POINTER_SITE)}
 
 
 def room_bodies(imports):
@@ -406,8 +411,10 @@ def room_bodies(imports):
             f"\n other:jmp 0x2e4a68;"
         )
     )
-    # Execute the original mouse-placement routine, bypassing the old generic
-    # cursor-preservation shim only for the game's explicit room-navigation API.
+    # Room navigation and the New Technology screen explicitly place the mouse.
+    # The latter computes the OK button's center for each equipment reveal.
+    # Preserve those requests through the original routine, then synchronize
+    # Windows while the game has focus. Other cursor-preservation calls remain.
     tramp = asm(ROOM_TRAMP, ("push ebx;"
                              "push ecx;"
                              "push edx;"
@@ -482,7 +489,7 @@ def room_bodies(imports):
     return [(ROOM_CODE, body), (ROOM_TRAMP, tramp), (ROOM_SYNC, sync),
             (ROOM_DLL, b'user32.dll\0')] + list(
                 zip(ROOM_NAMES, [b'GetForegroundWindow\0', b'ClientToScreen\0', b'SetCursorPos\0'])
-            ) + [(ROOM_SITE, asm(ROOM_SITE, f'call {ROOM_CODE}'))]
+            ) + [(site, asm(site, f'call {ROOM_CODE}')) for site in room_providers()]
 
 
 MOUSE = 0x1d0f000

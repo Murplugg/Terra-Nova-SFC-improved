@@ -140,7 +140,7 @@ class RenderArenaTests(unittest.TestCase):
         r.validate(i, {n: 0x300000 + 4 * j for j, n in enumerate(NAMES)})
         self.assertEqual(r.BASE, state_core.ARENA)
         self.assertEqual(r.SIZE, 32 * 1024 * 1024)
-        self.assertEqual(len(i.guard_edges()), 54)
+        self.assertEqual(len(i.guard_edges()), 58)
         self.assertEqual(r.MARKER, i.state + 124)
         self.assertEqual(
             (i.pixels, i.reflection, i.frame, i.screen, i.map),
@@ -168,6 +168,9 @@ class RenderArenaTests(unittest.TestCase):
             self.assertEqual(bytes(u.mem_read(a, n)), bytes(n))
             self.assertEqual(bytes(u.mem_read(a - 4, 4)), b'Z' * 4)
             self.assertEqual(bytes(u.mem_read(a + n, 4)), b'Z' * 4)
+        self.assertEqual(bytes(u.mem_read(i.terrain_shading,16)),
+                         struct.pack('<4I',0,0,0xfffff000,1))
+        self.assertEqual(bytes(u.mem_read(i.object_fog,15*0x1800)),bytes(15*0x1800))
         self.assertEqual(get(u, i.state), 1)
         self.assertEqual(get(u, i.state + 24), 0)
         self.assertEqual(get(u, r.MARKER), r.MAGIC)

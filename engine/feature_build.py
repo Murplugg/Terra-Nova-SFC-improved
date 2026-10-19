@@ -80,6 +80,8 @@ def owned_component(name, write, ram, context):
         'panel-compositor': (hud_install.install_fast, hud_install.verify_fast, ram, {}, {}),
         'terrain-columns':
         (terrain_raster.column_install, terrain_raster.column_verify, read, {}, {}),
+        'terrain-shading': (terrain_raster.shad_install, terrain_raster.shad_verify, read, {}, {}),
+        'object-fog': (terrain_distance.fog_install, terrain_distance.fog_verify, read, {}, {}),
         'water-rows': (terrain_raster.water_install, terrain_raster.water_verify, read, {}, {}),
         'sky-rows': (terrain_raster.sky_install, terrain_raster.sky_verify, read, {}, {}),
         'volley-timing':

@@ -61,6 +61,10 @@ named patches or source files. See the [source guide](docs/source-guide.md) for 
 
 ### Graphics and performance
 
+- **Fixed [legacy]:** distant foliage and other shaded objects stopped fading at a lower fog level than the terrain. Their palettes now cover the full terrain fog range while preserving each mission's fog distance. [RENDER; terrain_distance.py]
+
+- Added vertical terrain shading adapted from Terra Nova Plus, softening lighting bands on slopes without changing their geometry or draw distance. Infrared views retain their existing renderer. [RENDER; terrain_raster.py]
+
 - Fixed terrain covering the sky when looking steeply upward above the ground. Very distant projected coordinates now keep their correct direction instead of overflowing at native viewport sizes. [RENDER; terrain_raster.py]
 
 - Optimized water and haze column drawing while preserving its original pixel results. Adapted from Terra Nova Plus. [RENDER; terrain_raster.py]

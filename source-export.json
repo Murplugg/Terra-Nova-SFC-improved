@@ -184,6 +184,7 @@
     "tests/test_target_picking.py",
     "tests/test_target_profiles.py",
     "tests/test_terrain_install.py",
+    "tests/test_terrain_shading.py",
     "tests/test_weapon_timing.py",
     "third_party/README.md",
     "third_party/keystone-engine-0.9.2.tar.gz",
@@ -237,6 +238,7 @@
     "tests.test_target_profiles",
     "tests.test_terrain_install",
     "tests.test_weapon_timing",
-    "tests.test_ballistic_safety"
+    "tests.test_ballistic_safety",
+    "tests.test_terrain_shading"
   ]
 }

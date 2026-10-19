@@ -327,7 +327,8 @@ def renderer_layout(install=None, document=None):
     if document is None:
         document = json.loads((ROOT / 'state-layout.json').read_text(encoding='utf-8'))
     key = install.profile.get('render_layout', 'legacy-16m') if install is not None else 'legacy-16m'
-    sizes = {'legacy-16m': 0x1000000, 'map-cache-32m': 0x2000000}
+    sizes = {'legacy-16m': 0x1000000, 'map-cache-32m': 0x2000000,
+             'terrain-fog-shading-32m': 0x2000000}
     require(key in sizes, 'Unsupported renderer layout')
     if 'layouts' in document:
         require(key in document['layouts'], 'Missing renderer layout: ' + key)

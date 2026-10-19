@@ -25,6 +25,27 @@ checks report skips. Synthetic textures, pixels and expected results remain
 invented test data. The [build guide](building.md)
 lists the dependencies and the additional checks performed by a complete build.
 
+## Terrain lighting and object fog
+
+`test_terrain_shading` compares supported columns with the original renderer,
+checks pixel coverage and clipping, and exercises per-view history resets,
+allocation failure and fallbacks for infrared or unsupported inputs. Lighting
+interpolation may change colors inside existing terrain spans; it must not move
+their edges. Complete-frame comparisons and moving-view playtests complement
+these isolated tests. Timing those frames excludes simulation and presentation,
+so those measurements do not establish a whole-game frame rate.
+
+`test_terrain_install` checks all object haze levels against composition from the
+original light and fog palettes. It also checks palette reloads, special-palette
+overrides and restoration after drawing. The expanded palettes belong to the
+renderer arena and are captured with snapshots. The shading ring bookkeeping is
+cleared on restoration; each new view allocates its own column history.
+
+The shading routine updates sixteen four-byte palette/stride operands, as the
+original renderer also does. Cold builds check the complete generated code.
+Live snapshot guards omit exactly those operand fields while retaining the
+surrounding instructions and hooks.
+
 ## New Technology pointer placement
 
 The original reveal screen calculates the OK button's center and requests a

@@ -4,7 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 
-EXPECTED = 'cdf5467a4d8e7b083fce34edda76dcaaaebba003cf63de43824fb3711eb2b8eb'
+EXPECTED = '3dcef497054bc10f9225d8ba2adcaa927530ddaa154427e002a83d49f2bdd2c6'
 
 
 @dataclass(frozen=True)
@@ -28,7 +28,7 @@ def capture(integration):
     regions += tuple((address, 12800) for address in (*hud.REFS, *hud.MASKS))
     regions += maps.BUFFERS
     guards += [edge for address, size in regions for edge in (address - 256, address + size)]
-    if len(guards) != 78:
+    if len(guards) != 82:
         raise ValueError('Unexpected snapshot guard layout')
     external = []
     spans = []
@@ -44,7 +44,8 @@ def capture(integration):
         raise ValueError('Overlapping snapshot payloads')
     if not external:
         raise ValueError('Snapshot export requires a built renderer plan')
-    return Contract(tuple(guards), tuple(external), SIZE, ())
+    return Contract(tuple(guards), tuple(external), SIZE,
+                    ((expected.terrain_shading, 12),))
 
 
 def encode(contract, revision=120):

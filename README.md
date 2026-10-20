@@ -109,7 +109,7 @@ Playtesting at the standard difficulty level has reached Mission 34. Testing doe
 
 Linux compatibility via Wine etc. has not yet been tested.
 
-Known gameplay observations still under review include residual aim/reticle alignment, sprite and 3D model depth issues inherited from the original game, and squad collateral damage near friendly buildings.
+Known gameplay observations still under review include residual aim/reticle alignment, sprite and 3D model depth issues inherited from the original game, squad collateral damage near friendly buildings, flickering on camera views/panels, and more.
 
 See [changelog](CHANGELOG.md) for changes since 0.1.0.
 

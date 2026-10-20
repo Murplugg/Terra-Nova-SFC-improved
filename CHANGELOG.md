@@ -14,6 +14,8 @@ named patches or source files. See the [source guide](docs/source-guide.md) for 
 
 ## [Unreleased]
 
+## [0.2.0-beta.1] - 2026-10-20
+
 ### Controls and interface
 
 - Keyboard navigation now reaches Prequel below New Game (Skip Instruction), with matching reverse navigation and Left/Right movement between Prequel and Exit. [CAMPAIGN; resource_transforms.py]

@@ -107,15 +107,15 @@ tools, separate original-file locations and narrower developer builds.
 
 Playtesting at the standard difficulty level has reached Mission 34. Testing does not yet cover every mission and difficulty combination.
 
-Linux compatibility via Wine etc. has not yet been tested. 
+Linux compatibility via Wine etc. has not yet been tested.
 
-Known gameplay observations still under review include shots appearing offset from the reticle, sprite and 3D model depth issues inherited from the original game, and the final laser segment redirecting toward the PBA body center on contact.
+Known gameplay observations still under review include residual aim/reticle alignment, sprite and 3D model depth issues inherited from the original game, and squad collateral damage near friendly buildings.
 
-Release 0.1.0 also has a short smoke-particle draw distance. Improvements to smoke visibility and collision are listed under [Unreleased](CHANGELOG.md#unreleased). [SMOKE]
+This pre-release improves smoke visibility and collision and fixes the final laser segment changing direction on contact. See the [changelog](CHANGELOG.md) for changes since 0.1.0. [SMOKE, WEAPONS]
 
 The new Full-Rate AI Firing feature/setting is optional; easier/harder difficulty balance needs more playtesting and may prove very hard against Hegemony Clones on the hardest settings.
 
-Testing has primarily used this Windows 10 laptop. Clean Windows installations and other hardware remain unverified.
+Testing has primarily used this Windows 10 laptop. Another contributor has tested 0.1.0 on Windows 11; this pre-release still needs broader hardware testing and a complete clean-machine check.
 
 Selected timing and gameplay routines have automated checks at rates from 20 to 120 updates per second. These checks do not establish that the entire game behaves correctly at every frame rate. Human gameplay at 120 FPS or higher has not yet been tested.
 

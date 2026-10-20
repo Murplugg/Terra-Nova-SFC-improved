@@ -20,7 +20,7 @@ import zipfile
 PROJECT = Path(__file__).resolve().parent
 NAME = 'Terra Nova Launcher'
 # Public release label; game_revision separately identifies compatible snapshots.
-RELEASE_VERSION = '0.1.0'
+RELEASE_VERSION = '0.2.0-beta.1'
 LIBFFI_URL = (
     'https://raw.githubusercontent.com/python/cpython-bin-deps/'
     '94cb9a1c7feb608adf2b9f8fe2dbd6925ffbf90d/amd64/libffi-8.dll'
@@ -293,7 +293,7 @@ build-specific snapshots. {switching} This is a public test candidate, tested
 on the development Windows 10 laptop. Clean Windows installation and broader
 hardware compatibility remain unverified. See the release notes for gameplay limits.
 '''
-    (package / 'README.txt').write_text(readme, encoding='utf-8')
+    (package / 'README.txt').write_text(readme, encoding='utf-8', newline='\n')
     manifest['installer_revision'] = milestone
     manifest['outputs'].sort(key=lambda row: row['path'])
     manifest['package_files'] = {

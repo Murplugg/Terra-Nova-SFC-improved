@@ -36,7 +36,7 @@ Exact mission snapshots require a matching game build; restoring one reopens the
 Original weapon statistics and difficulty modifiers are preserved. AI changes retain the original pathfinder, scripted orders and mission restrictions.
 
 
-![Example demo mission](docs/screenshots/tnova-native-rev153-demo-mission-pirate-base.png)
+![Example demo mission](docs/screenshots/tnova-native-rev180-demo-mission-pirate-base.png)
 ![Example demo mission](docs/screenshots/tnova-native-rev153-demo-mission-jes-river.png)
 
 
@@ -111,7 +111,7 @@ Linux compatibility via Wine etc. has not yet been tested.
 
 Known gameplay observations still under review include residual aim/reticle alignment, sprite and 3D model depth issues inherited from the original game, and squad collateral damage near friendly buildings.
 
-This pre-release improves smoke visibility and collision and fixes the final laser segment changing direction on contact. See the [changelog](CHANGELOG.md) for changes since 0.1.0. [SMOKE, WEAPONS]
+See [changelog](CHANGELOG.md) for changes since 0.1.0.
 
 The new Full-Rate AI Firing feature/setting is optional; easier/harder difficulty balance needs more playtesting and may prove very hard against Hegemony Clones on the hardest settings.
 
